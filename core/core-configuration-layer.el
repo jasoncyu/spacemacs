@@ -18,7 +18,9 @@
 (unless package--initialized
   (setq package-archives '(("ELPA" . "http://tromey.com/elpa/")
                            ("gnu" . "http://elpa.gnu.org/packages/")
-                           ("melpa" . "http://melpa.org/packages/")))
+                           ("melpa" . "http://melpa.org/packages/")
+                           ("marmalade" . "http://marmalade-repo.org/packages/")
+                           ))
   ;; optimization, no need to activate all the packages so early
   (setq package-enable-at-startup nil)
   (package-initialize 'noactivate)

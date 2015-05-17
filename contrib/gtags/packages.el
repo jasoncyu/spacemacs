@@ -38,6 +38,10 @@
       (spacemacs/helm-gtags-define-keys-for-mode 'asm-mode)
       (spacemacs/helm-gtags-define-keys-for-mode 'dired-mode)
 
+      ;; experimental
+      (spacemacs/helm-gtags-define-keys-for-mode 'python-mode)
+      (spacemacs/helm-gtags-define-keys-for-mode 'js2-mode)
+
       (spacemacs/ggtags-enable-eldoc 'tcl-mode)
       (spacemacs/ggtags-enable-eldoc 'java-mode)
       (spacemacs/ggtags-enable-eldoc 'vhdl-mode))
