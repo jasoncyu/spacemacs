@@ -24,6 +24,7 @@
     git-link
     ;; not up to date
     ;; helm-gist
+    helm-gitignore
     magit
     magit-gh-pulls
     magit-gitflow
@@ -52,6 +53,11 @@
         "ggl" 'gist-list
         "ggr" 'gist-region
         "ggR" 'gist-region-private))))
+
+(defun git/init-helm-gitignore ()
+  (use-package helm-gitignore
+    :defer t
+    :init (evil-leader/set-key "gI" 'helm-gitignore)))
 
 (defun git/init-git-commit-mode ()
   (use-package git-commit-mode

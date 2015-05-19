@@ -464,7 +464,8 @@ also recommended to disable smooth scrolling on Windows.
 
 2. **Why is there no Spacemacs logo in the startup buffer ?**
 A GUI build of emacs supporting image display is required.
-You can follow the instructions [here][Windows Image Support]. Alternatively you can download binaries of emacs with image support
+You can follow the instructions [here][Windows Image Support]. Alternatively you
+can download binaries of emacs with image support
 included such as this [one][Windows Gui Build].
 
 3. **How to fix the error: The directory ~/.emacs.d/server is unsafe ?**
@@ -474,6 +475,12 @@ Change the owner of the directory `~/.emacs.d/server`:
   - select the Tab “Owner”
   - change the owner to your account name
   Source: [Stackoverflow][so-server-unsafe]
+
+4. **I followed installation instructions and it's not working, why?**
+Make sure your `HOME` directory is set. Go to the Environment Variables
+panel, add a new user variable called `HOME` and give it the value
+`%USERPROFILE%`. You can check that the variable is set correctly by
+opening a new command line window and type `echo %HOME%`.
 
 ## OS X
 
