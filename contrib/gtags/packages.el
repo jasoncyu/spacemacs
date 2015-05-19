@@ -39,8 +39,11 @@
       (spacemacs/helm-gtags-define-keys-for-mode 'dired-mode)
 
       ;; experimental
-      (spacemacs/helm-gtags-define-keys-for-mode 'python-mode)
-      (spacemacs/helm-gtags-define-keys-for-mode 'js2-mode)
+      (eval-after-load 'anaconda-mode
+        (spacemacs/helm-gtags-define-keys-for-mode 'python-mode)
+        )
+      (eval-after-load 'js2-mode
+        (spacemacs/helm-gtags-define-keys-for-mode 'js2-mode))
 
       (spacemacs/ggtags-enable-eldoc 'tcl-mode)
       (spacemacs/ggtags-enable-eldoc 'java-mode)

@@ -16,3 +16,8 @@
 (define-key evil-emacs-state-map (kbd "C-o") 'evil-execute-in-normal-state)
 (add-hook 'dired-mode-hook (lambda ()
                              (local-set-key (kbd "M-o") 'dired-display-file)))
+(evil-leader/set-key
+  "mj" 'org-clock-jump-to-current-clock
+  ;; *s*ymbol
+  "ms" 'prelude-goto-symbol
+  )
