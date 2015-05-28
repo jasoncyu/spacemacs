@@ -651,6 +651,9 @@
       (define-key evil-motion-state-map (kbd dotspacemacs-command-key) 'evil-ex)
       ;; Make the current definition and/or comment visible.
       (define-key evil-normal-state-map "zf" 'reposition-window)
+      ;; toggle maximize buffer
+      (define-key evil-window-map (kbd "o") 'toggle-maximize-buffer)
+      (define-key evil-window-map (kbd "C-o") 'toggle-maximize-buffer)
 
       (evil-leader/set-key "re" 'evil-show-registers)
 
@@ -902,9 +905,11 @@ Example: (evil-map visual \"<\" \"<gv\")"
                   'spacemacs/activate-major-mode-leader)))))
 
 (defun spacemacs/init-evil-lisp-state ()
-  (setq evil-lisp-state-global t)
-  (setq evil-lisp-state-leader-prefix "k")
-  (require 'evil-lisp-state))
+  (use-package evil-lisp-state
+    :init
+    (progn
+      (setq evil-lisp-state-global t)
+      (setq evil-lisp-state-leader-prefix "k"))))
 
 (defun spacemacs/init-evil-nerd-commenter ()
   (use-package evil-nerd-commenter
@@ -1162,10 +1167,26 @@ Example: (evil-map visual \"<\" \"<gv\")"
                       windmove-right
                       windmove-up
                       windmove-down
+                      evil-window-delete
+                      evil-window-split
+                      evil-window-vsplit
                       evil-window-left
                       evil-window-right
                       evil-window-up
                       evil-window-down
+                      evil-window-bottom-right
+                      evil-window-top-left
+                      evil-window-mru
+                      evil-window-next
+                      evil-window-prev
+                      evil-window-new
+                      evil-window-vnew
+                      evil-window-rotate-upwards
+                      evil-window-rotate-downwards
+                      evil-window-move-very-top
+                      evil-window-move-far-left
+                      evil-window-move-far-right
+                      evil-window-move-very-bottom
                       select-window-0
                       select-window-1
                       select-window-2
@@ -1297,7 +1318,8 @@ Example: (evil-map visual \"<\" \"<gv\")"
             helm-lisp-fuzzy-completion t
             helm-locate-fuzzy-match t
             helm-recentf-fuzzy-match t
-            helm-semantic-fuzzy-match t)
+            helm-semantic-fuzzy-match t
+            helm-buffers-fuzzy-matching t)
 
       (defun spacemacs/helm-find-files-navigate-back (orig-fun &rest args)
         )
@@ -1382,12 +1404,12 @@ If ARG is non nil then `ag' and `pt' and ignored."
                   (unless (configuration-layer/package-usedp 'smex)
                     (evil-leader/set-key dotspacemacs-command-key 'helm-M-x))))
 
-      (defvar spacemacs-helm-display-buffer-regexp `(,(rx bos "*helm" (* not-newline) "*" eos)
+      (defvar spacemacs-helm-display-help-buffer-regexp '("*.*Helm.*Help.**"))
+      (defvar spacemacs-helm-display-buffer-regexp `("*.*helm.**"
                                                      (display-buffer-in-side-window)
                                                      (inhibit-same-window . t)
                                                      (window-height . 0.4)))
       (defvar spacemacs-display-buffer-alist nil)
-
       (defun spacemacs//display-helm-at-bottom ()
         "Display the helm buffer at the bottom of the frame."
         ;; avoid Helm buffer being diplaye twice when user
@@ -1399,7 +1421,15 @@ If ARG is non nil then `ag' and `pt' and ignored."
           ;; the only buffer to display is Helm, nothing else we must set this
           ;; otherwise Helm cannot reuse its own windows for copyinng/deleting
           ;; etc... because of existing popwin buffers in the alist
-          (setq display-buffer-alist (list spacemacs-helm-display-buffer-regexp))
+          (setq display-buffer-alist nil)
+          (add-to-list 'display-buffer-alist spacemacs-helm-display-buffer-regexp)
+          ;; this or any specialized case of Helm buffer must be added AFTER
+          ;; `spacemacs-helm-display-buffer-regexp'. Otherwise,
+          ;; `spacemacs-helm-display-buffer-regexp' will be used before
+          ;; `spacemacs-helm-display-help-buffer-regexp' and display
+          ;; configuration for normal Helm buffer is applied for helm help
+          ;; buffer, making the help buffer unable to be displayed.
+          (add-to-list 'display-buffer-alist spacemacs-helm-display-help-buffer-regexp)
           (popwin-mode -1)))
 
       (defun spacemacs//restore-previous-display-config ()
@@ -1591,8 +1621,7 @@ ARG non nil means that the editing style is `vim'."
                helm-projectile-find-file
                helm-projectile-grep
                helm-projectile
-               helm-projectile-switch-project
-               helm-projectile-vc)
+               helm-projectile-switch-project)
     :init
     (progn
       (setq projectile-switch-project-action 'helm-projectile)
@@ -1649,7 +1678,7 @@ If ARG is non nil then `ag' and `pt' and ignored."
         "psg" 'helm-projectile-grep
         "psk" 'helm-projectile-ack
         "psp" 'helm-projectile-pt
-        "pv"  'helm-projectile-vc))))
+        "pv"  'projectile-vc))))
 
 (defun spacemacs/init-helm-swoop ()
   (use-package helm-swoop
@@ -2107,15 +2136,15 @@ Put (global-hungry-delete-mode) in dotspacemacs/config to enable by default."
       (setq popwin:special-display-config nil)
 
       ;; buffers that we manage
-      (push '("*Help*"                 :dedicated t :position bottom :stick t :noselect t :height 0.4) popwin:special-display-config)
-      (push '("*compilation*"          :dedicated t :position bottom :stick t :noselect t :height 0.4) popwin:special-display-config)
-      (push '("*Shell Command Output*" :dedicated t :position bottom :stick t :noselect t            ) popwin:special-display-config)
-      (push '("*Async Shell Command*"  :dedicated t :position bottom :stick t :noselect t            ) popwin:special-display-config)
-      (push '(" *undo-tree*"           :dedicated t :position bottom :stick t :noselect t :height 0.4) popwin:special-display-config)
-      (push '("*ert*"                  :dedicated t :position bottom :stick t :noselect t            ) popwin:special-display-config)
-      (push '("*grep*"                 :dedicated t :position bottom :stick t :noselect t            ) popwin:special-display-config)
-      (push '("*nosetests*"            :dedicated t :position bottom :stick t :noselect t            ) popwin:special-display-config)
-      (push '("^\*WoMan.+\*$" :regexp t             :position bottom                                 ) popwin:special-display-config)
+      (push '("*Help*"                 :dedicated t :position bottom :stick t :noselect nil :height 0.4) popwin:special-display-config)
+      (push '("*compilation*"          :dedicated t :position bottom :stick t :noselect nil :height 0.4) popwin:special-display-config)
+      (push '("*Shell Command Output*" :dedicated t :position bottom :stick t :noselect nil            ) popwin:special-display-config)
+      (push '("*Async Shell Command*"  :dedicated t :position bottom :stick t :noselect nil            ) popwin:special-display-config)
+      (push '(" *undo-tree*"           :dedicated t :position bottom :stick t :noselect nil :height 0.4) popwin:special-display-config)
+      (push '("*ert*"                  :dedicated t :position bottom :stick t :noselect nil            ) popwin:special-display-config)
+      (push '("*grep*"                 :dedicated t :position bottom :stick t :noselect nil            ) popwin:special-display-config)
+      (push '("*nosetests*"            :dedicated t :position bottom :stick t :noselect nil            ) popwin:special-display-config)
+      (push '("^\*WoMan.+\*$" :regexp t             :position bottom                                   ) popwin:special-display-config)
 
       (defun spacemacs/remove-popwin-display-config (str)
         "Removes the popwin display configurations that matches the passed STR"
@@ -2523,13 +2552,13 @@ It is a string holding:
                                            (recentf-mode)
                                            (recentf-track-opened-file))))
     :config
-    (progn
-      (setq recentf-exclude '(spacemacs-cache-directory))
-      (add-to-list 'recentf-exclude "COMMIT_EDITMSG\\'")
-      (setq recentf-save-file (concat spacemacs-cache-directory "recentf"))
-      (setq recentf-max-saved-items 100)
-      (setq recentf-auto-cleanup 'never)
-      (setq recentf-auto-save-timer (run-with-idle-timer 600 t 'recentf-save-list)))))
+    (add-to-list 'recentf-exclude (expand-file-name spacemacs-cache-directory))
+    (add-to-list 'recentf-exclude (expand-file-name package-user-dir))
+    (add-to-list 'recentf-exclude "COMMIT_EDITMSG\\'")
+    (setq recentf-save-file (concat spacemacs-cache-directory "recentf"))
+    (setq recentf-max-saved-items 100)
+    (setq recentf-auto-cleanup 'never)
+    (setq recentf-auto-save-timer (run-with-idle-timer 600 t 'recentf-save-list))))
 
 (defun spacemacs/init-rfringe ()
   (use-package rfringe
@@ -2567,9 +2596,6 @@ It is a string holding:
                             :documentation "Enable smartparens globally."
                             :evil-leader "t C-p")
 
-      ;; don't create a pair with single quote in minibuffer
-      (sp-local-pair 'minibuffer-inactive-mode "'" nil :actions nil)
-
       (setq sp-show-pair-delay 0
             sp-show-pair-from-inside t ; fix paren highlighting in normal mode
             sp-cancel-autoskip-on-backward-movement nil))
@@ -2589,21 +2615,24 @@ It is a string holding:
         (spacemacs/smartparens-pair-newline id action context)
         (indent-according-to-mode))
 
+      ;; don't create a pair with single quote in minibuffer
+      (sp-local-pair 'minibuffer-inactive-mode "'" nil :actions nil)
+
       (sp-pair "{" nil :post-handlers
                '(:add (spacemacs/smartparens-pair-newline-and-indent "RET")))
       (sp-pair "[" nil :post-handlers
                '(:add (spacemacs/smartparens-pair-newline-and-indent "RET"))))))
 
-
 (defun spacemacs/init-smooth-scrolling ()
-  ;; this is not a conventional package
-  ;; no require are needed for this package everything is auto-loaded
   (if dotspacemacs-smooth-scrolling
-      ;; enable smooth scrolling
-      (setq scroll-step 1
-            scroll-conservatively 10000
-            auto-window-vscroll nil
-            smooth-scroll-margin 5)
+      (use-package smooth-scrolling
+        :init
+        (setq smooth-scroll-margin 5
+              scroll-conservatively 101
+              scroll-preserve-screen-position t
+              auto-window-vscroll nil)
+        :config
+        (setq scroll-margin 5))
 
     ;; deactivate the defadvice's
     (ad-disable-advice 'previous-line 'after 'smooth-scroll-down)

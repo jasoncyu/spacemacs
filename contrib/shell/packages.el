@@ -13,6 +13,7 @@
 (setq shell-packages
       '(
         helm
+        multi-term
         shell
         shell-pop
         term
@@ -44,8 +45,26 @@
         (add-hook 'eshell-mode-hook 'spacemacs/init-helm-eshell)
         ;;shell
         (evil-leader/set-key-for-mode 'shell-mode
-          "mH" 'spacemacs/helm-shell-history))))
-  )
+          "mH" 'spacemacs/helm-shell-history)))))
+
+(defun shell/init-multi-term ()
+  (use-package multi-term
+    :defer t
+    :init
+    (progn
+      (evil-leader/set-key "ast" 'shell-pop-multi-term)
+      (defun multiterm (_)
+        "Wrapper to be able to call multi-term from shell-pop"
+        (interactive)
+        (multi-term)))
+    :config
+    (progn
+      (defun term-send-tab ()
+        "Send tab in term mode."
+        (interactive)
+        (term-send-raw-string "\t"))
+
+      (add-to-list 'term-bind-key-alist '("<tab>" . term-send-tab)))))
 
 (defun spacemacs/init-shell ()
   (defun shell-comint-input-sender-hook ()
@@ -98,7 +117,15 @@
       (make-shell-pop-command eshell)
       (make-shell-pop-command shell)
       (make-shell-pop-command term shell-pop-term-shell)
+      (make-shell-pop-command multiterm)
       (make-shell-pop-command ansi-term shell-pop-term-shell)
+
+      (defun spacemacs//term-kill-buffer-hook ()
+        "Function that hook `kill-buffer-hook'."
+        (when (eq major-mode 'term-mode)
+          (when (term-check-proc (current-buffer))
+            (term-quit-subjob))))
+      (add-hook 'kill-buffer-hook 'spacemacs//term-kill-buffer-hook)
 
       (defun ansi-term-handle-close ()
         "Close current term buffer when `exit' from term buffer."
@@ -109,18 +136,19 @@
                                     (kill-buffer (process-buffer proc))
                                     (delete-window))))))
       (add-hook 'term-mode-hook 'ansi-term-handle-close)
-      (defun term-switch-dir-hook ()
-        (term-send-raw-string (concat "cd " default-directory "\n")))
-      (add-hook 'shell-pop-in-hook #'term-switch-dir-hook)
 
       (defun spacemacs/default-pop-shell ()
         "Open the default shell in a popup."
         (interactive)
-        (call-interactively (intern (format "shell-pop-%S" shell-default-shell))))
+        (let ((shell (if (eq 'multi-term shell-default-shell)
+                         'multiterm
+                       shell-default-shell)))
+          (call-interactively (intern (format "shell-pop-%S" shell)))))
       (evil-leader/set-key
-        ";"   'spacemacs/default-pop-shell
+        "'"   'spacemacs/default-pop-shell
         "ase" 'shell-pop-eshell
         "asi" 'shell-pop-shell
+        "asm" 'shell-pop-multiterm
         "ast" 'shell-pop-ansi-term
         "asT" 'shell-pop-term))))
 

@@ -258,10 +258,11 @@ the current state and point position."
 (defun toggle-maximize-buffer ()
   "Maximize buffer"
   (interactive)
-  (if (= 1 (length (window-list)))
+  (if (and (= 1 (length (window-list)))
+           (assoc'_ register-alist))
       (jump-to-register '_)
     (progn
-      (set-register '_ (list (current-window-configuration)))
+      (window-configuration-to-register '_)
       (delete-other-windows))))
 
 (defun toggle-maximize-centered-buffer ()
@@ -399,6 +400,9 @@ argument takes the kindows rotate backwards."
         (cond ((get-buffer new-name)
                (error "A buffer named '%s' already exists!" new-name))
               (t
+               (let ((dir (file-name-directory new-name)))
+                 (when (and (not (file-exists-p dir)) (yes-or-no-p (format "Create directory '%s'?" dir)))
+                   (make-directory dir t)))
                (rename-file filename new-name 1)
                (rename-buffer new-name)
                (set-visited-file-name new-name)
@@ -533,20 +537,19 @@ argument takes the kindows rotate backwards."
 
 ;; From http://xugx2007.blogspot.ca/2007/06/benjamin-rutts-emacs-c-development-tips.html
 (setq compilation-finish-function
-   (lambda (buf str)
+      (lambda (buf str)
 
-     (if (or (string-match "exited abnormally" str)
-            (string-match "FAILED" (buffer-string)))
+        (if (or (string-match "exited abnormally" str)
+                (string-match "FAILED" (buffer-string)))
 
-         ;;there were errors
-         (message "There were errors. SPC-e-n to visit.")
-       (unless (or (string-match "Grep finished" (buffer-string))
-                  (string-match "Ag finished" (buffer-string))
-                  (string-match "nosetests" (buffer-name)))
+            ;; there were errors
+            (message "There were errors. SPC-e-n to visit.")
+          (unless (or (string-match "Grep finished" (buffer-string))
+                      (string-match "Ag finished" (buffer-string))
+                      (string-match "nosetests" (buffer-name)))
 
-         ;;no errors, make the compilation window go away in 0.5 seconds
-         (delete-windows-on buf)
-         (message "compilation ok.")))))
+            ;; no errors
+            (message "compilation ok.")))))
 
 ;; from https://gist.github.com/timcharper/493269
 (defun split-window-vertically-and-switch ()
