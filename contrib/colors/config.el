@@ -24,6 +24,7 @@
     (leuven . (100 40))
     (material . (95 105))
     (monokai . (55 60))
+    (moe-dark . (80 70))
     (solarized-dark . (65 55))
     (solarized-light . (60 55))
     (zenburn . (40 65)))

@@ -28,15 +28,16 @@
       "mgc" 'helm-gtags-create-tags
       "mgd" 'helm-gtags-find-tag
       "mgf" 'helm-gtags-select-path
-      "mgg" 'helm-gtags-dwim
-      "mgG" 'helm-gtags-dwim-other-window
+      "mgg" 'helm-gtags-dwim-other-window
+      ;; "mgG" 'helm-gtags-dwim-other-window
       "mgi" 'helm-gtags-tags-in-this-function
       "mgl" 'helm-gtags-parse-file
       "mgn" 'helm-gtags-next-history
       "mgp" 'helm-gtags-previous-history
       "mgr" 'helm-gtags-find-rtag
       "mgR" 'helm-gtags-resume
-      "mgs" 'helm-gtags-select
+      ;; "mgs" 'helm-gtags-select
+      "mg/" 'helm-gtags-select
       "mgS" 'helm-gtags-show-stack
       "mgu" 'helm-gtags-update-tags)))
 

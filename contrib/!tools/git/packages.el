@@ -274,7 +274,10 @@
                (kbd "C-k") 'magit-goto-previous-section
                (kbd "C-n") 'magit-goto-next-section
                (kbd "C-p") 'magit-goto-previous-section
-               (kbd "C-v") 'magit-revert-item))
+               (kbd "C-v") 'magit-revert-item)
+      ;; Disable magit-wazzup, which is really slow
+      (defun magit-wazzup ()
+        (message "Magit wazzup is disabled because it's soo slow")))
     :config
     (progn
       (spacemacs|hide-lighter magit-auto-revert-mode)
