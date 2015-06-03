@@ -12,11 +12,24 @@
 
 (defvar rust-packages
   '(
+    flycheck
+    flycheck-rust
     rust-mode
     toml-mode
     )
   "List of all packages to install and/or initialize. Built-in packages
 which require an initialization must be listed explicitly in the list.")
+
+(defun rust/post-init-flycheck ()
+  (add-hook 'rust-mode-hook 'flycheck-mode))
+
+(when (configuration-layer/layer-usedp 'syntax-checking)
+  (defun rust/init-flycheck-rust ()
+    (use-package flycheck-rust
+      :if (configuration-layer/package-usedp 'flycheck)
+      :defer t
+      :init
+      (add-hook 'flycheck-mode-hook #'flycheck-rust-setup))))
 
 (defun rust/init-rust-mode ()
   (use-package rust-mode

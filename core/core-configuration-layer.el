@@ -177,8 +177,9 @@ LAYER_DIR is nil, the private directory is used."
     (find-file dest)
     (save-excursion
       (goto-char (point-min))
-      (while (re-search-forward "NAME" nil t)
-        (replace-match name t)))
+      (let ((case-fold-search nil))
+        (while (re-search-forward "%LAYERNAME%" nil t)
+          (replace-match name t))))
     (save-buffer)))
 
 (defun configuration-layer//get-contrib-category-dirs ()
@@ -282,12 +283,21 @@ the following keys:
   "Set the configuration variables for the passed LAYERS."
   (dolist (layer layers)
     (let ((variables (spacemacs/mplist-get layer :variables)))
-      (while variables
-        (let ((var (pop variables)))
-          (if (consp variables)
-              (set-default var (pop variables))
-            (spacemacs-buffer/warning "Missing value for variable %s !"
-                                      var)))))))
+          (while variables
+            (let ((var (pop variables)))
+              (if (consp variables)
+                  (condition-case err
+                      (set-default var (eval (pop variables)))
+                    ('error
+                     (configuration-layer//set-error)
+                     (spacemacs-buffer/append
+                      (format (concat "An error occurred while setting layer "
+                                      "variable %s "
+                                      "(error: %s). Be sure to quote the value "
+                                      "if needed.\n") var err))))
+                (spacemacs-buffer/warning "Missing value for variable %s !"
+                                          var)))))))
+
 
 (defun configuration-layer/package-usedp (pkg)
   "Return non-nil if PKG symbol corresponds to a used package."

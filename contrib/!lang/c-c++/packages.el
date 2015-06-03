@@ -19,6 +19,7 @@
     company-c-headers
     company-ycmd
     flycheck
+    gdb-mi
     helm-gtags
     semantic
     srefactor
@@ -33,7 +34,7 @@
   (use-package cc-mode
     :defer t
     :init
-    (add-to-list 'auto-mode-alist '("\\.h$" . c++-mode))
+    (add-to-list 'auto-mode-alist `("\\.h$" . ,c-c++-default-mode-for-headers))
     :config
     (progn
       (require 'compile)
@@ -112,6 +113,16 @@
 
 (defun c-c++/post-init-flycheck ()
   (add-to-hooks 'flycheck-mode '(c-mode-hook c++-mode-hook)))
+
+(defun c-c++/init-gdb-mi ()
+  (use-package gdb-mi
+    :defer t
+    :init
+    (setq
+     ;; use gdb-many-windows by default when `M-x gdb'
+     gdb-many-windows t
+     ;; Non-nil means display source file containing the main routine at startup
+     gdb-show-main t)))
 
 (defun c-c++/post-init-helm-gtags ()
   (spacemacs/helm-gtags-define-keys-for-mode 'c-mode)
