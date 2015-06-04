@@ -12,9 +12,10 @@
 
 (setq python-packages
   '(
-    anaconda-mode
+    ;; Anaconda mode's been giving me weird errors
+    ;; anaconda-mode
     company
-    company-anaconda
+    ;; company-anaconda
     cython-mode
     eldoc
     evil-jumper
@@ -31,16 +32,16 @@
     stickyfunc-enhance
     ))
 
-(defun python/init-anaconda-mode ()
-  (use-package anaconda-mode
-    :defer t
-    :init (add-hook 'python-mode-hook 'anaconda-mode)
-    :config
-    (progn
-      (evil-leader/set-key-for-mode 'python-mode
-        "mhh" 'anaconda-mode-view-doc
-        "mgg"  'anaconda-mode-goto)
-      (spacemacs|hide-lighter anaconda-mode))))
+;; (defun python/init-anaconda-mode ()
+;;   (use-package anaconda-mode
+;;     :defer t
+;;     :init (add-hook 'python-mode-hook 'anaconda-mode)
+;;     :config
+;;     (progn
+;;       (evil-leader/set-key-for-mode 'python-mode
+;;         "mhh" 'anaconda-mode-view-doc
+;;         "mgg"  'anaconda-mode-goto)
+;;       (spacemacs|hide-lighter anaconda-mode))))
 
 (defun python/init-cython-mode ()
   (use-package cython-mode
@@ -53,7 +54,9 @@
       )))
 
 (defun python/init-eldoc ()
-  (add-hook 'python-mode-hook 'eldoc-mode))
+  ;; Comment out for now since I "need an inferior python process running."
+  ;; (add-hook 'python-mode-hook 'eldoc-mode)
+  )
 
 (defun python/init-evil-jumper ()
   (defadvice anaconda-mode-goto (before python/anaconda-mode-goto activate)
@@ -317,5 +320,3 @@ fix this issue."
 
 (defun python/post-init-stickyfunc-enhance ()
   (add-hook 'python-mode-hook 'spacemacs/lazy-load-stickyfunc-enhance))
-
-
