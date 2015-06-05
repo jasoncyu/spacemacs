@@ -12,6 +12,7 @@
 
 (setq git-packages
   '(
+    browse-at-remote
     gitattributes-mode
     gitconfig-mode
     gitignore-mode
@@ -35,6 +36,25 @@
 (if git-gutter-use-fringe
     (push 'git-gutter-fringe git-packages)
   (push 'git-gutter git-packages))
+
+(defun git/init-browse-at-remote ()
+  "Browse github/bitbucket file corresponding to the file you're currently in.
+   Will also jump to the correct line number."
+  (use-package browse-at-remote)
+    :if  git-enable-github-support
+    :defer t
+    :init
+    (progn
+      (evil-leader/set-key
+        ;; *g*ithub *o* open in remote repository.
+        "go" 'browse-at-remote)
+
+      (evilify magit-commit-mode magit-commit-mode-map
+               (kbd "C-o") 'browse-at-remote)
+
+      (evilify magit-log-mode magit-log-mode-map
+               (kbd "C-o") 'browse-at-remote)
+      ))
 
 (defun git/init-gist ()
   (use-package gist
