@@ -274,7 +274,11 @@
                (kbd "C-k") 'magit-goto-previous-section
                (kbd "C-n") 'magit-goto-next-section
                (kbd "C-p") 'magit-goto-previous-section
-               (kbd "C-v") 'magit-revert-item))
+               (kbd "C-v") 'magit-revert-item)
+      ;; Work with golden ratio
+      (setq golden-ratio-extra-commands
+            (append golden-ratio-extra-commands
+                    '(magit-status magit-mode-quit-window)))))
     :config
     (progn
       (spacemacs|hide-lighter magit-auto-revert-mode)
