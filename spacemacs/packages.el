@@ -15,6 +15,7 @@
     ace-jump-mode
     ace-link
     ace-window
+    avy
     adaptive-wrap
     aggressive-indent
     auto-dictionary
@@ -120,6 +121,18 @@
     (progn
       (setq ace-jump-mode-scope 'global)
       (evil-leader/set-key "`" 'ace-jump-mode-pop-mark))))
+
+(defun spacemacs/init-avy ()
+  (use-package avy
+    :defer t
+    :init
+    (progn
+      (evil-leader/set-key "SPC" 'avy-goto-char-2)
+      (evil-leader/set-key "l" 'avy-goto-line))
+    :config
+    (progn
+      ;; Jump among all windows of current frame.
+      (setq avy-all-windows t))))
 
 (defun spacemacs/init-ace-link ()
   (use-package ace-link
