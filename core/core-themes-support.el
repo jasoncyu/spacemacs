@@ -13,6 +13,12 @@
 (defconst emacs-built-in-themes (custom-available-themes)
   "List of emacs built-in themes")
 
+(defface org-kbd
+  '((t (:background "LemonChiffon1" :foreground "black" :box
+                    (:line-width 2 :color nil :style released-button))))
+  "Face for displaying key bindings in Spacemacs documents."
+  :group 'org-faces)
+
 (defconst spacemacs-theme-name-to-package
   '(
     (alect-black-alt . alect-themes)
@@ -112,6 +118,7 @@
     (colorsarenice-light . colorsarenice-theme)
     (hemisu-dark  . hemisu-theme)
     (hemisu-light . hemisu-theme)
+    (material-light . material-theme)
     (minimal-light . minimal-theme)
     (moe-dark  . moe-theme)
     (moe-light . moe-theme)

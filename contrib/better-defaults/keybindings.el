@@ -11,6 +11,7 @@
 ;;; License: GPLv3
 
 (global-set-key (kbd "C-a") 'spacemacs/smart-move-beginning-of-line)
+<<<<<<< HEAD
 
 ;; emacs state bindings
 (define-key evil-emacs-state-map (kbd "C-o") 'evil-execute-in-normal-state)

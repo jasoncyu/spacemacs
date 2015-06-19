@@ -19,6 +19,7 @@
     org-pomodoro
     org-present
     org-repo-todo
+    toc-org
     ))
 
 (defun org/init-evil-org ()
@@ -45,14 +46,15 @@
     :defer t
     :init
     (progn
-      (setq org-log-done t)
+      (setq org-log-done t
+            org-startup-with-inline-images t
+            org-src-fontify-natively t)
 
       (eval-after-load 'org-indent
         '(spacemacs|hide-lighter org-indent-mode))
       (setq org-startup-indented t)
       (let ((dir (configuration-layer/get-layer-property 'org :dir)))
         (setq org-export-async-init-file (concat dir "org-async-init.el")))
-
       (defmacro spacemacs|org-emphasize (fname char)
         "Make function for setting the emphasis in org mode"
         `(defun ,fname () (interactive)
@@ -82,7 +84,6 @@ Will work on both org-mode and any mode that accepts plain html."
         "mhI" 'org-insert-heading
 
         "mI" 'org-clock-in
-        "mj" 'helm-org-in-buffer-headings
         (if dotspacemacs-major-mode-leader-key
             (concat "m" dotspacemacs-major-mode-leader-key)
           "m,") 'org-ctrl-c-ctrl-c
@@ -125,9 +126,17 @@ Will work on both org-mode and any mode that accepts plain html."
                     (1 font-lock-comment-face prepend)
                     (2 font-lock-function-name-face)
                     (3 font-lock-comment-face prepend))))
+
       (require 'org-indent)
       (define-key global-map "\C-cl" 'org-store-link)
       (define-key global-map "\C-ca" 'org-agenda)
+
+      ;; We add this key mapping because an Emacs user can change
+      ;; `dotspacemacs-major-mode-emacs-leader-key' to `C-c' and the key binding
+      ;; C-c ' is shadowed by `spacemacs/default-pop-shell', effectively making
+      ;; the Emacs user unable to exit src block editing.
+      (define-key org-src-mode-map (kbd (concat dotspacemacs-major-mode-emacs-leader-key " '")) 'org-edit-src-exit)
+
       (evil-leader/set-key
         "Cc" 'org-capture))))
 
@@ -185,6 +194,11 @@ Will work on both org-mode and any mode that accepts plain html."
         "CT"  'ort/capture-todo-check)
       (evil-leader/set-key-for-mode 'org-mode
         "mgt" 'ort/goto-todos))))
+
+(defun org/init-toc-org ()
+  (use-package toc-org
+    :init
+    (add-hook 'org-mode-hook 'toc-org-enable)))
 
 (defun org/init-htmlize ()
  (use-package htmlize

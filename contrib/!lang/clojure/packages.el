@@ -145,6 +145,7 @@ the focus."
         "mee" 'cider-eval-last-sexp
         "mef" 'cider-eval-defun-at-point
         "mer" 'cider-eval-region
+        "mew" 'cider-eval-last-sexp-and-replace
 
         "mgb" 'cider-jump-back
         "mge" 'cider-jump-to-compilation-error
