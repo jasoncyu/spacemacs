@@ -572,13 +572,6 @@
       ;; https://bitbucket.org/lyro/evil/issue/502/cursor-is-not-refreshed-in-some-cases
       (add-hook 'post-command-hook 'evil-refresh-cursor)
 
-      ;; hack for speeding up the use of ace-jump-line as a motion
-      ;; https://bitbucket.org/lyro/evil/issue/472/evil-half-cursor-makes-evil-ace-jump-mode
-      (defun evil-half-cursor ()
-        "Change cursor to a half-height box. (This is really just a thick horizontal bar.)"
-        (let ((height (/ (window-pixel-height) (* (window-height) 2))))
-          (setq cursor-type (cons 'hbar height))))
-
       (defun spacemacs/state-color-face (state)
         "Return the symbol of the face for the given STATE."
         (intern (format "spacemacs-%s-face" (symbol-name state))))
@@ -764,7 +757,9 @@ Example: (evil-map visual \"<\" \"<gv\")"
        "paste-micro-state"
        (evil-paste-before evil-paste-after evil-visual-paste) after
        "Initate the paste micro-state."
-       (unless (evil-ex-p) (spacemacs/paste-micro-state)))
+       (unless (or (evil-ex-p)
+                   (eq 'evil-paste-from-register this-command))
+         (spacemacs/paste-micro-state)))
       (defun spacemacs//paste-ms-doc ()
         "The documentation for the paste micro-state."
         (format (concat "[%s/%s] Type [p] or [P] to paste the previous or "
@@ -1352,7 +1347,7 @@ Example: (evil-map visual \"<\" \"<gv\")"
 
 (defun spacemacs/init-helm ()
   (use-package helm
-    :defer t
+    :defer 1
     :commands spacemacs/helm-find-files
     :config
     (progn
@@ -1377,7 +1372,18 @@ Removes the automatic guessing of the initial value based on thing at point. "
             helm-bookmark-show-location t
             helm-display-header-line nil
             helm-split-window-in-side-p t
-            helm-always-two-windows t)
+            helm-always-two-windows t
+            helm-echo-input-in-header-line t)
+
+      ;; hide minibuffer in Helm session, since we use the header line already
+      (defun helm-hide-minibuffer-maybe ()
+        (when (with-helm-buffer helm-echo-input-in-header-line)
+          (let ((ov (make-overlay (point-min) (point-max) nil nil t)))
+            (overlay-put ov 'window (selected-window))
+            (overlay-put ov 'face (let ((bg-color (face-background 'default nil)))
+                                    `(:background ,bg-color :foreground ,bg-color)))
+            (setq-local cursor-type nil))))
+      (add-hook 'helm-minibuffer-set-up-hook 'helm-hide-minibuffer-maybe)
 
       ;; fuzzy matching setting
       (setq helm-M-x-fuzzy-match t
@@ -1516,38 +1522,12 @@ Removes the automatic guessing of the initial value based on thing at point. "
                                                      (inhibit-same-window . t)
                                                      (window-height . 0.4)))
       (defvar spacemacs-display-buffer-alist nil)
-      (defun spacemacs//display-helm-at-bottom ()
-        "Display the helm buffer at the bottom of the frame."
-        ;; avoid Helm buffer being diplaye twice when user
-        ;; sets this variable to some function that pop buffer to
-        ;; a window. See https://github.com/syl20bnr/spacemacs/issues/1396
-        (let ((display-buffer-base-action '(nil)))
-          ;; backup old display-buffer-base-action
-          (setq spacemacs-display-buffer-alist display-buffer-alist)
-          ;; the only buffer to display is Helm, nothing else we must set this
-          ;; otherwise Helm cannot reuse its own windows for copyinng/deleting
-          ;; etc... because of existing popwin buffers in the alist
-          (setq display-buffer-alist nil)
-          (add-to-list 'display-buffer-alist spacemacs-helm-display-buffer-regexp)
-          ;; this or any specialized case of Helm buffer must be added AFTER
-          ;; `spacemacs-helm-display-buffer-regexp'. Otherwise,
-          ;; `spacemacs-helm-display-buffer-regexp' will be used before
-          ;; `spacemacs-helm-display-help-buffer-regexp' and display
-          ;; configuration for normal Helm buffer is applied for helm help
-          ;; buffer, making the help buffer unable to be displayed.
-          (add-to-list 'display-buffer-alist spacemacs-helm-display-help-buffer-regexp)
-          (popwin-mode -1)))
+      (defun spacemacs//display-helm-at-bottom (buffer)
+        (let ((display-buffer-alist (list spacemacs-helm-display-help-buffer-regexp
+                                          spacemacs-helm-display-buffer-regexp)))
+          (helm-default-display-buffer buffer)))
 
-      (defun spacemacs//restore-previous-display-config ()
-        (popwin-mode 1)
-        ;; we must enable popwin-mode first then restore `display-buffer-alist'
-        ;; Otherwise, popwin keeps adding up its own buffers to `display-buffer-alist'
-        ;; and could slow down Emacs as the list grows
-        (setq display-buffer-alist spacemacs-display-buffer-alist))
-
-      (add-hook 'helm-after-initialize-hook 'spacemacs//display-helm-at-bottom)
-      ;;  Restore popwin-mode after a Helm session finishes.
-      (add-hook 'helm-cleanup-hook 'spacemacs//restore-previous-display-config)
+      (setq helm-display-function 'spacemacs//display-helm-at-bottom)
 
       ;; Add minibuffer history with `helm-minibuffer-history'
       (define-key minibuffer-local-map (kbd "C-c C-l") 'helm-minibuffer-history)
@@ -1916,10 +1896,11 @@ Search for a search tool in the order provided by `dotspacemacs-search-tools'
 If DEFAULT-INPUTP is non nil then the current region or symbol at point
 are used as default input."
         (interactive)
-        (call-interactively
-         (spacemacs//helm-do-search-find-tool "helm-project-do"
-                                              dotspacemacs-search-tools
-                                              default-inputp)))
+        (let ((projectile-require-project-root nil))
+         (call-interactively
+          (spacemacs//helm-do-search-find-tool "helm-project-do"
+                                               dotspacemacs-search-tools
+                                               default-inputp))))
 
       (defun spacemacs/helm-project-smart-do-search-region-or-symbol ()
         "Search in current project using `dotspacemacs-search-tools' with
@@ -1958,8 +1939,7 @@ Search for a search tool in the order provided by `dotspacemacs-search-tools'."
         "stf" 'spacemacs/helm-files-do-pt
         "stF" 'spacemacs/helm-files-do-pt-region-or-symbol
         ;; current project scope
-        "/"   'spacemacs/helm-project-smart-do-search
-        "?"   'spacemacs/helm-project-smart-do-search-region-or-symbol
+        "/"   'spacemacs/helm-project-smart-do-search-region-or-symbol
         "sp"  'spacemacs/helm-project-smart-do-search
         "sP"  'spacemacs/helm-project-smart-do-search-region-or-symbol
         "sap" 'spacemacs/helm-project-do-ag
@@ -1982,7 +1962,7 @@ Search for a search tool in the order provided by `dotspacemacs-search-tools'."
     (progn
       (setq helm-descbinds-window-style 'split)
       (add-hook 'helm-mode-hook 'helm-descbinds-mode)
-      (evil-leader/set-key "hk" 'helm-descbinds))))
+      (evil-leader/set-key "?" 'helm-descbinds))))
 
 (defun spacemacs/init-helm-make ()
   (use-package helm-make
@@ -2023,10 +2003,10 @@ Search for a search tool in the order provided by `dotspacemacs-search-tools'."
       (evil-leader/set-key
         "pb"  'helm-projectile-switch-to-buffer
         "pd"  'helm-projectile-find-dir
-        "pe"  'helm-projectile-recentf
         "pf"  'helm-projectile-find-file
         "ph"  'helm-projectile
         "pp"  'helm-projectile-switch-project
+        "pr"  'helm-projectile-recentf
         "pv"  'projectile-vc
         "sgp" 'helm-projectile-grep))))
 
@@ -2910,27 +2890,26 @@ It is a string holding:
                                           "projectile.cache"))
       (setq projectile-known-projects-file (concat spacemacs-cache-directory
                                                    "projectile-bookmarks.eld"))
-      (unless (boundp 'spacemacs-use-helm-projectile)
+      (unless (configuration-layer/package-usedp 'helm-projectile)
         (evil-leader/set-key
           "pb" 'projectile-switch-to-buffer
           "pd" 'projectile-find-dir
-          "pe" 'projectile-recentf
           "pf" 'projectile-find-file
-          "pg" 'projectile-grep
           "ph" 'helm-projectile
+          "pr" 'projectile-recentf
           "ps" 'projectile-switch-project))
       (evil-leader/set-key
         "p!" 'projectile-run-shell-command-in-root
         "p&" 'projectile-run-async-shell-command-in-root
         "pc" 'projectile-compile-project
         "pD" 'projectile-dired
+        "pG" 'projectile-regenerate-tags
         "pI" 'projectile-invalidate-cache
         "pk" 'projectile-kill-buffers
         "po" 'projectile-multi-occur
-        "pr" 'projectile-replace
-        "pR" 'projectile-regenerate-tags
-        "py" 'projectile-find-tag
-        "pT" 'projectile-find-test-file))
+        "pR" 'projectile-replace
+        "pT" 'projectile-find-test-file
+        "py" 'projectile-find-tag))
     :config
     (progn
       (projectile-global-mode)

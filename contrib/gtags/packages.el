@@ -37,6 +37,8 @@
       (spacemacs/helm-gtags-define-keys-for-mode 'awk-mode)
       (spacemacs/helm-gtags-define-keys-for-mode 'asm-mode)
       (spacemacs/helm-gtags-define-keys-for-mode 'dired-mode)
+      (spacemacs/helm-gtags-define-keys-for-mode 'compilation-mode)
+      (spacemacs/helm-gtags-define-keys-for-mode 'shell-mode)
 
       ;; experimental
       (eval-after-load 'anaconda-mode
