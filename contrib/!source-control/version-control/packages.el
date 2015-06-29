@@ -25,7 +25,7 @@
 
 (defun version-control/init-diff-hl ()
   (use-package diff-hl
-    :init
+    :config
     (progn
       (setq diff-hl-side 'right)
       (global-diff-hl-mode)
