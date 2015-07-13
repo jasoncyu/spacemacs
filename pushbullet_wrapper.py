@@ -1,23 +1,21 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 import sys
-for p in sys.path:
-    print p
 import click
 import datetime
 
-# TODO: move the API key for this somewhere safe so i can version control this
-# file
 from pushbullet import Pushbullet
-pb = Pushbullet("v1oZ3Cg4FfihCR0U1mWYR49kkxhFMpQqxUujA49u7oU20")
 
 
 @click.command()
+# The PushbulletAPI key you want to use
+@click.argument("api_key", required=True)
 @click.option("--tock", help="The tock notification you want to show. Use " +
               "this to show the tock notification instead of manually " +
-              "passing in a title and a msg.")
+              "passing in a title and a message.")
 @click.option("--title", help="The title of the pushbullet note to show.")
 @click.option("--message", help="The message of the pushbullet note to show.")
-def main(tock, title, msg):
+def main(api_key, tock, title, message):
+    pb = Pushbullet(api_key)
     if tock:
         now_dt = datetime.datetime.now()
         now_dt_str = now_dt.strftime("%H:%M")
@@ -28,8 +26,8 @@ def main(tock, title, msg):
             pb.push_note("Tock done!", "Tock done at %s" % now_dt_str)
         elif tock == "break_done":
             pb.push_note("Break done!", "Break done at %s" % now_dt_str)
-    elif title and msg:
-        pb.push_note(title, msg)
+    elif title and message:
+        pb.push_note(title, message)
     else:
         raise Exception("Unrecognized command.")
 
