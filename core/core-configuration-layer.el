@@ -16,12 +16,11 @@
 (require 'core-spacemacs-buffer)
 
 (unless package--initialized
-  (setq package-archives '(("ELPA" . "http://tromey.com/elpa/")
-                           ("gnu" . "https://elpa.gnu.org/packages/")
-                           ("melpa" . "http://melpa.org/packages/")
+  (setq package-archives '(("melpa" . "http://melpa.org/packages/")
+                           ("org" . "http://orgmode.org/elpa/")
+                           ("ELPA" . "http://tromey.com/elpa/")
                            ("marmalade" . "http://marmalade-repo.org/packages/")
-                           ("org" . "http://orgmode.org/elpa/"))
-                           )
+                           ("gnu" . "https://elpa.gnu.org/packages/")))
   ;; optimization, no need to activate all the packages so early
   (setq package-enable-at-startup nil)
   (package-initialize 'noactivate)
@@ -591,9 +590,9 @@ This function also processed recursively the package dependencies."
            (version<= (configuration-layer//get-latest-package-version-string x)
                       installed-ver))))))
 
-(defun configuration-layer/update-packages ()
-  "Upgrade elpa packages"
-  (interactive)
+(defun configuration-layer/update-packages (&optional always-update)
+  "Upgrade elpa packages.  If called with a prefix argument ALWAYS-UPDATE, assume yes to update."
+  (interactive "P")
   (spacemacs-buffer/insert-page-break)
   (spacemacs-buffer/append
    "\nUpdating Spacemacs... (for now only ELPA packages are updated)\n")
@@ -611,9 +610,10 @@ This function also processed recursively the package dependencies."
          (upgraded-count 0)
          (update-packages-alist))
     (if (> upgrade-count 0)
-        (if (not (yes-or-no-p (format (concat "%s package(s) to update, "
-                                              "do you want to continue ? ")
-                                      upgrade-count)))
+        (if (and (not always-update)
+                 (not (yes-or-no-p (format (concat "%s package(s) to update, "
+                                                   "do you want to continue ? ")
+                                           upgrade-count))))
             (spacemacs-buffer/append
              "Packages update has been cancelled.\n")
           ;; backup the package directory and construct an alist
