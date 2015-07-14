@@ -64,7 +64,8 @@
         helm-mode-manager
         ;; not working for now
         ;; helm-proc
-        helm-projectile
+        ;; Use plain projectile and let ivy handle things
+        ;; helm-projectile
         helm-swoop
         helm-themes
         highlight-indentation
