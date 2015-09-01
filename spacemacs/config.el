@@ -14,49 +14,55 @@
 ;; Prefixes
 ;; ---------------------------------------------------------------------------
 
-;; We define prefix commands only for the sake of guide-key
-(setq spacemacs/key-binding-prefixes '(("a" .  "applications")
-                                       ("ai" . "applications-irc")
-                                       ("as" . "applications-shells")
-                                       ("b" .  "buffers")
-                                       ("bm" . "buffers-move")
-                                       ("c" .  "compile/comments")
-                                       ("C" .  "capture/colors")
-                                       ("e" .  "errors")
-                                       ("f" .  "files")
-                                       ("fe" . "files-emacs/spacemacs")
-                                       ("g" .  "git/versions-control")
-                                       ("h" .  "helm/help/highlight")
-                                       ("hd" . "help-describe")
-                                       ("i" .  "insertion")
-                                       ("j" .  "join/split")
-                                       ("k" .  "lisp")
-                                       ("kd" .  "lisp-delete")
-                                       ("kD" .  "lisp-delete-backward")
-                                       ("n" .  "narrow/numbers")
-                                       ("p" .  "projects")
-                                       ("p$" .  "projects/shell")
-                                       ("q" .  "quit")
-                                       ("r" .  "registers/rings")
-                                       ("s" .  "search/symbol")
-                                       ("sw" .  "search-web")
-                                       ("t" .  "toggles")
-                                       ("tC" . "toggles-colors")
-                                       ("th" . "toggles-highlight")
-                                       ("tm" . "toggles-modeline")
-                                       ("T" .  "toggles/themes")
-                                       ("w" .  "windows")
-                                       ("wp" . "windows-popup")
-                                       ("wS" . "windows-size")
-                                       ("x" .  "text")
-                                       ("xa" . "text-align")
-                                       ("xd" . "text-delete")
-                                       ("xg" . "text-google-translate")
-                                       ("xm" . "text-move")
-                                       ("xt" . "text-transpose")
-                                       ("xw" . "text-words")
-                                       ("z" .  "zoom")))
-(mapc (lambda (x) (spacemacs/declare-prefix (car x) (cdr x)))
+;; We define prefix commands only for the sake of which-key
+(setq spacemacs/key-binding-prefixes '(("a"   "applications")
+                                       ("ai"  "applications-irc")
+                                       ("as"  "applications-shells")
+                                       ("b"   "buffers")
+                                       ("bm"  "buffers-move")
+                                       ("c"   "compile/comments")
+                                       ("C"   "capture/colors")
+                                       ("e"   "errors")
+                                       ("E"   "editing-modes")
+                                       ("f"   "files")
+                                       ("fe"  "files-emacs/spacemacs")
+                                       ("g"   "git/versions-control")
+                                       ("h"   "helm/help/highlight")
+                                       ("hd"  "help-describe")
+                                       ("i"   "insertion")
+                                       ("j"   "join/split")
+                                       ("k"   "lisp")
+                                       ("kd"  "lisp-delete")
+                                       ("kD"  "lisp-delete-backward")
+                                       ("k`"  "lisp-hybrid")
+                                       ("n"   "narrow/numbers")
+                                       ("p"   "projects")
+                                       ("p$"  "projects/shell")
+                                       ("q"   "quit")
+                                       ("r"   "registers/rings")
+                                       ("s"   "search/symbol")
+                                       ("sa"  "search-ag")
+                                       ("sg"  "search-grep")
+                                       ("sk"  "search-ack")
+                                       ("st"  "search-pt")
+                                       ("sw"  "search-web")
+                                       ("t"   "toggles")
+                                       ("tC"  "toggles-colors")
+                                       ("th"  "toggles-highlight")
+                                       ("tm"  "toggles-modeline")
+                                       ("T"   "toggles/themes")
+                                       ("w"   "windows")
+                                       ("wp"  "windows-popup")
+                                       ("x"   "text")
+                                       ("xa"  "text-align")
+                                       ("xd"  "text-delete")
+                                       ("xg"  "text-google-translate")
+                                       ("xl"  "text-lines")
+                                       ("xm"  "text-move")
+                                       ("xt"  "text-transpose")
+                                       ("xw"  "text-words")
+                                       ("z"   "zoom")))
+(mapc (lambda (x) (apply #'spacemacs/declare-prefix x))
       spacemacs/key-binding-prefixes)
 
 ;; ---------------------------------------------------------------------------
@@ -82,8 +88,8 @@
 ;; activate winner mode use to undo and redo windows layout
 (winner-mode t)
 ;; no beep pleeeeeease ! (and no visual blinking too please)
-(custom-set-variables '(ring-bell-function 'ignore))
-(setq visible-bell nil)
+(setq ring-bell-function 'ignore
+      visible-bell nil)
 ;; required for evil folding
 (defun spacemacs//enable-hs-minor-mode ()
   "Enable hs-minor-mode for code folding."
@@ -143,17 +149,8 @@ It runs `tabulated-list-revert-hook', then calls `tabulated-list-print'."
 
 ;; Use system trash for file deletion
 ;; should work on Windows and Linux distros
-;; on OS X, install `trash' from `homebrew'
+;; on OS X, see contrib/osx layer
 (setq delete-by-moving-to-trash t)
-(when (system-is-mac)
-  ;; use trash if installed
-  (if (executable-find "trash")
-      (defun system-move-file-to-trash (file)
-        "Use `trash' to move FILE to the system trash.
-Can be installed with `brew install trash'."
-        (call-process (executable-find "trash") nil 0 nil file))
-    ;; regular move to trash directory
-    (setq trash-directory "~/.Trash/emacs")))
 
 ;; auto fill breaks line beyond current-fill-column
 (setq-default default-fill-column 80)
@@ -212,6 +209,10 @@ Can be installed with `brew install trash'."
     (if dotspacemacs-maximized-at-startup
         (add-hook 'window-setup-hook 'toggle-frame-maximized))))
 
+(defvar spacemacs--global-mode-line-excludes nil
+  "List of elements to exclude from the global modeline string.
+These should have their own segments in the modeline.")
+
 ;; ---------------------------------------------------------------------------
 ;; Session
 ;; ---------------------------------------------------------------------------
@@ -256,26 +257,9 @@ Can be installed with `brew install trash'."
 ;; remove annoying ellipsis when printing sexp in message buffer
 (setq eval-expression-print-length nil
       eval-expression-print-level nil)
-;; Save point position between sessions
-(require 'saveplace)
-(setq-default save-place t
-              save-place-file (concat spacemacs-cache-directory "places"))
-
-;; minibuffer history
-(require 'savehist)
-(setq savehist-file (concat spacemacs-cache-directory "savehist")
-      enable-recursive-minibuffers t ; Allow commands in minibuffers
-      history-length 1000
-      savehist-additional-variables '(mark-ring global-mark-ring search-ring regexp-search-ring extended-command-history)
-      savehist-autosave-interval 60)
-(savehist-mode +1)
 
 ;; cache files
-;; bookmarks
-(setq bookmark-default-file (concat spacemacs-cache-directory "bookmarks")
-      ;; save after every change
-      bookmark-save-flag 1
-      url-configuration-directory (concat spacemacs-cache-directory "url")
+(setq url-configuration-directory (concat spacemacs-cache-directory "url")
       eshell-directory-name (concat spacemacs-cache-directory "eshell" )
       tramp-persistency-file-name (concat spacemacs-cache-directory "tramp"))
 
@@ -381,6 +365,6 @@ Can be installed with `brew install trash'."
 ;;             ;; ;; If the *scratch* buffer is the current one, then create a new
 ;;             ;; ;; empty untitled buffer to hide *scratch*
 ;;             ;; (if (string= (buffer-name) "*scratch*")
-;;             ;;     (new-empty-buffer))
+;;             ;;     (spacemacs/new-empty-buffer))
 ;;             )
 ;;           t) ;; append this hook to the tail

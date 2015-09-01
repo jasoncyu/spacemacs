@@ -13,6 +13,7 @@
 (setq c-c++-packages
   '(
     cc-mode
+    disaster
     clang-format
     cmake-mode
     company
@@ -20,11 +21,13 @@
     company-ycmd
     flycheck
     gdb-mi
+    helm-cscope
     helm-gtags
     semantic
     srefactor
     stickyfunc-enhance
     ycmd
+    xcscope
     ))
 
 (unless (version< emacs-version "24.4")
@@ -45,6 +48,17 @@
       (evil-leader/set-key-for-mode 'c++-mode
         "mga" 'projectile-find-other-file
         "mgA" 'projectile-find-other-file-other-window))))
+
+(defun c-c++/init-disaster ()
+  (use-package disaster
+    :defer t
+    :commands (disaster)
+    :init
+    (progn
+      (evil-leader/set-key-for-mode 'c-mode
+        "mD" 'disaster)
+      (evil-leader/set-key-for-mode 'c++-mode
+        "mD" 'disaster))))
 
 (defun c-c++/init-clang-format ()
   (use-package clang-format
@@ -112,7 +126,7 @@
       :init (push 'company-c-headers company-backends-c-mode-common))))
 
 (defun c-c++/post-init-flycheck ()
-  (add-to-hooks 'flycheck-mode '(c-mode-hook c++-mode-hook)))
+  (spacemacs/add-to-hooks 'flycheck-mode '(c-mode-hook c++-mode-hook)))
 
 (defun c-c++/init-gdb-mi ()
   (use-package gdb-mi
@@ -135,10 +149,10 @@
 (defun c-c++/post-init-srefactor ()
   (evil-leader/set-key-for-mode 'c-mode "mr" 'srefactor-refactor-at-point)
   (evil-leader/set-key-for-mode 'c++-mode "mr" 'srefactor-refactor-at-point)
-  (add-to-hooks 'spacemacs/lazy-load-srefactor '(c-mode-hook c++-mode-hook)))
+  (spacemacs/add-to-hooks 'spacemacs/lazy-load-srefactor '(c-mode-hook c++-mode-hook)))
 
 (defun c-c++/post-init-stickyfunc-enhance ()
-  (add-to-hooks 'spacemacs/lazy-load-stickyfunc-enhance '(c-mode-hook c++-mode-hook)))
+  (spacemacs/add-to-hooks 'spacemacs/lazy-load-stickyfunc-enhance '(c-mode-hook c++-mode-hook)))
 
 (defun c-c++/post-init-ycmd ()
   (add-hook 'c++-mode-hook 'ycmd-mode)
@@ -148,3 +162,15 @@
 
 (defun c-c++/post-init-company-ycmd ()
   (push 'company-ycmd company-backends-c-mode-common))
+
+(defun c-c++/pre-init-xcscope ()
+  (spacemacs|use-package-add-hook xcscope
+    :post-init
+    (dolist (mode '(c-mode c++-mode))
+      (evil-leader/set-key-for-mode mode "mgi" 'cscope-index-files))))
+
+(defun c-c++/pre-init-helm-cscope ()
+  (spacemacs|use-package-add-hook xcscope
+    :post-init
+    (dolist (mode '(c-mode c++-mode))
+      (spacemacs/setup-helm-cscope mode))))

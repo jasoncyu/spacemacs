@@ -1,4 +1,4 @@
-;;; packages.el --- chinese Layer packages File for Spacemacs
+;;; packages.el --- Chinese Layer packages File for Spacemacs
 ;;
 ;; Copyright (c) 2012-2014 Sylvain Benner
 ;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
@@ -14,12 +14,18 @@
 ;; which require an initialization must be listed explicitly in the list.
 (setq chinese-packages
     '(
-      youdao-dictionary
-      chinese-pyim
       find-by-pinyin-dired
       ace-pinyin
-      chinese-wbim
+      pangu-spacing
+      org
       ))
+
+(if chinese-enable-youdao-dict
+  (push 'youdao-dictionary chinese-packages))
+
+(if (eq chinese-default-input-method 'wubi)
+    (push 'chinese-wbim chinese-packages)
+  (push 'chinese-pyim chinese-packages))
 
 (defun chinese/init-chinese-wbim ()
   "Initialize chinese-wubi"
@@ -40,6 +46,8 @@
 
 (defun chinese/init-youdao-dictionary ()
   (use-package youdao-dictionary
+    :if chinese-enable-youdao-dict
+    :defer
     :config
     (progn
       ;; Enable Cache
@@ -73,3 +81,26 @@
     (progn
       (ace-pinyin-global-mode t)
       (spacemacs|hide-lighter ace-pinyin-mode))))
+
+(defun chinese/init-pangu-spacing ()
+  (use-package pangu-spacing
+    :defer t
+    :init (progn (global-pangu-spacing-mode 1)
+                 (spacemacs|hide-lighter pangu-spacing-mode)
+                 ;; Always insert `real' space in org-mode.
+                 (add-hook 'org-mode-hook
+                           '(lambda ()
+                              (set (make-local-variable 'pangu-spacing-real-insert-separtor) t))))))
+
+(defun chinese/post-init-org ()
+  (defadvice org-html-paragraph (before org-html-paragraph-advice
+                                        (paragraph contents info) activate)
+    "Join consecutive Chinese lines into a single long line without
+unwanted space when exporting org-mode to html."
+    (let* ((origin-contents (ad-get-arg 1))
+           (fix-regexp "[[:multibyte:]]")
+           (fixed-contents
+            (replace-regexp-in-string
+             (concat
+              "\\(" fix-regexp "\\) *\n *\\(" fix-regexp "\\)") "\\1\\2" origin-contents)))
+      (ad-set-arg 1 fixed-contents))))

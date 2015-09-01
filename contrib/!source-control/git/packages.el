@@ -16,11 +16,11 @@
         gitattributes-mode
         gitconfig-mode
         gitignore-mode
+        git-commit
         git-messenger
         git-timemachine
         magit
-        ;; not compatible with magit 2.1 at the time of release
-        ;; magit-gitflow
+        magit-gitflow
         ;; not compatible with magit 2.1 at the time of release
         ;; magit-svn
         smeargle
@@ -44,12 +44,19 @@
     :defer t
     :init (evil-leader/set-key "gI" 'helm-gitignore)))
 
+(defun git/init-git-commit ()
+  (use-package git-commit
+    :defer t))
+
 (defun git/init-git-messenger ()
   (use-package git-messenger
     :defer t
     :init
-    (evil-leader/set-key
-      "gm" 'git-messenger:popup-message)))
+     (evil-leader/set-key
+      "gm" 'git-messenger:popup-message)
+    :config
+    (define-key git-messenger-map [escape] 'git-messenger:popup-close)
+    ))
 
 (defun git/init-git-timemachine ()
   (use-package git-timemachine
@@ -103,9 +110,6 @@
                magit-commit)
     :init
     (progn
-      (add-to-list 'load-path (format "%smagit-next/lisp/"
-                                      (configuration-layer/get-layer-property
-                                       'git :ext-dir)))
       (setq magit-completing-read-function 'magit-builtin-completing-read)
       (add-hook 'git-commit-mode-hook 'fci-mode)
       ;; On Windows, we must use Git GUI to enter username and password
@@ -276,7 +280,11 @@
 (defun git/init-magit-gitflow ()
   (use-package magit-gitflow
     :commands turn-on-magit-gitflow
-    :init (add-hook 'magit-mode-hook 'turn-on-magit-gitflow)
+    :init (progn
+            (add-hook 'magit-mode-hook 'turn-on-magit-gitflow)
+            (eval-after-load 'magit
+              '(progn
+                 (define-key magit-mode-map "#f" 'magit-gitflow-popup))))
     :config (spacemacs|diminish magit-gitflow-mode "Flow")))
 
 (defun git/init-magit-svn ()
@@ -293,7 +301,9 @@
   (use-package smeargle
     :defer t
     :init
-    (evil-leader/set-key
-      "ghc" 'smeargle-clear
-      "ghh" 'smeargle-commits
-      "ght" 'smeargle)))
+    (progn
+      (spacemacs/declare-prefix "gh" "smeargle")
+      (evil-leader/set-key
+        "ghc" 'smeargle-clear
+        "ghh" 'smeargle-commits
+        "ght" 'smeargle))))

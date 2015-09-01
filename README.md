@@ -23,8 +23,51 @@
 
 **Quick Install:**
 
-    git clone --recursive https://github.com/syl20bnr/spacemacs ~/.emacs.d
+    git clone https://github.com/syl20bnr/spacemacs ~/.emacs.d
 
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-generate-toc again -->
+**Table of Contents**
+
+- [Introduction](#introduction)
+- [Features](#features)
+    - [Batteries Included](#batteries-included)
+    - [Nice UI](#nice-ui)
+    - [Excellent ergonomics](#excellent-ergonomics)
+    - [Convenient and Mnemonic Key Bindings](#convenient-and-mnemonic-key-bindings)
+        - [Great [Documentation][DOCUMENTATION.org]](#great-documentationdocumentationorg)
+- [Prerequisites](#prerequisites)
+    - [Emacs](#emacs)
+        - [Linux distros](#linux-distros)
+        - [OS X](#os-x)
+        - [Windows](#windows)
+- [Install](#install)
+    - [Spacemacs logo](#spacemacs-logo)
+- [Update](#update)
+    - [Update notification](#update-notification)
+    - [Rollback](#rollback)
+- [Configuration](#configuration)
+    - [Configuration layers](#configuration-layers)
+    - [Dotfile (.spacemacs)](#dotfile-spacemacs)
+    - [Dotdirectory (~/.spacemacs.d)](#dotdirectory-spacemacsd)
+- [Learning Spacemacs](#learning-spacemacs)
+    - [Editing Styles](#editing-styles)
+    - [The leader keys](#the-leader-keys)
+    - [Evil-tutor](#evil-tutor)
+    - [Universal argument](#universal-argument)
+    - [Configuration layers and Package discovery](#configuration-layers-and-package-discovery)
+    - [Key bindings discovery](#key-bindings-discovery)
+    - [Describe functions](#describe-functions)
+- [How-To's](#how-tos)
+- [Contributions](#contributions)
+- [License](#license)
+- [Special Credits](#special-credits)
+- [Supporting Spacemacs](#supporting-spacemacs)
+- [FAQ](#faq)
+    - [Common](#common)
+    - [Windows](#windows)
+    - [OS X](#os-x)
+
+<!-- markdown-toc end -->
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc/generate-toc again -->
 **Table of Contents**
 
@@ -141,8 +184,14 @@ are extensively documented.
 If you need help, ask your question in the [Gitter Chat][] and a member of the
 community will help you out.
 
+Tip: Run `SPC h d s` (it gathers info about your Spacemacs setup and copies to
+your clipboard) and then paste into the Gitter chat so that others know the
+basic info about your setup necessary to help diagnose any issues you may be
+facing.
+
 If you prefer IRC, connect to the [Gitter Chat IRC server][] and join the
 `#syl20bnr/spacemacs` channel.
+
 
 # Prerequisites
 
@@ -165,7 +214,7 @@ via [homebrew][] with the following commands:
 
 ```sh
 $ brew tap railwaycat/emacsmacport
-$ brew install emacs-mac --with-spacemacs-icon
+$ brew install emacs-mac --with-spacemacs-icon  # OR, brew cask install emacs-mac
 ```
 (The `with-spacemacs-icon` option uses the official spacemacs logo for the app bundle.)
 
@@ -289,8 +338,8 @@ listed first.
 [configuration layers][config]. These layers are stacked on top of each other
 to achieve a custom configuration.
 
-`Spacemacs` uses the dotfile `~/.spacemacs` to control which layers to
-load. Within this file you may also generally configure certain features.
+By default `Spacemacs` uses the dotfile `~/.spacemacs` to control which layers
+to load. Within this file you may also generally configure certain features.
 
 ## Configuration layers
 
@@ -354,6 +403,12 @@ The [comments in this file][dotfile template] contain further information about
 how to customize `Spacemacs`. See the [dotfile configuration][dotfile] section of
 the documentation for more details.
 
+## Dotdirectory (~/.spacemacs.d)
+
+Like `Emacs`, Spacemacs initialization can also be contained in an `init.el` file
+in a special directory `~/.spacemacs.d`. The contents of the dotfile should be
+then copied in the `init.el` file.
+
 # Learning Spacemacs
 
 ## Editing Styles
@@ -400,7 +455,7 @@ function of a package.
 
 ## Key bindings discovery
 
-Thanks to [guide-key][], whenever a prefix command is pressed (like `SPC`)
+Thanks to [which-key][], whenever a prefix command is pressed (like `SPC`)
 a buffer appears after one second listing the possible keys for this prefix.
 
 It is also possible to search for specific key bindings by pressing:
@@ -530,8 +585,8 @@ details.
 [using_package_buf]: doc/DOCUMENTATION.org#using-the-package-list-buffer
 [troubleshoot]: doc/DOCUMENTATION.org#troubleshoot
 [contrib layers]: doc/DOCUMENTATION.org#using-configuration-layers
-[Git support]: contrib/git/README.org
-[git layer]: contrib/git
+[Git support]: contrib/!source-control/git/README.org
+[git layer]: contrib/!source-control/git
 [ace-jump]: doc/DOCUMENTATION.org#vim-motions-with-ace-jump-mode
 [project management]: doc/DOCUMENTATION.org#project-management
 [Evil Mode]: doc/DOCUMENTATION.org#evil
@@ -543,8 +598,7 @@ details.
 [dotfile template]: ./core/templates/.spacemacs.template
 [install OSX section]: https://github.com/syl20bnr/spacemacs#os-x
 [osx layer]: contrib/osx/README.org
-[guide-key]: https://github.com/kai2nenobu/guide-key
-[guide-key-tip]: https://github.com/aki2o/guide-key-tip
+[which-key]: https://github.com/justbur/emacs-which-key
 [evil-nerd-commenter]: https://github.com/redguardtoo/evil-nerd-commenter
 [Gitter Chat]: https://gitter.im/syl20bnr/spacemacs
 [Gitter Chat IRC server]: https://irc.gitter.im/

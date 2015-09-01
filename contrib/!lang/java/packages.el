@@ -17,6 +17,7 @@
 (defun java/init-emacs-eclim ()
   (use-package eclim
     :defer t
+    :diminish eclim-mode
     :init (add-hook 'java-mode-hook 'eclim-mode)
     :config
     (progn
@@ -29,6 +30,7 @@
 
       (evil-define-key 'insert java-mode-map
         (kbd ".") 'spacemacs/java-completing-dot
+        (kbd ":") 'spacemacs/java-completing-double-colon
         (kbd "M-.") 'eclim-java-find-declaration
         (kbd "M-,") 'pop-tag-mark
         (kbd "M-<mouse-3>") 'eclim-java-find-declaration

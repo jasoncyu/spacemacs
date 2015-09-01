@@ -12,9 +12,11 @@
 
 (setq emacs-lisp-packages
       '(
+        company
         eldoc
         elisp-slime-nav
         evil
+        flycheck
         ielm
         macrostep
         semantic
@@ -24,12 +26,19 @@
 
 (use-package ielm
   :config
-  (defun ielm-indent-line ()
-    (interactive)
-    (let ((current-point (point)))
-      (save-restriction
-        (narrow-to-region (search-backward-regexp "^ELISP>") (goto-char current-point))
-        (lisp-indent-line)))))
+  (progn
+    (defun ielm-indent-line ()
+      (interactive)
+      (let ((current-point (point)))
+        (save-restriction
+          (narrow-to-region (search-backward-regexp "^ELISP>") (goto-char current-point))
+          (lisp-indent-line))))
+    (evil-leader/set-key-for-mode 'emacs-lisp-mode
+      "msi" 'ielm)))
+
+(defun emacs-lisp/post-init-company ()
+  (spacemacs|add-company-hook ielm-mode)
+  (push '(company-files company-capf) company-backends-ielm-mode))
 
 (defun emacs-lisp/post-init-eldoc ()
   (add-hook 'emacs-lisp-mode-hook 'eldoc-mode))
@@ -64,12 +73,17 @@
         ("q" macrostep-collapse-all :exit t)))))
 
 (defun emacs-lisp/post-init-evil ()
-  (add-to-hook 'emacs-lisp-mode
-               '(lambda ()
-                  (spacemacs|define-text-object ";"
-                                                "elisp-comment"
-                                                ";; "
-                                                ""))))
+  (spacemacs/add-to-hook 'emacs-lisp-mode
+                         '(lambda ()
+                            (spacemacs|define-text-object ";"
+                                                          "elisp-comment"
+                                                          ";; "
+                                                          ""))))
+
+(defun emacs-lisp/post-init-flycheck ()
+  ;; Make flycheck recognize packages in loadpath
+  ;; i.e (require 'company) will not give an error now
+  (setq flycheck-emacs-lisp-load-path 'inherit))
 
 (defun emacs-lisp/post-init-semantic ()
   (semantic/enable-semantic-mode 'emacs-lisp-mode)

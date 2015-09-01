@@ -9,35 +9,80 @@
 ;; This file is not part of GNU Emacs.
 ;;
 ;;; License: GPLv3
+
+;; old macro
+(defmacro evilify (mode map &rest body)
+  "Set `evilified state' as default for MODE.
+
+BODY is a list of additional key bindings to apply for the given MAP in
+`evilified state'."
+  (let ((defkey (when body `(evil-define-key 'evilified ,map ,@body))))
+    `(progn (unless ,(null mode)
+              (unless (memq ',mode spacemacs-core-evilified-state--modes)
+                (push ',mode spacemacs-core-evilified-state--modes))
+              (unless (or (bound-and-true-p holy-mode)
+                          (memq ',mode evil-evilified-state-modes))
+                (delq ',mode evil-emacs-state-modes)
+                (push ',mode evil-evilified-state-modes)))
+            (unless ,(null defkey) (,@defkey)))))
+
+;; new macro
 (defmacro spacemacs|evilify-map (map &rest props)
-  "Evilify MAP."
+  "Evilify MAP.
+
+Avaiblabe PROPS:
+
+`:mode SYMBOL'
+A mode SYMBOL associated with MAP. Used to add SYMBOL to the list of modes
+defaulting to `evilified-state'.
+
+`:evilified-map SYMBOL'
+A map SYMBOL of an alternate evilified map, if nil then
+`evil-evilified-state-map' is used.
+
+`:eval-after-load SYMBOL'
+If specified the evilification of MAP is deferred to the loading of the feature
+bound to SYMBOL. May be required for some lazy-loaded maps.
+
+`:bindings EXPRESSIONS'
+One or several EXPRESSIONS with the form `KEY FUNCTION':
+   KEY1 FUNCTION1
+   KEY2 FUNCTION2
+   ...
+Each pair KEYn FUNCTIONn is defined in MAP after the evilification of it."
   (declare (indent 1))
   (let* ((mode (plist-get props :mode))
          (evilified-map (plist-get props :evilified-map))
+         (eval-after-load (plist-get props :eval-after-load))
          (bindings (spacemacs/mplist-get props :bindings))
-         (defkey (when bindings `(evil-define-key 'evilified ,map ,@bindings))))
-    `(progn
-       (let ((sorted-map (spacemacs//evilify-sort-keymap
-                          (or ,evilified-map evil-evilified-state-map)))
-             processed)
-         (mapc (lambda (map-entry)
-                 (unless (or (member (car map-entry) processed)
-                             ;; don't care about evil-escape starter key
-                             (and (boundp 'evil-escape-key-sequence)
-                                  (equal (car map-entry)
+         (defkey (when bindings `(evil-define-key 'evilified ,map ,@bindings)))
+         (body 
+          `(progn
+             (let ((sorted-map (spacemacs//evilify-sort-keymap
+                                (or ,evilified-map evil-evilified-state-map)))
+                   processed)
+               (mapc (lambda (map-entry)
+                       (unless (or (member (car map-entry) processed)
+                                   ;; don't care about evil-escape starter key
+                                   (and (boundp 'evil-escape-key-sequence)
+                                        (equal
+                                         (car map-entry)
                                          (elt evil-escape-key-sequence 0))))
-                   (setq processed (spacemacs//evilify-event
-                                    ,map ',map
-                                    (car map-entry) (cdr map-entry)))))
-               sorted-map))
-       (unless ,(null defkey)
-         (,@defkey))
-       (unless ,(null mode)
-         (spacemacs/evilify-configure-default-state ',mode)))))
+                         (setq processed (spacemacs//evilify-event
+                                          ,map ',map
+                                          (car map-entry) (cdr map-entry)))))
+                     sorted-map))
+             (unless ,(null defkey)
+               (,@defkey))
+             (unless ,(null mode)
+               (spacemacs/evilify-configure-default-state ',mode)))))
+    (if (null eval-after-load)
+        `(,@body)
+      `(eval-after-load ',eval-after-load '(,@body)))))
 
 (defun spacemacs/evilify-configure-default-state (mode)
   "Configure default state for the passed mode."
-  (add-to-list 'evil-evilified-state--modes mode)
+  (add-to-list 'spacemacs-core-evilified-state--modes mode)
   (unless (bound-and-true-p holy-mode)
     (delq mode evil-emacs-state-modes)
     (add-to-list 'evil-evilified-state-modes mode)))
@@ -158,7 +203,11 @@
      ((equal event 32) nil)
      ((equal event ?/) nil)
      ((equal event ?:) nil)
+     ;; C-g (cannot remap C-g)
+     ((equal event ?\a) nil)
      ((and (<= ?a event) (<= event ?z)) (- event 32))
+     ;; don't shadow C-g, G is mapped directly to C-S-g
+     ((equal event ?G) (+ (expt 2 25) ?\a))
      ((and (<= ?A event) (<= event ?Z)) (- event 64))
      ((and (<= 1 event) (<= event 26)) (+ (expt 2 25) event)))))
 

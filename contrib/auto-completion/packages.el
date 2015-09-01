@@ -26,6 +26,8 @@
 (unless (version< emacs-version "24.4")
   (push 'company-quickhelp auto-completion-packages))
 
+;; TODO replace by company-ispell which comes with company
+;; to be moved to spell-checking layer as well
 (defun auto-completion/init-ac-ispell ()
   (use-package ac-ispell
     :defer t
@@ -212,9 +214,11 @@
         (unless yas-global-mode
           (progn
             (yas-global-mode 1)
-            (let ((private-yas-dir (concat
-                                    configuration-layer-private-directory
-                                    "snippets/"))
+            (let ((private-yas-dir (if auto-completion-private-snippets-directory
+                                       auto-completion-private-snippets-directory
+                                     (concat
+                                      configuration-layer-private-directory
+                                      "snippets/")))
                   (spacemacs-snippets-dir (expand-file-name
                                            "snippets"
                                            spacemacs--auto-completion-dir)))
@@ -228,23 +232,23 @@
               (setq yas-wrap-around-region t))))
         (yas-minor-mode 1))
 
-      (add-to-hooks 'spacemacs/load-yasnippet '(prog-mode-hook
-                                                markdown-mode-hook
-                                                org-mode-hook))
+      (spacemacs/add-to-hooks 'spacemacs/load-yasnippet '(prog-mode-hook
+                                                          markdown-mode-hook
+                                                          org-mode-hook))
       (spacemacs|add-toggle yasnippet
-                            :status yas-minor-mode
-                            :on (yas-minor-mode)
-                            :off (yas-minor-mode -1)
-                            :documentation "Enable yasnippet."
-                            :evil-leader "ty")
+        :status yas-minor-mode
+        :on (yas-minor-mode)
+        :off (yas-minor-mode -1)
+        :documentation "Enable snippets."
+        :evil-leader "ty")
 
       (defun spacemacs/force-yasnippet-off ()
         (yas-minor-mode -1)
         (setq yas-dont-activate t))
 
-      (add-to-hooks 'spacemacs/force-yasnippet-off '(term-mode-hook
-                                                     shell-mode-hook
-                                                     eshell-mode-hook)))
+      (spacemacs/add-to-hooks 'spacemacs/force-yasnippet-off '(term-mode-hook
+                                                               shell-mode-hook
+                                                               eshell-mode-hook)))
     :config
     (progn
       ;;  We need to know whether the smartparens was enabled, see
@@ -274,6 +278,7 @@
         (interactive)
         (call-interactively 'aya-expand)
         (evil-insert-state))
+      (spacemacs/declare-prefix "iS" "auto-yasnippet")
       (evil-leader/set-key
         "iSc" 'aya-create
         "iSe" 'spacemacs/auto-yasnippet-expand

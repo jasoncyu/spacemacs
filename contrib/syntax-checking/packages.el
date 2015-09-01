@@ -14,8 +14,6 @@
   '(
     flycheck
     flycheck-pos-tip
-    flyspell
-    helm-flyspell
     popwin
     ))
 
@@ -26,22 +24,14 @@
     (progn
       (setq flycheck-standard-error-navigation nil)
       (spacemacs|add-toggle syntax-checking
-                            :status flycheck-mode
-                            :on (flycheck-mode)
-                            :off (flycheck-mode -1)
-                            :documentation "Enable error and syntax checking."
-                            :evil-leader "ts"))
+        :status flycheck-mode
+        :on (flycheck-mode)
+        :off (flycheck-mode -1)
+        :documentation "Enable error and syntax checking."
+        :evil-leader "ts"))
     :config
     (progn
       (spacemacs|diminish flycheck-mode " ⓢ" " s")
-
-      (defun spacemacs/mode-line-flycheck-info-toggle ()
-        "Toggle display of flycheck info."
-        (interactive)
-        (if flycheck-mode
-            (flycheck-mode -1)
-          (flycheck-mode)))
-      (evil-leader/set-key "tmf" 'spacemacs/mode-line-flycheck-info-toggle)
 
       ;; color mode line faces
       (defun spacemacs/defface-flycheck-mode-line-color (state)
@@ -109,10 +99,21 @@
         :fringe-bitmap 'my-flycheck-fringe-indicator
         :fringe-face 'flycheck-fringe-info)
 
+      ;; toggle flycheck window
+      (defun spacemacs/toggle-flycheck-error-list ()
+        "Toggle flycheck's error list window.
+If the error list is visible, hide it.  Otherwise, show it."
+        (interactive)
+        (-if-let (window (flycheck-get-error-list-window))
+            (quit-window nil window)
+          (flycheck-list-errors)))
+
       ;; key bindings
       (evil-leader/set-key
         "ec" 'flycheck-clear
-        "el" 'flycheck-list-errors))))
+        "eh" 'flycheck-describe-checker
+        "el" 'spacemacs/toggle-flycheck-error-list
+        "ev"    'flycheck-verify-setup))))
 
 (defun syntax-checking/init-flycheck-pos-tip ()
   (use-package flycheck-pos-tip
@@ -120,32 +121,6 @@
     :defer t
     :init
     (setq flycheck-display-errors-function 'flycheck-pos-tip-error-messages)))
-
-(defun syntax-checking/init-flyspell ()
-  (use-package flyspell
-    :defer t
-    :init
-    (progn
-      (setq-default ispell-program-name "aspell")
-      (setq-default ispell-dictionary "english")
-      (add-hook 'markdown-mode-hook '(lambda () (flyspell-mode 1)))
-      (add-hook 'text-mode-hook '(lambda () (flyspell-mode 1)))
-      (spacemacs|add-toggle spelling-checking
-                            :status flyspell-mode
-                            :on (flyspell-mode)
-                            :off (flyspell-mode -1)
-                            :documentation
-                            "Enable flyspell for automatic spelling checking."
-                            :evil-leader "tS"))
-    :config
-    (progn
-      (flyspell-prog-mode)
-      (spacemacs|diminish flyspell-mode " Ⓢ" " S"))))
-
-(defun syntax-checking/init-helm-flyspell ()
-  (use-package helm-flyspell
-    :commands helm-flyspell-correct
-    :init (evil-leader/set-key "Sc" 'helm-flyspell-correct)))
 
 (defun syntax-checking/post-init-popwin ()
   (push '("^\*Flycheck.+\*$" :regexp t :dedicated t :position bottom :stick t :noselect t) popwin:special-display-config))

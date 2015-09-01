@@ -64,6 +64,8 @@
         "mp" 'ein:worksheet-yank-cell
         "md" 'ein:worksheet-kill-cell
         "mh" 'ein:notebook-worksheet-open-prev-or-last
+        "mi" 'ein:worksheet-insert-cell-below
+        "mI" 'ein:worksheet-insert-cell-above
         "mj" 'ein:worksheet-goto-next-input
         "mk" 'ein:worksheet-goto-prev-input
         "ml" 'ein:notebook-worksheet-open-next-or-first
@@ -73,8 +75,6 @@
         "mL" 'ein:notebook-worksheet-move-next
         "mt" 'ein:worksheet-toggle-output
         "mR" 'ein:worksheet-rename-sheet
-        "mo" 'ein:worksheet-insert-cell-below
-        "mO" 'ein:worksheet-insert-cell-above
         "m RET" 'ein:worksheet-execute-cell-and-goto-next
         ;; Output
         "m C-l" 'ein:worksheet-clear-output
@@ -101,6 +101,13 @@
         "mx" 'ein:notebook-close
         "mu" 'ein:worksheet-change-cell-type
         "fs" 'ein:notebook-save-notebook-command)
+
+      ;; keybindings for ipython notebook traceback mode
+      (evil-leader/set-key-for-mode 'ein:traceback-mode
+        "m RET" 'ein:tb-jump-to-source-at-point-command
+        "mn" 'ein:tb-next-item
+        "mp" 'ein:tb-prev-item
+        "mq" 'bury-buffer)
 
       ;; keybindings mirror ipython web interface behavior
       (evil-define-key 'insert ein:notebook-multilang-mode-map

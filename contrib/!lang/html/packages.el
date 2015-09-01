@@ -1,4 +1,4 @@
-;;; packages.el --- HTTP Layer packages File for Spacemacs
+;;; packages.el --- HTML Layer packages File for Spacemacs
 ;;
 ;; Copyright (c) 2012-2014 Sylvain Benner
 ;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
@@ -18,17 +18,29 @@
     emmet-mode
     evil-matchit
     flycheck
+    haml-mode
     helm-css-scss
+    jade-mode
     less-css-mode
     rainbow-delimiters
-    scss-mode
     sass-mode
+    scss-mode
+    slim-mode
     tagedit
     web-mode
     yasnippet
-    haml-mode
-    slim-mode
     ))
+
+(when (configuration-layer/layer-usedp 'auto-completion)
+  ;;TODO: whenever company-web makes a backend for haml-mode it should be added here. -- @robbyoconnor
+  (defun html/post-init-company ()
+    (spacemacs|add-company-hook css-mode)
+    (spacemacs|add-company-hook jade-mode)
+    (spacemacs|add-company-hook slim-mode)
+    (spacemacs|add-company-hook web-mode))
+
+  (defun html/init-company-web ()
+    (use-package company-web)))
 
 (defun html/init-css-mode ()
   (use-package css-mode
@@ -36,12 +48,81 @@
     :init
     (push 'company-css company-backends-css-mode)))
 
+(defun html/init-emmet-mode ()
+  (use-package emmet-mode
+    :defer t
+    :init (spacemacs/add-to-hooks 'emmet-mode '(css-mode-hook
+                                                html-mode-hook
+                                                web-mode-hook))
+    :config
+    (progn
+      (evil-define-key 'insert emmet-mode-keymap (kbd "TAB") 'emmet-expand-yas)
+      (evil-define-key 'insert emmet-mode-keymap (kbd "<tab>") 'emmet-expand-yas)
+      (evil-define-key 'emacs emmet-mode-keymap (kbd "TAB") 'emmet-expand-yas)
+      (evil-define-key 'emacs emmet-mode-keymap (kbd "<tab>") 'emmet-expand-yas)
+      (spacemacs|hide-lighter emmet-mode))))
+
+(defun html/post-init-evil-matchit ()
+  (add-hook 'web-mode-hook 'evil-matchit-mode))
+
+(defun html/post-init-flycheck ()
+  (spacemacs/add-to-hooks 'flycheck-mode '(haml-mode-hook
+                                           jade-mode-hook
+                                           less-mode-hook
+                                           sass-mode-hook
+                                           scss-mode-hook
+                                           slim-mode-hook
+                                           web-mode-hook)))
+
+(defun html/init-haml-mode ()
+  (use-package haml-mode
+    :defer t))
+
 (defun html/init-helm-css-scss ()
   (use-package helm-css-scss
     :defer t
     :init
     (eval-after-load 'scss-mode
       '(evil-leader/set-key-for-mode 'scss-mode "mgh" 'helm-css-scss))))
+
+(defun html/init-jade-mode ()
+  (use-package jade-mode
+    :defer t))
+
+(defun html/init-less-css-mode ()
+  (use-package less-css-mode
+    :defer t
+    :mode ("\\.less\\'" . less-css-mode)))
+
+(defun html/init-sass-mode ()
+  (use-package sass-mode
+    :defer t
+    :mode ("\\.sass\\'" . sass-mode)))
+
+(defun html/init-scss-mode ()
+  (use-package scss-mode
+    :defer t
+    :mode ("\\.scss\\'" . scss-mode)))
+
+(defun html/init-slim-mode ()
+  (use-package slim-mode
+    :defer t))
+
+(defun html/init-tagedit ()
+  (use-package tagedit
+    :defer t
+    :config
+    (progn
+      (tagedit-add-experimental-features)
+      (add-hook 'html-mode-hook (lambda () (tagedit-mode 1)))
+      (spacemacs|diminish tagedit-mode " Ⓣ" " T"))))
+
+(defun html/post-init-rainbow-delimiters ()
+  (spacemacs/add-to-hooks 'rainbow-delimiters-mode '(haml-mode-hook
+                                                     jade-mode-hook
+                                                     less-css-mode-hook
+                                                     scss-mode-hook
+                                                     slim-mode-hook)))
 
 (defun html/init-web-mode ()
   (use-package web-mode
@@ -55,7 +136,7 @@
 
       (sp-local-pair 'web-mode "<% " " %>")
       (sp-local-pair 'web-mode "{ " " }")
-      (sp-local-pair 'web-mode "<%= "  "  %>")
+      (sp-local-pair 'web-mode "<%= "  " %>")
       (sp-local-pair 'web-mode "<%# "  " %>")
       (sp-local-pair 'web-mode "<%$ "  " %>")
       (sp-local-pair 'web-mode "<%@ "  " %>")
@@ -64,7 +145,6 @@
       (sp-local-pair 'web-mode "{% "  " %}")
       (sp-local-pair 'web-mode "{%- "  " %}")
       (sp-local-pair 'web-mode "{# "  " #}")
-
 
       (evil-leader/set-key-for-mode 'web-mode
         "meh" 'web-mode-dom-errors-show
@@ -112,101 +192,36 @@
         ("D" web-mode-element-kill)
         ("j" web-mode-element-next)
         ("J" web-mode-element-sibling-next)
+        ("gj" web-mode-element-sibling-next)
         ("k" web-mode-element-previous)
         ("K" web-mode-element-sibling-previous)
+        ("gk" web-mode-element-sibling-previous)
         ("h" web-mode-element-parent)
         ("l" web-mode-element-child)
         ("p" web-mode-dom-xpath)
-        ("r" web-mode-element-rename)
+        ("r" web-mode-element-rename :exit t)
         ("q" nil :exit t)
         ("w" web-mode-element-wrap)))
 
     :mode
     (("\\.phtml\\'"      . web-mode)
      ("\\.tpl\\.php\\'"  . web-mode)
+     ("\\.twig\\'"       . web-mode)
      ("\\.html\\'"       . web-mode)
      ("\\.htm\\'"        . web-mode)
      ("\\.[gj]sp\\'"     . web-mode)
-     ("\\.as[cp]x\\'"    . web-mode)
+     ("\\.as[cp]x?\\'"   . web-mode)
+     ("\\.eex\\'"        . web-mode)
      ("\\.erb\\'"        . web-mode)
      ("\\.mustache\\'"   . web-mode)
      ("\\.handlebars\\'" . web-mode)
      ("\\.hbs\\'"        . web-mode)
      ("\\.eco\\'"        . web-mode)
+     ("\\.jsx\\'"        . web-mode)
+     ("\\.ejs\\'"        . web-mode)
      ("\\.djhtml\\'"     . web-mode))))
 
-(defun html/init-emmet-mode ()
-  (use-package emmet-mode
-    :defer t
-    :init
-    (progn
-      (add-hook 'web-mode-hook 'emmet-mode)
-      (add-hook 'html-mode-hook 'emmet-mode)
-      (add-hook 'css-mode-hook 'emmet-mode))
-    :config
-    (progn
-      (evil-define-key 'insert emmet-mode-keymap (kbd "TAB") 'emmet-expand-yas)
-      (evil-define-key 'insert emmet-mode-keymap (kbd "<tab>") 'emmet-expand-yas)
-      (evil-define-key 'emacs emmet-mode-keymap (kbd "TAB") 'emmet-expand-yas)
-      (evil-define-key 'emacs emmet-mode-keymap (kbd "<tab>") 'emmet-expand-yas)
-      (spacemacs|hide-lighter emmet-mode))))
-
-(defun html/post-init-evil-matchit ()
-  (add-hook 'web-mode-hook 'evil-matchit-mode))
-
-(defun html/init-scss-mode ()
-  (use-package scss-mode
-    :defer t
-    :mode ("\\.scss\\'" . scss-mode)))
-
-(defun html/init-sass-mode ()
-  (use-package sass-mode
-    :defer t
-    :mode ("\\.sass\\'" . sass-mode)))
-
-(defun html/init-less-css-mode ()
-  (use-package less-css-mode
-    :defer t
-    :mode ("\\.less\\'" . less-css-mode)))
-
-(defun html/post-init-flycheck ()
-  (add-hook 'web-mode-hook 'flycheck-mode)
-  (add-hook 'scss-mode-hook 'flycheck-mode)
-  (add-hook 'sass-mode-hook 'flycheck-mode))
-
-(defun html/init-tagedit ()
-  (use-package tagedit
-    :defer t
-    :config
-    (progn
-      (tagedit-add-experimental-features)
-      (add-hook 'html-mode-hook (lambda () (tagedit-mode 1)))
-      (spacemacs|diminish tagedit-mode " Ⓣ" " T"))))
-
-(defun html/init-yasnippet ()
-  (use-package yasnippet
-    :defer t
-    :init
-    (add-hook 'css-mode-hook 'spacemacs/load-yasnippet)))
-
-(defun html/init-haml-mode ()
-  (use-package haml-mode
-    :defer t))
-
-(defun html/init-slim-mode ()
-  (use-package slim-mode
-    :defer t))
-
-(when (configuration-layer/layer-usedp 'auto-completion)
-  (defun html/post-init-company ()
-    (spacemacs|add-company-hook css-mode)
-    (spacemacs|add-company-hook web-mode))
-
-  (defun html/init-company-web ()
-    (use-package company-web)))
-
-(defun html/init-rainbow-delimiters ()
-  (when (configuration-layer/package-usedp 'less-css-mode)
-    (add-hook 'less-css-mode-hook 'rainbow-delimiters-mode))
-  (when (configuration-layer/package-usedp 'scss-mode)
-    (add-hook 'scss-mode-hook 'rainbow-delimiters-mode)))
+(defun html/post-init-yasnippet ()
+  (spacemacs/add-to-hooks 'spacemacs/load-yasnippet '(css-mode-hook
+                                                      jade-mode
+                                                      slim-mode)))

@@ -12,16 +12,11 @@
 
 (setq scala-packages
   '(
-    projectile
     ensime
     noflet
     sbt-mode
     scala-mode2
     ))
-
-(defun scala/init-projectile ()
-  (use-package projectile
-    :defer t))
 
 (defun scala/init-ensime ()
   (use-package ensime
@@ -89,7 +84,6 @@
 
       (evil-leader/set-key-for-mode 'scala-mode
         "m/"     'ensime-search
-        "m?"     'ensime-scalex
 
         "mbc"     'ensime-sbt-do-compile
         "mbC"     'ensime-sbt-do-clean
@@ -120,6 +114,7 @@
         "mes"     'ensime-stacktrace-switch
 
         "mgg"     'ensime-edit-definition
+        "mgp"     'ensime-pop-find-definition-stack
         "mgi"     'ensime-goto-impl
         "mgt"     'ensime-goto-test
 
@@ -180,14 +175,13 @@
       (evil-define-key 'normal scala-mode-map "J" 'spacemacs/scala-join-line)
 
       ;; Compatibility with `aggressive-indent'
-      (custom-set-variables
-       '(scala-indent:align-forms t)
-       '(scala-indent:align-parameters t)
-       '(scala-indent:default-run-on-strategy scala-indent:operator-strategy))
+      (setq scala-indent:align-forms t
+            scala-indent:align-parameters t
+            scala-indent:default-run-on-strategy scala-indent:operator-strategy)
 
       (require 'noflet)
 
       (defadvice scala-indent:indent-code-line (around retain-trailing-ws activate)
         "Keep trailing-whitespace when indenting."
         (noflet ((scala-lib:delete-trailing-whitespace ()))
-          ad-do-it)))))
+                ad-do-it)))))

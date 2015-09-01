@@ -16,7 +16,7 @@
 (define-key global-map (kbd "RET") 'newline-and-indent)
 
 ;; improve delete-other-windows
-(define-key global-map (kbd "C-x 1") 'toggle-maximize-buffer)
+(define-key global-map (kbd "C-x 1") 'spacemacs/toggle-maximize-buffer)
 
 ;; replace `dired-goto-file' with `helm-find-files', since `helm-find-files'
 ;; can do the same thing and with fuzzy matching and other features.
@@ -66,14 +66,14 @@
   "TAB" 'spacemacs/alternate-buffer
   "bh"  'spacemacs/home
   "be"  'spacemacs/safe-erase-buffer
-  "bK"  'kill-other-buffers
+  "bK"  'spacemacs/kill-other-buffers
   "bk"  'ido-kill-buffer
-  "b C-k" 'kill-matching-buffers-rudely
-  "bP"  'copy-clipboard-to-whole-buffer
+  "b C-k" 'spacemacs/kill-matching-buffers-rudely
+  "bP"  'spacemacs/copy-clipboard-to-whole-buffer
   "bn"  'spacemacs/next-useful-buffer
   "bp"  'spacemacs/previous-useful-buffer
   "bR"  'spacemacs/safe-revert-buffer
-  "bY"  'copy-whole-buffer-to-clipboard
+  "bY"  'spacemacs/copy-whole-buffer-to-clipboard
   "bw"  'read-only-mode)
 ;; Cycling settings -----------------------------------------------------------
 (evil-leader/set-key "Tn" 'spacemacs/cycle-spacemacs-theme)
@@ -96,9 +96,10 @@ Ensure that helm is required before calling FUNC."
 (spacemacs||set-helm-key "hdk" describe-key)
 (spacemacs||set-helm-key "hdm" describe-mode)
 (spacemacs||set-helm-key "hdp" describe-package)
+(evil-leader/set-key "hds" 'spacemacs/describe-system-info)
 (spacemacs||set-helm-key "hdt" describe-theme)
 (spacemacs||set-helm-key "hdv" describe-variable)
-(spacemacs||set-helm-key "hL" helm-locate-library)
+(spacemacs||set-helm-key "hL"  helm-locate-library)
 ;; search functions -----------------------------------------------------------
 (spacemacs||set-helm-key "sww" helm-wikipedia-suggest)
 (spacemacs||set-helm-key "swg" helm-google-suggest)
@@ -110,27 +111,28 @@ Ensure that helm is required before calling FUNC."
 ;; file -----------------------------------------------------------------------
 (evil-leader/set-key
   "fc" 'spacemacs/copy-file
-  "fD"  'delete-current-buffer-file
-  "fei" 'find-user-init-file
-  "fes" 'find-spacemacs-file
-  "fec" 'find-contrib-file
-  "fed" 'find-dotfile
-  "feD" 'ediff-dotfile-and-template
+  "fD" 'spacemacs/delete-current-buffer-file
+  "fei" 'spacemacs/find-user-init-file
+  "fes" 'spacemacs/find-spacemacs-file
+  "fec" 'spacemacs/find-contrib-file
+  "fed" 'spacemacs/find-dotfile
+  "feD" 'spacemacs/ediff-dotfile-and-template
   "feR" 'dotspacemacs/sync-configuration-layers
   "fev" 'spacemacs/display-and-copy-version
   "fg" 'rgrep
   "fj" 'dired-jump
+  "fl" 'find-file-literally
   "fo" 'spacemacs/open-in-external-app
-  "fR"  'rename-current-buffer-file
+  "fR" 'spacemacs/rename-current-buffer-file
   "fS" 'evil-write-all
   "fs" 'spacemacs/write-file
-  "fy" 'show-and-copy-buffer-filename)
+  "fy" 'spacemacs/show-and-copy-buffer-filename)
 ;; insert stuff ---------------------------------------------------------------
 (evil-leader/set-key
   "iJ" 'spacemacs/insert-line-below-no-indent
   "iK" 'spacemacs/insert-line-above-no-indent
-  "ik" 'evil-insert-line-above
-  "ij" 'evil-insert-line-below)
+  "ik" 'spacemacs/evil-insert-line-above
+  "ij" 'spacemacs/evil-insert-line-below)
 ;; format ---------------------------------------------------------------------
 ;; <SPC> j k key binding for a frequent action: go and indent line below the point
 ;; <SPC> J split the current line at point and indent it
@@ -140,7 +142,7 @@ Ensure that helm is required before calling FUNC."
   "jo" 'open-line
   "j=" 'spacemacs/indent-region-or-buffer
   "jJ" 'spacemacs/split-and-new-line
-  "jk" 'evil-goto-next-line-and-indent)
+  "jk" 'spacemacs/evil-goto-next-line-and-indent)
 
 ;; navigation -----------------------------------------------------------------
 (evil-leader/set-key
@@ -162,93 +164,111 @@ Ensure that helm is required before calling FUNC."
   "Sn" 'flyspell-goto-next-error)
 ;; toggle ---------------------------------------------------------------------
 (spacemacs|add-toggle highlight-current-line-globally
-                      :status global-hl-line-mode
-                      :on (global-hl-line-mode)
-                      :off (global-hl-line-mode -1)
-                      :documentation "Globally Highlight the current line."
-                      :evil-leader "thh")
+  :status global-hl-line-mode
+  :on (global-hl-line-mode)
+  :off (global-hl-line-mode -1)
+  :documentation "Globally highlight the current line."
+  :evil-leader "thh")
 (spacemacs|add-toggle truncate-lines
-                      :status nil
-                      :on (toggle-truncate-lines)
-                      :documentation "Truncate the long lines (no wrap)."
-                      :evil-leader "tl")
+  :status nil
+  :on (toggle-truncate-lines)
+  :documentation "Truncate long lines (no wrap)."
+  :evil-leader "tl")
 (spacemacs|add-toggle visual-line-navigation
-                      :status visual-line-mode
-                      :on (visual-line-mode)
-                      :off (visual-line-mode -1)
-                      :documentation "Move point according to visual lines."
-                      :evil-leader "tL")
+  :status visual-line-mode
+  :on (progn
+        (visual-line-mode)
+        (define-key evil-motion-state-map "j" 'evil-next-visual-line)
+        (define-key evil-motion-state-map "k" 'evil-previous-visual-line)
+        (when (bound-and-true-p evil-escape-mode)
+          (evil-escape-mode -1)
+          (setq evil-escape-motion-state-shadowed-func nil)
+          (define-key evil-motion-state-map "j" 'evil-next-visual-line)
+          (define-key evil-motion-state-map "k" 'evil-previous-visual-line)
+          (evil-escape-mode)))
+  :off (progn
+         (visual-line-mode -1)
+         (define-key evil-motion-state-map "j" 'evil-next-line)
+         (define-key evil-motion-state-map "k" 'evil-previous-line)
+         (when (bound-and-true-p evil-escape-mode)
+           (evil-escape-mode -1)
+           (setq evil-escape-motion-state-shadowed-func nil)
+           (define-key evil-motion-state-map "j" 'evil-next-line)
+           (define-key evil-motion-state-map "k" 'evil-previous-line)
+           (evil-escape-mode)))
+  :documentation "Move point according to visual lines."
+  :evil-leader "tL")
 (spacemacs|add-toggle line-numbers
-                      :status linum-mode
-                      :on (global-linum-mode)
-                      :off (global-linum-mode -1)
-                      :documentation "Show the line numbers."
-                      :evil-leader "tn")
+  :status linum-mode
+  :on (global-linum-mode)
+  :off (global-linum-mode -1)
+  :documentation "Show the line numbers."
+  :evil-leader "tn")
 (spacemacs|add-toggle auto-fill-mode
-                      :status auto-fill-function
-                      :on (auto-fill-mode)
-                      :off (auto-fill-mode -1)
-                      :documentation "Break line beyond `current-fill-column` while editing."
-                      :evil-leader "tF")
+  :status auto-fill-function
+  :on (auto-fill-mode)
+  :off (auto-fill-mode -1)
+  :documentation "Break line beyond `current-fill-column` while editing."
+  :evil-leader "tF")
 (spacemacs|add-toggle debug-on-error
-                      :status nil
-                      :on (toggle-debug-on-error)
-                      :documentation "Toggle display of backtrace when an error happens."
-                      :evil-leader "tD")
+  :status nil
+  :on (toggle-debug-on-error)
+  :documentation "Toggle display of backtrace when an error happens."
+  :evil-leader "tD")
 (spacemacs|add-toggle fringe
-                      :status (not (equal fringe-mode 0))
-                      :on (call-interactively 'fringe-mode)
-                      :off (fringe-mode 0)
-                      :documentation "Display the fringe in GUI mode."
-                      :evil-leader "Tf")
+  :status (not (equal fringe-mode 0))
+  :on (call-interactively 'fringe-mode)
+  :off (fringe-mode 0)
+  :documentation "Display the fringe in GUI mode."
+  :evil-leader "Tf")
 (spacemacs|add-toggle fullscreen-frame
-                      :status nil
-                      :on (spacemacs/toggle-frame-fullscreen)
-                      :documentation "Display the current frame in full screen."
-                      :evil-leader "TF")
+  :status nil
+  :on (spacemacs/toggle-frame-fullscreen)
+  :documentation "Display the current frame in full screen."
+  :evil-leader "TF")
 (spacemacs|add-toggle maximize-frame
-                      :if (version< "24.3.50" emacs-version)
-                      :status nil
-                      :on (toggle-frame-maximized)
-                      :documentation "Maximize the current frame."
-                      :evil-leader "TM")
+  :if (version< "24.3.50" emacs-version)
+  :status nil
+  :on (toggle-frame-maximized)
+  :documentation "Maximize the current frame."
+  :evil-leader "TM")
 (spacemacs|add-toggle mode-line
-                      :status hidden-mode-line-mode
-                      :on (hidden-mode-line-mode)
-                      :off (hidden-mode-line-mode -1)
-                      :documentation "Toggle the visibility of modeline."
-                      :evil-leader "tmt")
+  :status hidden-mode-line-mode
+  :on (hidden-mode-line-mode)
+  :off (hidden-mode-line-mode -1)
+  :documentation "Toggle the visibility of modeline."
+  :evil-leader "tmt")
 (spacemacs|add-toggle transparent-frame
-                      :status nil
-                      :on (toggle-transparency)
-                      :documentation "Make the current frame non-opaque."
-                      :evil-leader "TT")
+  :status nil
+  :on (spacemacs/toggle-transparency)
+  :documentation "Make the current frame non-opaque."
+  :evil-leader "TT")
 (spacemacs|add-toggle tool-bar
-                      :if window-system
-                      :status tool-bar-mode
-                      :on (tool-bar-mode)
-                      :off (tool-bar-mode -1)
-                      :documentation "Display the tool bar in GUI mode."
-                      :evil-leader "Tt")
+  :if window-system
+  :status tool-bar-mode
+  :on (tool-bar-mode)
+  :off (tool-bar-mode -1)
+  :documentation "Display the tool bar in GUI mode."
+  :evil-leader "Tt")
 (spacemacs|add-toggle menu-bar
-                      :if (or window-system (version<= "24.3.1" emacs-version))
-                      :status menu-bar-mode
-                      :on (menu-bar-mode)
-                      :off (menu-bar-mode -1)
-                      :documentation "Display the menu bar."
-                      :evil-leader "Tm")
+  :if (or window-system (version<= "24.3.1" emacs-version))
+  :status menu-bar-mode
+  :on (menu-bar-mode)
+  :off (menu-bar-mode -1)
+  :documentation "Display the menu bar."
+  :evil-leader "Tm")
 (spacemacs|add-toggle semantic-stickyfunc
-                      :status semantic-stickyfunc-mode
-                      :on (semantic-stickyfunc-mode)
-                      :off (semantic-stickyfunc-mode -1)
-                      :documentation "Enable semantic-stickyfunc."
-                      :evil-leader "Ts")
-(spacemacs|add-toggle semantic-stickfunc-globally
-                      :status global-semantic-stickyfunc-mode
-                      :on (global-semantic-stickyfunc-mode)
-                      :off (global-semantic-stickyfunc-mode -1)
-                      :documentation "Enable semantic-stickyfunc globally."
-                      :evil-leader "T C-s")
+  :status semantic-stickyfunc-mode
+  :on (semantic-stickyfunc-mode)
+  :off (semantic-stickyfunc-mode -1)
+  :documentation "Enable semantic-stickyfunc."
+  :evil-leader "Ts")
+(spacemacs|add-toggle semantic-stickyfunc-globally
+  :status global-semantic-stickyfunc-mode
+  :on (global-semantic-stickyfunc-mode)
+  :off (global-semantic-stickyfunc-mode -1)
+  :documentation "Enable semantic-stickyfunc globally."
+  :evil-leader "T C-s")
 ;; quit -----------------------------------------------------------------------
 (evil-leader/set-key
   "qs" 'spacemacs/save-buffers-kill-emacs
@@ -275,11 +295,11 @@ Ensure that helm is required before calling FUNC."
     (golden-ratio)))
 
 (evil-leader/set-key
-  "w2"  'layout-double-columns
-  "w3"  'layout-triple-columns
-  "wb"  'switch-to-minibuffer-window
+  "w2"  'spacemacs/layout-double-columns
+  "w3"  'spacemacs/layout-triple-columns
+  "wb"  'spacemacs/switch-to-minibuffer-window
   "wc"  'delete-window
-  "wd"  'toggle-current-window-dedication
+  "wd"  'spacemacs/toggle-current-window-dedication
   "wH"  'evil-window-move-far-left
   "wh"  'evil-window-left
   "wJ"  'evil-window-move-very-bottom
@@ -288,10 +308,10 @@ Ensure that helm is required before calling FUNC."
   "wk"  'evil-window-up
   "wL"  'evil-window-move-far-right
   "wl"  'evil-window-right
-  "wm"  'toggle-maximize-buffer
-  "wM"  'toggle-maximize-centered-buffer
+  "wm"  'spacemacs/toggle-maximize-buffer
+  "wM"  'spacemacs/toggle-maximize-centered-buffer
   "wo"  'other-frame
-  "wR"  'rotate-windows
+  "wR"  'spacemacs/rotate-windows
   "ws"  'split-window-below
   "wS"  'split-window-below-and-focus
   "w-"  'split-window-below
@@ -305,28 +325,30 @@ Ensure that helm is required before calling FUNC."
 ;; text -----------------------------------------------------------------------
 (evil-leader/set-key
   "xaa" 'align
-  "xar" 'align-repeat
-  "xam" 'align-repeat-math-oper
-  "xa." 'align-repeat-decimal
-  "xa," 'align-repeat-comma
-  "xa;" 'align-repeat-semicolon
-  "xa:" 'align-repeat-colon
-  "xa=" 'align-repeat-equal
-  "xa&" 'align-repeat-ampersand
-  "xa|" 'align-repeat-bar
-  "xa(" 'align-repeat-left-paren
-  "xa)" 'align-repeat-right-paren
+  "xar" 'spacemacs/align-repeat
+  "xam" 'spacemacs/align-repeat-math-oper
+  "xa." 'spacemacs/align-repeat-decimal
+  "xa," 'spacemacs/align-repeat-comma
+  "xa;" 'spacemacs/align-repeat-semicolon
+  "xa:" 'spacemacs/align-repeat-colon
+  "xa=" 'spacemacs/align-repeat-equal
+  "xa&" 'spacemacs/align-repeat-ampersand
+  "xa|" 'spacemacs/align-repeat-bar
+  "xa(" 'spacemacs/align-repeat-left-paren
+  "xa)" 'spacemacs/align-repeat-right-paren
   "xdw" 'delete-trailing-whitespace
+  "xls" 'spacemacs/sort-lines
+  "xlu" 'spacemacs/uniquify-lines
   "xtc" 'transpose-chars
   "xtl" 'transpose-lines
   "xtw" 'transpose-words
   "xU"  'upcase-region
   "xu"  'downcase-region
-  "xwC" 'count-words-analysis
+  "xwC" 'spacemacs/count-words-analysis
   "xwc" 'count-words-region)
 ;; google translate -----------------------------------------------------------
 (evil-leader/set-key
-  "xgl" 'set-google-translate-languages)
+  "xgl" 'spacemacs/set-google-translate-languages)
 ;; shell ----------------------------------------------------------------------
 (eval-after-load "shell"
   '(progn
@@ -425,6 +447,7 @@ Ensure that helm is required before calling FUNC."
 (spacemacs|define-micro-state window-manipulation
   :doc "[?] for help"
   :evil-leader "w."
+  :use-minibuffer t
   :bindings
   ("?" nil                                   :doc (spacemacs//window-manipulation-full-doc))
   ("0" select-window-0                       :doc (spacemacs//window-manipulation-number-doc))
@@ -455,7 +478,7 @@ Ensure that helm is required before calling FUNC."
   ("K" evil-window-move-very-top             :doc (spacemacs//window-manipulation-move-doc))
   ("L" evil-window-move-far-right            :doc (spacemacs//window-manipulation-move-doc))
   ("o" other-frame                           :doc (spacemacs//window-manipulation-move-doc))
-  ("R" rotate-windows                        :doc (spacemacs//window-manipulation-move-doc))
+  ("R" spacemacs/rotate-windows              :doc (spacemacs//window-manipulation-move-doc))
   ("s" split-window-below                    :doc (spacemacs//window-manipulation-split-doc))
   ("S" split-window-below-and-focus          :doc (spacemacs//window-manipulation-split-doc))
   ("u" winner-undo                           :doc (spacemacs//window-manipulation-layout-doc))
@@ -504,3 +527,47 @@ otherwise it is scaled down."
   ("q" nil :exit t))
 
 ;; end of Text Manipulation Micro State
+
+;; Transparency micro-state
+
+(defun spacemacs/toggle-transparency ()
+  "Toggle between transparent or opaque display."
+  (interactive)
+  ;; Define alpha if it's nil
+  (if (eq (frame-parameter (selected-frame) 'alpha) nil)
+      (set-frame-parameter (selected-frame) 'alpha '(100 100)))
+  ;; Do the actual toggle
+  (if (/= (cadr (frame-parameter (selected-frame) 'alpha)) 100)
+      (set-frame-parameter (selected-frame) 'alpha '(100 100))
+    (set-frame-parameter (selected-frame) 'alpha
+                         (list dotspacemacs-active-transparency
+                               dotspacemacs-inactive-transparency)))
+  ;; Immediately enter the micro-state, but also keep toggle
+  ;; accessible from helm-spacemacs
+  (spacemacs/scale-transparency-micro-state))
+
+(defun spacemacs/increase-transparency ()
+  "Increase transparency of current frame."
+  (interactive)
+  (let* ((current-alpha (car (frame-parameter (selected-frame) 'alpha)))
+         (increased-alpha (- current-alpha 5)))
+    (when (>= increased-alpha frame-alpha-lower-limit)
+      (set-frame-parameter (selected-frame) 'alpha (list increased-alpha increased-alpha)))))
+
+(defun spacemacs/decrease-transparency ()
+  "Decrease transparency of current frame."
+  (interactive)
+  (let* ((current-alpha (car (frame-parameter (selected-frame) 'alpha)))
+         (decreased-alpha (+ current-alpha 5)))
+    (when (<= decreased-alpha 100)
+      (set-frame-parameter (selected-frame) 'alpha (list decreased-alpha decreased-alpha)))))
+
+(spacemacs|define-micro-state scale-transparency
+  :doc "[+] increase [-] decrease [T] toggle transparency [q] quit"
+  :bindings
+  ("+" spacemacs/increase-transparency)
+  ("-" spacemacs/decrease-transparency)
+  ("T" spacemacs/toggle-transparency)
+  ("q" nil :exit t))
+
+;; end of Transparency Micro State

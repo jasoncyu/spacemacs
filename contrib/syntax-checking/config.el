@@ -17,4 +17,3 @@
 
 ;; Command Prefixes
 
-(spacemacs/declare-prefix "S" "spelling")

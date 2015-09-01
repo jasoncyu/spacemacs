@@ -1,4 +1,4 @@
-;;; packages.el --- Finance Layer packages File for Spacemacs
+;;; packages.el --- Markdown Layer packages File for Spacemacs
 ;;
 ;; Copyright (c) 2012-2014 Sylvain Benner
 ;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
@@ -12,10 +12,16 @@
 
 (setq markdown-packages
   '(
+    emoji-cheat-sheet-plus
     markdown-mode
     markdown-toc
     mmm-mode
+    company
+    company-emoji
     ))
+
+(defun markdown/post-init-emoji-cheat-sheet-plus ()
+  (add-hook 'markdown-mode-hook 'emoji-cheat-sheet-plus-display-mode))
 
 (defun markdown/init-markdown-mode ()
   (use-package markdown-mode
@@ -23,10 +29,6 @@
     :defer t
     :init (add-hook 'markdown-mode-hook 'smartparens-mode)
     :config
-    ;; Don't do terrible things with Github code blocks (```)
-    (when (fboundp 'sp-local-pair)
-      (sp-local-pair 'markdown-mode "`" nil :actions '(:rem autoskip))
-      (sp-local-pair 'markdown-mode "'" nil :actions nil))
     (progn
       ;; Insert key for org-mode and markdown a la C-h k
       ;; from SE endless http://emacs.stackexchange.com/questions/2206/i-want-to-have-the-kbd-tags-for-my-blog-written-in-org-mode/2208#2208
@@ -95,7 +97,7 @@ Will work on both org-mode and any mode that accepts plain html."
         "mxP"  'markdown-pre-region
         ;; Following and Jumping
         "mN"   'markdown-next-link
-        "mo"   'markdown-follow-thing-at-point
+        "mf"   'markdown-follow-thing-at-point
         "mP"   'markdown-previous-link
         "m <RET>" 'markdown-jump)
 
@@ -169,3 +171,10 @@ Will work on both org-mode and any mode that accepts plain html."
       (mmm-add-mode-ext-class 'markdown-mode nil 'markdown-c++)
       (mmm-add-mode-ext-class 'markdown-mode nil 'markdown-elisp)
       (mmm-add-mode-ext-class 'markdown-mode nil 'markdown-html))))
+
+(when (configuration-layer/layer-usedp 'auto-completion)
+  (defun markdown/post-init-company ()
+    (spacemacs|add-company-hook markdown-mode)
+    (push 'company-capf company-backends-markdown-mode))
+  (defun markdown/post-init-company-emoji ()
+    (push 'company-emoji company-backends-markdown-mode)))

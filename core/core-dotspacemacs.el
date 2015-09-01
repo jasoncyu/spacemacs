@@ -13,9 +13,38 @@
   (expand-file-name (concat spacemacs-core-directory "templates/"))
   "Templates directory.")
 
+(defconst dotspacemacs-directory
+  (let* ((env (getenv "SPACEMACSDIR"))
+         (env-dir (when env (expand-file-name (concat env "/"))))
+         (no-env-dir-default (expand-file-name
+                              (concat user-home-directory
+                                      ".spacemacs.d/"))))
+    (cond
+     ((and env (file-exists-p env-dir))
+      env-dir)
+     ((file-exists-p no-env-dir-default)
+      no-env-dir-default)
+     (t
+      nil)))
+  "Optional spacemacs directory, which defaults to
+~/.spacemacs.d. This setting can be overridden using the
+SPACEMACSDIR environment variable. If neither of these
+directories exist, this variable will be nil.")
+
 (defconst dotspacemacs-filepath
-  (concat user-home-directory ".spacemacs")
-  "Filepath to the installed dotfile.")
+  (let* ((default (concat user-home-directory ".spacemacs"))
+         (spacemacs-dir-init (when dotspacemacs-directory
+                                 (concat dotspacemacs-directory
+                                         "init.el"))))
+    (if (and (not (file-exists-p default))
+             dotspacemacs-directory
+             (file-exists-p spacemacs-dir-init))
+        spacemacs-dir-init
+      default))
+  "Filepath to the installed dotfile. If ~/.spacemacs exists,
+then this is used. If ~/.spacemacs does not exist, then check
+for init.el in dotspacemacs-directory and use this if it
+exists. Otherwise, fallback to ~/.spacemacs")
 
 (defvar dotspacemacs-verbose-loading nil
   "If non nil output loading progess in `*Messages*' buffer.")
@@ -87,6 +116,9 @@ with `:' and Emacs commands are executed with `<leader> :'.")
   "If non nil then `ido' replaces `helm' for some commands. For now only
 `find-files' (SPC f f) is replaced.")
 
+(defvar dotspacemacs-helm-resize nil
+  "If non nil, `helm' will try to miminimize the space it uses.")
+
 (defvar dotspacemacs-auto-save-file-location 'cache
   "Location where to auto-save files. Possible values are `original' to
 auto-save the file in-place, `cache' to auto-save the file to another
@@ -141,8 +173,9 @@ it reaches the top or bottom of the screen.")
   "If non-nil smartparens-strict-mode will be enabled in programming modes.")
 
 (defvar dotspacemacs-highlight-delimiters 'all
-  "Select a scope to highlight delimiters. Possible value is `all', `current'
-or `nil'. Default is `all'")
+  "Select a scope to highlight delimiters. Possible values are `any',
+  `current', `all' or `nil'. Default is `all' (highlight any scope and
+  emphasis the current one.")
 
 (defvar dotspacemacs-delete-orphan-packages t
   "If non-nil spacemacs will delete any orphan packages, i.e. packages that are
@@ -188,6 +221,12 @@ If ARG is non nil then `dotspacemacs/config' is skipped."
           (message "Done."))
         (when (configuration-layer/package-usedp 'powerline)
           (spacemacs//restore-powerline (current-buffer)))))))
+
+(defmacro dotspacemacs|symbol-value (symbol)
+  "Return the value of SYMBOL corresponding to a dotspacemacs variable.
+If SYMBOL value is `display-graphic-p' then return the result of
+ `(display-graphic-p)', otherwise return the value of the symbol."
+  `(if (eq 'display-graphic-p ,symbol) (display-graphic-p) ,symbol))
 
 (defun dotspacemacs/location ()
   "Return the absolute path to the spacemacs dotfile."

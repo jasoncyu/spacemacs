@@ -18,8 +18,7 @@
     flycheck
     robe
     ruby-test-mode
-    ruby-tools
-    yaml-mode))
+    ruby-tools))
 
 (when ruby-version-manager
   (add-to-list 'ruby-packages ruby-version-manager))
@@ -45,6 +44,7 @@
   (use-package enh-ruby-mode
     :mode (("\\(Rake\\|Thor\\|Guard\\|Gem\\|Cap\\|Vagrant\\|Berks\\|Pod\\|Puppet\\)file\\'" . enh-ruby-mode)
            ("\\.\\(rb\\|rabl\\|ru\\|builder\\|rake\\|thor\\|gemspec\\|jbuilder\\)\\'" . enh-ruby-mode))
+    :interpreter "ruby"
     :config
     (progn
       (setq enh-ruby-deep-indent-paren nil
@@ -64,7 +64,11 @@
     :init
     (add-hook 'enh-ruby-mode-hook 'ruby-tools-mode)
     :config
-    (spacemacs|hide-lighter ruby-tools-mode)))
+    (progn
+      (spacemacs|hide-lighter ruby-tools-mode)
+      (evil-leader/set-key-for-mode 'enh-ruby-mode "mx\'" 'ruby-tools-to-single-quote-string)
+      (evil-leader/set-key-for-mode 'enh-ruby-mode "mx\"" 'ruby-tools-to-double-quote-string)
+      (evil-leader/set-key-for-mode 'enh-ruby-mode "mx:" 'ruby-tools-to-symbol))))
 
 (defun ruby/init-bundler ()
   (use-package bundler
@@ -100,15 +104,6 @@
       (evil-leader/set-key-for-mode 'enh-ruby-mode "msr" 'ruby-send-region)
       (evil-leader/set-key-for-mode 'enh-ruby-mode "msR" 'ruby-send-region-and-go)
       (evil-leader/set-key-for-mode 'enh-ruby-mode "mss" 'ruby-switch-to-inf))))
-
-(defun ruby/init-yaml-mode ()
-  "Initialize YAML mode"
-  (use-package yaml-mode
-    :mode (("\\.\\(yml\\|yaml\\)\\'" . yaml-mode)
-           ("Procfile\\'" . yaml-mode))
-    :config (add-hook 'yaml-mode-hook
-                      '(lambda ()
-                         (define-key yaml-mode-map "\C-m" 'newline-and-indent)))))
 
 (defun ruby/init-ruby-test-mode ()
   "Define keybindings for ruby test mode"

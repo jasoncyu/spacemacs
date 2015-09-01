@@ -39,11 +39,11 @@
                                                     font-lock-variable-name-face))
 
       (spacemacs|add-toggle rainbow-identifier-globally
-                            :status rainbow-identifiers-mode
-                            :on (rainbow-identifiers-mode)
-                            :off (rainbow-identifiers-mode -1)
-                            :documentation "Colorize identifiers globally."
-                            :evil-leader "tCi")
+        :status rainbow-identifiers-mode
+        :on (rainbow-identifiers-mode)
+        :off (rainbow-identifiers-mode -1)
+        :documentation "Colorize identifiers globally."
+        :evil-leader "tCi")
 
       (add-hook 'prog-mode-hook 'rainbow-identifiers-mode)
 
@@ -70,7 +70,7 @@
         "Display a short documentation in the mini buffer."
         (let ((var (intern (format
                             "rainbow-identifiers-cie-l*a*b*-%s" component))))
-          (echo "Change color %s mini-mode (value: %s)
+          (spacemacs/echo "Change color %s mini-mode (value: %s)
   + to increase %s
   - to decrease %s
   = to reset

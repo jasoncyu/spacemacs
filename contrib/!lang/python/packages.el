@@ -20,6 +20,7 @@
     eldoc
     evil-jumper
     flycheck
+    helm-cscope
     helm-pydoc
     hy-mode
     pip-requirements
@@ -30,18 +31,20 @@
     semantic
     smartparens
     stickyfunc-enhance
+    xcscope
     ))
 
-;; (defun python/init-anaconda-mode ()
-;;   (use-package anaconda-mode
-;;     :defer t
-;;     :init (add-hook 'python-mode-hook 'anaconda-mode)
-;;     :config
-;;     (progn
-;;       (evil-leader/set-key-for-mode 'python-mode
-;;         "mhh" 'anaconda-mode-view-doc
-;;         "mgg"  'anaconda-mode-goto)
-;;       (spacemacs|hide-lighter anaconda-mode))))
+(defun python/init-anaconda-mode ()
+  (use-package anaconda-mode
+    :defer t
+    :init (add-hook 'python-mode-hook 'anaconda-mode)
+    :config
+    (progn
+      (evil-leader/set-key-for-mode 'python-mode
+        "mhh" 'anaconda-mode-view-doc
+        "mgg" 'anaconda-mode-goto
+        "mgu" 'anaconda-mode-usages)
+      (spacemacs|hide-lighter anaconda-mode))))
 
 (defun python/init-cython-mode ()
   (use-package cython-mode
@@ -50,15 +53,13 @@
     (progn
       (evil-leader/set-key-for-mode 'cython-mode
         "mhh" 'anaconda-mode-view-doc
-        "mgg"  'anaconda-mode-goto)
-      )))
+        "mgg" 'anaconda-mode-goto
+        "mgu" 'anaconda-mode-usages))))
 
-(defun python/init-eldoc ()
-  ;; Comment out for now since I "need an inferior python process running."
-  ;; (add-hook 'python-mode-hook 'eldoc-mode)
-  )
+(defun python/post-init-eldoc ()
+  (add-hook 'python-mode-hook 'eldoc-mode))
 
-(defun python/init-evil-jumper ()
+(defun python/post-init-evil-jumper ()
   (defadvice anaconda-mode-goto (before python/anaconda-mode-goto activate)
     (evil-jumper--push)))
 
@@ -97,13 +98,13 @@
                pytest-module
                pytest-pdb-module)
     :init (evil-leader/set-key-for-mode 'python-mode
-            "mTa" 'pytest-pdb-all
+            "mtA" 'pytest-pdb-all
             "mta" 'pytest-all
-            "mTb" 'pytest-pdb-module
+            "mtB" 'pytest-pdb-module
             "mtb" 'pytest-module
-            "mTt" 'pytest-pdb-one
+            "mtT" 'pytest-pdb-one
             "mtt" 'pytest-one
-            "mTm" 'pytest-pdb-module
+            "mtM" 'pytest-pdb-module
             "mtm" 'pytest-module)
     :config (add-to-list 'pytest-project-root-files "setup.cfg")))
 
@@ -115,6 +116,7 @@
       (defun python-default ()
         (setq mode-name "Python"
               tab-width 4
+              fill-column 79
               ;; auto-indent on colon doesn't work well with if statement
               electric-indent-chars (delq ?: electric-indent-chars))
         (annotate-pdb)
@@ -124,25 +126,24 @@
 
       (defun python-setup-shell ()
         (if (executable-find "ipython")
-            (setq python-shell-interpreter "ipython"
-                  ;; python-shell-interpreter-args (if (system-is-mac)
-                  ;;                                   "--gui=osx --matplotlib=osx --colors=Linux"
-                  ;;                                 (if (system-is-linux)
-                  ;;                                     "--gui=wx --matplotlib=wx --colors=Linux"))
-                  python-shell-prompt-regexp "In \\[[0-9]+\\]: "
-                  python-shell-prompt-output-regexp "Out\\[[0-9]+\\]: "
-                  python-shell-completion-setup-code "from IPython.core.completerlib import module_completion"
-                  python-shell-completion-module-string-code "';'.join(module_completion('''%s'''))\n"
-                  python-shell-completion-string-code "';'.join(get_ipython().Completer.all_completions('''%s'''))\n")
+            (progn
+              (setq python-shell-interpreter "ipython")
+              (when (version< emacs-version "24.4")
+                ;; these settings are unnecessary and even counter-productive on emacs 24.4 and newer
+                (setq python-shell-prompt-regexp "In \\[[0-9]+\\]: "
+                      python-shell-prompt-output-regexp "Out\\[[0-9]+\\]: "
+                      python-shell-completion-setup-code "from IPython.core.completerlib import module_completion"
+                      python-shell-completion-module-string-code "';'.join(module_completion('''%s'''))\n"
+                      python-shell-completion-string-code "';'.join(get_ipython().Completer.all_completions('''%s'''))\n")))
           (setq python-shell-interpreter "python")))
 
       (defun inferior-python-setup-hook ()
         (setq indent-tabs-mode t))
 
       (add-hook 'inferior-python-mode-hook #'inferior-python-setup-hook)
-      (add-all-to-hook 'python-mode-hook
-                       'python-default
-                       'python-setup-shell))
+      (spacemacs/add-all-to-hook 'python-mode-hook
+                                 'python-default
+                                 'python-setup-shell))
     :config
     (progn
       (add-hook 'inferior-python-mode-hook 'smartparens-mode)
@@ -232,10 +233,23 @@
         ;; this key binding is for recentering buffer in Emacs
         ;; it would be troublesome if Emacs user
         ;; Vim users can use this key since they have other key
-        (define-key inferior-python-mode-map (kbd "C-l") 'comint-clear-buffer))
+        (define-key inferior-python-mode-map (kbd "C-l") 'spacemacs/comint-clear-buffer))
 
       ;; add this optional key binding for Emacs user, since it is unbound
-      (define-key inferior-python-mode-map (kbd "C-c M-l") 'comint-clear-buffer))))
+      (define-key inferior-python-mode-map (kbd "C-c M-l") 'spacemacs/comint-clear-buffer)
+
+      ;; fix for issue #2569 (https://github.com/syl20bnr/spacemacs/issues/2569)
+      ;; use `semantic-create-imenu-index' only when `semantic-mode' is enabled,
+      ;; otherwise use `python-imenu-create-index'
+      (defun spacemacs/python-imenu-create-index-python-or-semantic ()
+        (if (bound-and-true-p semantic-mode)
+            (semantic-create-imenu-index)
+          (python-imenu-create-index)))
+
+      (defadvice wisent-python-default-setup
+          (after spacemacs/python-set-imenu-create-index-function activate)
+        (setq imenu-create-index-function
+              #'spacemacs/python-imenu-create-index-python-or-semantic)))))
 
 (defun python/post-init-flycheck ()
   (add-hook 'python-mode-hook 'flycheck-mode))
@@ -250,7 +264,7 @@
     :init
     (evil-leader/set-key-for-mode 'python-mode "mhd" 'helm-pydoc)))
 
-(defun python/init-smartparens ()
+(defun python/post-init-smartparens ()
   (defadvice python-indent-dedent-line-backspace
       (around python/sp-backward-delete-char activate)
     (let ((pythonp (or (not smartparens-strict-mode)
@@ -264,7 +278,7 @@
   (defun python/post-init-company ()
     (spacemacs|add-company-hook python-mode)
     (spacemacs|add-company-hook inferior-python-mode)
-    (push 'company-capf company-backends-inferior-python-mode)
+    (push '(company-files company-capf) company-backends-inferior-python-mode)
     (add-hook 'inferior-python-mode-hook (lambda ()
                                            (setq-local company-minimum-prefix-length 0)
                                            (setq-local company-idle-delay 0.5)))))
@@ -301,3 +315,13 @@ fix this issue."
 
 (defun python/post-init-stickyfunc-enhance ()
   (add-hook 'python-mode-hook 'spacemacs/lazy-load-stickyfunc-enhance))
+
+(defun python/pre-init-xcscope ()
+  (spacemacs|use-package-add-hook xcscope
+    :post-init
+    (evil-leader/set-key-for-mode 'python-mode "mgi" 'cscope/run-pycscope)))
+
+(defun python/pre-init-helm-cscope ()
+  (spacemacs|use-package-add-hook xcscope
+    :post-init
+    (spacemacs/setup-helm-cscope 'python-mode)))

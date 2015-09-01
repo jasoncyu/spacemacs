@@ -12,22 +12,29 @@
 
 (setq spacemacs-packages
       '(
-        ace-jump-mode
+        ;; pre
+        (holy-mode :location local :step pre)
+        ;; default
         ace-link
         ace-window
         adaptive-wrap
         aggressive-indent
         auto-dictionary
         auto-highlight-symbol
+        avy
         bind-key
         bookmark
         buffer-move
+        (centered-cursor :location local)
         clean-aindent-mode
+        define-word
         desktop
         diminish
         doc-view
         ediff
         eldoc
+        ;; hack to be able to wrap built-in emacs modes in an init function
+        (emacs-builtin-process-menu :location local)
         eval-sexp-fu
         evil
         evil-anzu
@@ -35,7 +42,7 @@
         evil-escape
         evil-exchange
         evil-iedit-state
-        evil-indent-textobject
+        (evil-indent-textobject :location (recipe :fetcher github :repo "TheBB/evil-indent-textobject"))
         evil-jumper
         evil-leader
         evil-lisp-state
@@ -56,7 +63,7 @@
         gh-md
         golden-ratio
         google-translate
-        guide-key-tip
+        ;; guide-key-tip
         helm
         helm-ag
         helm-descbinds
@@ -64,15 +71,18 @@
         helm-mode-manager
         ;; not working for now
         ;; helm-proc
-        ;; Use plain projectile and let ivy handle things
-        ;; helm-projectile
+        helm-projectile
+        (helm-spacemacs :location local)
         helm-swoop
         helm-themes
         highlight-indentation
         highlight-numbers
         highlight-parentheses
-        hl-anything
+        ;; waiting for an overlay bug to be fixed
+        ;; see https://github.com/syl20bnr/spacemacs/issues/2529
+        (hl-anything :excluded t)
         hungry-delete
+        (hybrid-mode :location local)
         ido-vertical-mode
         info+
         iedit
@@ -88,54 +98,35 @@
         popwin
         powerline
         projectile
+        quelpa
         rainbow-delimiters
         recentf
         rfringe
+        savehist
+        saveplace
         smartparens
         smooth-scrolling
+        (solarized-theme :location local)
         spacemacs-theme
+        spray
         subword
         undo-tree
         use-package
         vi-tilde-fringe
         volatile-highlights
         whitespace
+        which-key
         window-numbering
         winner
+        (zoom-frm :location local)
         ))
-
-(setq spacemacs-excluded-packages '())
-
-;; Paradox from MELPA is not compatible with 24.3 anymore
-(unless  (version< emacs-version "24.4")
+;; Paradox from MELPA is not compatible with 24.3, so we use
+;; a local paradox with 24.3
+(if  (version< emacs-version "24.4")
+    (push '(paradox :location local) spacemacs-packages)
   (push 'paradox spacemacs-packages))
 
 ;; Initialization of packages
-
-(defun spacemacs/init-ace-jump-mode ()
-  (use-package ace-jump-mode
-    :defer t
-    :init
-    (progn
-      (add-hook 'ace-jump-mode-end-hook 'golden-ratio)
-      (evil-leader/set-key "SPC" 'evil-ace-jump-word-mode)
-      (evil-leader/set-key "l" 'evil-ace-jump-line-mode))
-    :config
-    (progn
-      (setq ace-jump-mode-scope 'global)
-      (evil-leader/set-key "`" 'ace-jump-mode-pop-mark))))
-
-(defun spacemacs/init-avy ()
-  (use-package avy
-    :defer t
-    :init
-    (progn
-      (evil-leader/set-key "SPC" 'avy-goto-char-2)
-      (evil-leader/set-key "l" 'avy-goto-line))
-    :config
-    (progn
-      ;; Jump among all windows of current frame.
-      (setq avy-all-windows t))))
 
 (defun spacemacs/init-ace-link ()
   (use-package ace-link
@@ -165,10 +156,14 @@
       (defun spacemacs/ace-buffer-links ()
         "Ace jump to links in `spacemacs' buffer."
         (interactive)
-        (ali-generic
-         (spacemacs//collect-spacemacs-buffer-links)
-         (forward-char 1)
-         (widget-button-press (point)))))))
+        (let ((res (avy--with-avy-keys spacemacs/ace-buffer-links
+                    (avy--process
+                        (spacemacs//collect-spacemacs-buffer-links)
+                        #'avy--overlay-pre))))
+            (when res
+            (goto-char (1+ res))
+            (widget-button-press (point))))))))
+
 
 (defun spacemacs/init-ace-window ()
   (use-package ace-window
@@ -180,19 +175,7 @@
         "wC"  'ace-delete-window
         "w <SPC>"  'ace-window)
       ;; set ace-window keys to home-row
-      (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))
-    :config
-    (progn
-      ;; add support for golden-ratio
-      (eval-after-load 'golden-ratio
-        '(setq golden-ratio-extra-commands
-               (append golden-ratio-extra-commands
-                       '(ace-window
-                         ace-delete-window
-                         ace-select-window
-                         ace-swap-window
-                         ace-maximize-window
-                         )))))))
+      (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))))
 
 (defun spacemacs/init-adaptive-wrap ()
   (use-package adaptive-wrap
@@ -205,33 +188,21 @@
     :defer t
     :init
     (progn
-      (defun spacemacs/toggle-aggressive-indent ()
-        "Toggle the aggressive indent mode for the current buffer."
-        (interactive)
-        (require 'aggressive-indent)
-        (if (symbol-value aggressive-indent-mode)
-            (global-aggressive-indent-mode -1)
-          (global-aggressive-indent-mode)))
-
       (spacemacs|add-toggle aggressive-indent
-                            :status aggressive-indent-mode
-                            :on (aggressive-indent-mode)
-                            :off (aggressive-indent-mode -1)
-                            :documentation "Keep code always indented."
-                            :evil-leader "tI")
+        :status aggressive-indent-mode
+        :on (aggressive-indent-mode)
+        :off (aggressive-indent-mode -1)
+        :documentation "Always keep code indented."
+        :evil-leader "tI")
       (spacemacs|add-toggle aggressive-indent-globally
-                            :status aggressive-indent-mode
-                            :on (global-aggressive-indent-mode)
-                            :off (global-aggressive-indent-mode -1)
-                            :documentation "Globally keep code always indented."
-                            :evil-leader "t C-I"))
+        :status aggressive-indent-mode
+        :on (global-aggressive-indent-mode)
+        :off (global-aggressive-indent-mode -1)
+        :documentation "Always keep code indented globally."
+        :evil-leader "t C-I"))
     :config
     (progn
-      (defun spacemacs/disable-aggressive-indent ()
-        (aggressive-indent-mode -1))
-
-      (add-hook 'diff-auto-refine-mode-hook 'spacemacs/disable-aggressive-indent)
-
+      (add-hook 'diff-auto-refine-mode-hook 'spacemacs/toggle-aggressive-indent-off)
       (spacemacs|diminish aggressive-indent-mode " Ⓘ" " I"))))
 
 (defun spacemacs/init-auto-dictionary ()
@@ -248,18 +219,17 @@
   (use-package auto-highlight-symbol
     :defer t
     :init
-    (add-to-hooks 'auto-highlight-symbol-mode '(prog-mode-hook
-                                                markdown-mode-hook))
+    (spacemacs/add-to-hooks 'auto-highlight-symbol-mode '(prog-mode-hook
+                                                          markdown-mode-hook))
     :config
     (progn
-      (custom-set-variables
-       '(ahs-case-fold-search nil)
-       '(ahs-default-range (quote ahs-range-whole-buffer))
-       ;; disable auto-highlight of symbol
-       ;; current symbol should be highlight on demand with <SPC> s h
-       '(ahs-idle-timer 0)
-       '(ahs-idle-interval 0.25)
-       '(ahs-inhibit-face-list nil))
+      (setq ahs-case-fold-search nil
+            ahs-default-range 'ahs-range-whole-buffer
+            ;; disable auto-highlight of symbol
+            ;; current symbol should be highlight on demand with <SPC> s h
+            ahs-idle-timer 0
+            ahs-idle-interval 0.25
+            ahs-inhibit-face-list nil)
 
       (defvar spacemacs-last-ahs-highlight-p nil
         "Info on the last searched highlighted symbol.")
@@ -307,28 +277,29 @@
         "Safe wrapper for ahs-highlight-now"
         (eval '(progn
                  (spacemacs/ensure-ahs-enabled-locally)
-                 (ahs-highlight-now)
-                 ) nil))
+                 (ahs-highlight-now)) nil))
 
       (defun spacemacs/quick-ahs-forward ()
         "Go to the next occurrence of symbol under point with
 `auto-highlight-symbol'"
         (interactive)
-        (eval '(progn (spacemacs/integrate-evil-search t)
-                      (spacemacs/ahs-highlight-now-wrapper)
-                      (when (configuration-layer/package-usedp 'evil-jumper)
-                        (evil-set-jump))
-                      (ahs-forward)) nil))
+        (spacemacs/integrate-evil-search t)
+        (spacemacs/ahs-highlight-now-wrapper)
+        (when (configuration-layer/package-usedp 'evil-jumper)
+          (evil-set-jump))
+        (spacemacs/highlight-symbol-micro-state)
+        (ahs-forward))
 
       (defun spacemacs/quick-ahs-backward ()
         "Go to the previous occurrence of symbol under point with
 `auto-highlight-symbol'"
         (interactive)
-        (eval '(progn (spacemacs/integrate-evil-search nil)
-                      (spacemacs/ahs-highlight-now-wrapper)
-                      (when (configuration-layer/package-usedp 'evil-jumper)
-                        (evil-set-jump))
-                      (ahs-backward)) nil))
+        (spacemacs/integrate-evil-search nil)
+        (spacemacs/ahs-highlight-now-wrapper)
+        (when (configuration-layer/package-usedp 'evil-jumper)
+          (evil-set-jump))
+        (spacemacs/highlight-symbol-micro-state)
+        (ahs-backward))
 
       (eval-after-load 'evil
         '(progn
@@ -338,24 +309,23 @@
       (defun spacemacs/symbol-highlight ()
         "Highlight the symbol under point with `auto-highlight-symbol'."
         (interactive)
-        (eval '(progn
-                 (spacemacs/ahs-highlight-now-wrapper)
-                 (setq spacemacs-last-ahs-highlight-p (ahs-highlight-p))
-                 (spacemacs/auto-highlight-symbol-overlay-map)
-                 (spacemacs/integrate-evil-search nil)
-                 ) nil))
+        (spacemacs/ahs-highlight-now-wrapper)
+        (setq spacemacs-last-ahs-highlight-p (ahs-highlight-p))
+        (spacemacs/highlight-symbol-micro-state)
+        (spacemacs/integrate-evil-search nil))
 
       (defun spacemacs/symbol-highlight-reset-range ()
         "Reset the range for `auto-highlight-symbol'."
         (interactive)
-        (eval '(ahs-change-range ahs-default-range) nil))
+        (ahs-change-range ahs-default-range))
 
       (evil-leader/set-key
-        "sh"  'spacemacs/symbol-highlight
-        "sH"  'spacemacs/goto-last-searched-ahs-symbol
-        "sR"  'spacemacs/symbol-highlight-reset-range)
+        "sh" 'spacemacs/symbol-highlight
+        "sH" 'spacemacs/goto-last-searched-ahs-symbol
+        "sR" 'spacemacs/symbol-highlight-reset-range)
 
       (spacemacs|hide-lighter auto-highlight-symbol-mode)
+
       ;; micro-state to easily jump from a highlighted symbol to the others
       (dolist (sym '(ahs-forward
                      ahs-forward-definition
@@ -364,52 +334,65 @@
                      ahs-back-to-start
                      ahs-change-range))
         (let* ((advice (intern (format "spacemacs/%s" (symbol-name sym)))))
-          (eval `(defadvice ,sym (after ,advice activate)
+          (eval `(defadvice ,sym (around ,advice activate)
                    (spacemacs/ahs-highlight-now-wrapper)
-                   (setq spacemacs-last-ahs-highlight-p (ahs-highlight-p))
-                   (spacemacs/auto-highlight-symbol-overlay-map)))))
-      (defun spacemacs/auto-highlight-symbol-overlay-map ()
-        "Set a temporary overlay map to easily jump from highlighted symbols to
- the nexts."
-        (interactive)
-        (set-temporary-overlay-map
-         (let ((map (make-sparse-keymap)))
-           (define-key map (kbd "d") 'ahs-forward-definition)
-           (define-key map (kbd "D") 'ahs-backward-definition)
-           (if (ht-contains? configuration-layer-all-packages 'evil-iedit-state)
-               (define-key map (kbd "e") 'evil-iedit-state/iedit-mode)
-             (define-key map (kbd "e") 'ahs-edit-mode))
-           (define-key map (kbd "n") 'ahs-forward)
-           (define-key map (kbd "N") 'ahs-backward)
-           (define-key map (kbd "R") 'ahs-back-to-start)
-           (define-key map (kbd "r") (lambda () (interactive)
-                                       (eval '(ahs-change-range) nil)))
-           (define-key map (kbd "/") 'spacemacs/helm-project-smart-do-search-region-or-symbol)
-           (define-key map (kbd "b") 'spacemacs/helm-buffers-smart-do-search-region-or-symbol)
-           (define-key map (kbd "f") 'spacemacs/helm-files-smart-do-search-region-or-symbol)
-           map) nil)
-        (let* ((i 0)
-               (overlay-count (length ahs-overlay-list))
-               (overlay (format "%s" (nth i ahs-overlay-list)))
-               (current-overlay (format "%s" ahs-current-overlay))
-               (st (ahs-stat))
-               (plighter (ahs-current-plugin-prop 'lighter))
-               (plugin (format " <%s> " (cond ((string= plighter "HS") "D")
-                                              ((string= plighter "HSA") "B")
-                                              ((string= plighter "HSD") "F"))))
-               (propplugin (propertize plugin 'face
-                                       `(:foreground "#ffffff"
-                                         :background ,(face-attribute
-                                                       'ahs-plugin-defalt-face :foreground)))))
-          (while (not (string= overlay current-overlay))
-            (setq i (1+ i))
-            (setq overlay (format "%s" (nth i ahs-overlay-list))))
-          (let* ((x/y (format "[%s/%s]" (- overlay-count i) overlay-count))
-                 (propx/y (propertize x/y 'face ahs-plugin-whole-buffer-face))
-                 (hidden (if (< 0 (- overlay-count (nth 4 st))) "*" ""))
-                 (prophidden (propertize hidden 'face '(:weight bold))))
-            (echo "%s %s%s (n/N) move, (e) edit, (r) range, (R) reset, (d/D) definition, (/) find in project, (f) find in files, (b) find in opened buffers"
-                  propplugin propx/y prophidden)))))))
+                   ad-do-it
+                   (spacemacs/ahs-highlight-now-wrapper)
+                   (setq spacemacs-last-ahs-highlight-p (ahs-highlight-p))))))
+
+      (spacemacs|define-micro-state highlight-symbol
+        :doc (let* ((i 0)
+                    (overlay-count (length ahs-overlay-list))
+                    (overlay (format "%s" (nth i ahs-overlay-list)))
+                    (current-overlay (format "%s" ahs-current-overlay))
+                    (st (ahs-stat))
+                    (plighter (ahs-current-plugin-prop 'lighter))
+                    (plugin (format " <%s> " (cond ((string= plighter "HS") "D")
+                                                   ((string= plighter "HSA") "B")
+                                                   ((string= plighter "HSD") "F"))))
+                    (propplugin (propertize plugin 'face
+                                            `(:foreground "#ffffff"
+                                                          :background ,(face-attribute
+                                                                        'ahs-plugin-defalt-face :foreground)))))
+               (while (not (string= overlay current-overlay))
+                 (setq i (1+ i))
+                 (setq overlay (format "%s" (nth i ahs-overlay-list))))
+               (let* ((x/y (format "(%s/%s)" (- overlay-count i) overlay-count))
+                      (propx/y (propertize x/y 'face ahs-plugin-whole-buffer-face))
+                      (hidden (if (< 0 (- overlay-count (nth 4 st))) "*" ""))
+                      (prophidden (propertize hidden 'face '(:weight bold))))
+                 (format "%s %s%s [n/N] move [e] edit [r] range [R] reset [d/D] definition [/] find in project [f] find in files [b] find in opened buffers [q] exit"
+                         propplugin propx/y prophidden)))
+        :bindings
+        ("d" ahs-forward-definition)
+        ("D" ahs-backward-definition)
+        ("e" nil
+         :post (if (configuration-layer/package-usedp 'evil-iedit-state)
+                   (evil-iedit-state/iedit-mode)
+                 (ahs-edit-mode))
+         :exit t)
+        ("n" spacemacs/quick-ahs-forward)
+        ("N" spacemacs/quick-ahs-backward)
+        ("R" ahs-back-to-start)
+        ("r" ahs-change-range)
+        ("/" spacemacs/helm-project-smart-do-search-region-or-symbol :exit t)
+        ("b" spacemacs/helm-buffers-smart-do-search-region-or-symbol :exit t)
+        ("f" spacemacs/helm-files-smart-do-search-region-or-symbol :exit t)
+        ("q" nil :exit t)))))
+
+(defun spacemacs/init-avy ()
+  (use-package avy
+    :defer t
+    :init
+    (progn
+      (setq avy-keys (number-sequence ?a ?z))
+      (setq avy-all-windows 'all-frames)
+      (setq avy-background t)
+      (evil-leader/set-key
+        "SPC" 'avy-goto-word-or-subword-1
+        "l" 'avy-goto-line))
+    :config
+    (evil-leader/set-key "`" 'avy-pop-mark)))
 
 (defun spacemacs/init-bind-key ())
 
@@ -417,7 +400,7 @@
   (use-package bookmark
     :defer t
     :init
-    (setq bookmark-default-file (concat user-emacs-directory "bookmarks")
+    (setq bookmark-default-file (concat spacemacs-cache-directory "bookmarks")
           ;; autosave each change
           bookmark-save-flag 1)))
 
@@ -430,6 +413,36 @@
       "bmj" 'buf-move-down
       "bmk" 'buf-move-up
       "bml" 'buf-move-right)))
+
+(defun spacemacs/init-centered-cursor ()
+  (use-package centered-cursor-mode
+    :commands (centered-cursor-mode
+               global-centered-cursor-mode)
+    :init
+    (progn
+      (spacemacs|add-toggle centered-point
+        :status centered-cursor-mode
+        :on (centered-cursor-mode)
+        :off (centered-cursor-mode -1)
+        :documentation
+        "Keep point at the center of the window."
+        :evil-leader "t-")
+      (spacemacs|add-toggle centered-point-globally
+        :status centered-cursor-mode
+        :on (global-centered-cursor-mode)
+        :off (global-centered-cursor-mode -1)
+        :documentation
+        "Keep point at the center of the window globally."
+        :evil-leader "t C--"))
+    :config
+    (progn
+      (setq ccm-recenter-at-end-of-file t
+            ccm-ignored-commands '(mouse-drag-region
+                                   mouse-set-point
+                                   widget-button-click
+                                   scroll-bar-toolkit-scroll
+                                   evil-mouse-drag-region))
+      (spacemacs|diminish centered-cursor-mode " ⊝" " -"))))
 
 (defun spacemacs/init-clean-aindent-mode ()
   (use-package clean-aindent-mode
@@ -445,24 +458,33 @@
       (setq desktop-dirname spacemacs-cache-directory)
       (push spacemacs-cache-directory desktop-path))))
 
+(defun spacemacs/init-define-word ()
+  (use-package define-word
+    :defer t
+    :init
+    (evil-leader/set-key
+      "xwd" 'define-word-at-point)))
+
 (defun spacemacs/init-diminish ()
-  (require 'diminish)
-  ;; Minor modes abbrev --------------------------------------------------------
-  (when (display-graphic-p)
-    (eval-after-load "eproject"
-      '(diminish 'eproject-mode " eⓅ"))
-    (eval-after-load "flymake"
-      '(diminish 'flymake-mode " Ⓕ2")))
-  ;; Minor Mode (hidden) ------------------------------------------------------
-  (eval-after-load 'elisp-slime-nav
-    '(diminish 'elisp-slime-nav-mode))
-  (eval-after-load "hi-lock"
-    '(diminish 'hi-lock-mode))
-  (eval-after-load "abbrev"
-    '(diminish 'abbrev-mode))
-  (eval-after-load "subword"
-    '(when (eval-when-compile (version< "24.3.1" emacs-version))
-       (diminish 'subword-mode))))
+  (use-package diminish
+    :init
+    (progn
+      ;; Minor modes abbrev --------------------------------------------------------
+      (when (display-graphic-p)
+        (eval-after-load "eproject"
+          '(diminish 'eproject-mode " eⓅ"))
+        (eval-after-load "flymake"
+          '(diminish 'flymake-mode " Ⓕ2")))
+      ;; Minor Mode (hidden) ------------------------------------------------------
+      (eval-after-load 'elisp-slime-nav
+        '(diminish 'elisp-slime-nav-mode))
+      (eval-after-load "hi-lock"
+        '(diminish 'hi-lock-mode))
+      (eval-after-load "abbrev"
+        '(diminish 'abbrev-mode))
+      (eval-after-load "subword"
+        '(when (eval-when-compile (version< "24.3.1" emacs-version))
+           (diminish 'subword-mode))))))
 
 (defun spacemacs/init-dired+ ()
   (use-package dired+
@@ -552,8 +574,13 @@
       ;; don't display eldoc on modeline
       (spacemacs|hide-lighter eldoc-mode))))
 
+(defun spacemacs/init-emacs-builtin-process-menu ()
+  (evilify process-menu-mode process-menu-mode-map))
+
 (defun spacemacs/init-eval-sexp-fu ()
-  (require 'eval-sexp-fu))
+  ;; ignore obsolete function warning generated on startup
+  (let ((byte-compile-not-obsolete-funcs (append byte-compile-not-obsolete-funcs '(preceding-sexp))))
+    (require 'eval-sexp-fu)))
 
 (defun spacemacs/init-evil ()
   (use-package evil
@@ -562,6 +589,7 @@
       (defvar spacemacs-evil-cursor-colors '((normal . "DarkGoldenrod2")
                                              (insert . "chartreuse3")
                                              (emacs  . "SkyBlue2")
+                                             (replace . "chocolate")
                                              (evilified . "LightGoldenrod3")
                                              (visual . "gray")
                                              (motion . "plum3")
@@ -573,6 +601,11 @@
       ;; put back refresh of the cursor on post-command-hook see status of:
       ;; https://bitbucket.org/lyro/evil/issue/502/cursor-is-not-refreshed-in-some-cases
       (add-hook 'post-command-hook 'evil-refresh-cursor)
+
+      ;; allow the point to go past the end of line so we can
+      ;; consisently evaluate expression with eval-last-sexp in
+      ;; all modes
+      (setq evil-move-beyond-eol t)
 
       (defun spacemacs/state-color-face (state)
         "Return the symbol of the face for the given STATE."
@@ -650,6 +683,10 @@
         (let ((c (when dotspacemacs-colorize-cursor-according-to-state
                    (spacemacs/state-color 'iedit-insert))))
           (setq evil-iedit-insert-state-cursor `(,c (bar . 2)))))
+      (defun set-default-evil-replace-state-cursor ()
+        (let ((c (when dotspacemacs-colorize-cursor-according-to-state
+                   (spacemacs/state-color 'replace))))
+          (setq evil-replace-state-cursor `(,c (hbar . 2)))))
       (defun evil-insert-state-cursor-hide ()
         (setq evil-insert-state-cursor '((hbar . 0))))
       (set-default-evil-emacs-state-cursor)
@@ -661,6 +698,7 @@
       (set-default-evil-lisp-state-cursor)
       (set-default-evil-iedit-state-cursor)
       (set-default-evil-iedit-insert-state-cursor)
+      (set-default-evil-replace-state-cursor)
 
       (evil-mode 1))
     :config
@@ -672,8 +710,8 @@
       ;; Make the current definition and/or comment visible.
       (define-key evil-normal-state-map "zf" 'reposition-window)
       ;; toggle maximize buffer
-      (define-key evil-window-map (kbd "o") 'toggle-maximize-buffer)
-      (define-key evil-window-map (kbd "C-o") 'toggle-maximize-buffer)
+      (define-key evil-window-map (kbd "o") 'spacemacs/toggle-maximize-buffer)
+      (define-key evil-window-map (kbd "C-o") 'spacemacs/toggle-maximize-buffer)
 
       (evil-leader/set-key "re" 'evil-show-registers)
 
@@ -816,12 +854,15 @@ Example: (evil-map visual \"<\" \"<gv\")"
         ;; between percent signs:
         (spacemacs|define-text-object "%" "percent" "%" "%"))
 
-      (add-to-hook 'prog-mode-hook '(spacemacs//standard-text-objects))
+      (spacemacs/add-to-hook 'prog-mode-hook '(spacemacs//standard-text-objects))
 
       ;; support smart 1parens-strict-mode
-      (if (ht-contains? configuration-layer-all-packages 'smartparens)
+      (when (configuration-layer/package-usedp 'smartparens)
           (defadvice evil-delete-backward-char-and-join
               (around spacemacs/evil-delete-backward-char-and-join activate)
+            (defvar smartparens-strict-mode)
+            ;; defadvice compiles this sexp generating a compiler warning for a
+            ;; free variable reference. The line above fixes this
             (if smartparens-strict-mode
                 (call-interactively 'sp-backward-delete-char)
               ad-do-it))))))
@@ -869,15 +910,17 @@ Example: (evil-map visual \"<\" \"<gv\")"
     :init (evil-exchange-install)))
 
 (defun spacemacs/init-evil-iedit-state ()
-
-  (defun spacemacs/evil-state-lazy-loading ()
-    (require 'evil-iedit-state)
-    ;; activate leader in iedit and iedit-insert states
-    (define-key evil-iedit-state-map
-      (kbd evil-leader/leader) evil-leader--default-map))
-
-  (evil-leader/set-key "se" 'evil-iedit-state/iedit-mode)
-  (add-to-hooks 'spacemacs/evil-state-lazy-loading '(find-file-hook)))
+  (use-package evil-iedit-state
+    :commands (evil-iedit-state evil-iedit-state/iedit-mode)
+    :init
+    (progn
+      (evil-leader/set-key "se" 'evil-iedit-state)
+      (evil-leader/set-key "sE" 'evil-iedit-state/iedit-mode))
+    :config
+    (progn
+      ;; activate leader in iedit and iedit-insert states
+      (define-key evil-iedit-state-map
+        (kbd evil-leader/leader) evil-leader--default-map))))
 
 (defun spacemacs/init-evil-indent-textobject ()
   (use-package evil-indent-textobject))
@@ -887,7 +930,7 @@ Example: (evil-map visual \"<\" \"<gv\")"
     :init
     (progn
       (setq evil-jumper-file (concat spacemacs-cache-directory "evil-jumps")
-            evil-jumper-auto-save-interval 3600)
+            evil-jumper-auto-save-interval 600)
       (evil-jumper-mode t)
       )))
 
@@ -961,7 +1004,7 @@ Example: (evil-map visual \"<\" \"<gv\")"
     (progn
       (defun spacemacs/evil-numbers-micro-state-doc ()
         "Display a short documentation in the mini buffer."
-        (echo "+/= to increase the value or - to decrease it"))
+        (spacemacs/echo "+/= to increase the value or - to decrease it"))
 
       (defun spacemacs/evil-numbers-micro-state-overlay-map ()
         "Set a temporary overlay map to easily increase or decrease a number"
@@ -1015,12 +1058,11 @@ Example: (evil-map visual \"<\" \"<gv\")"
       (evil-define-key 'visual evil-surround-mode-map "S" 'evil-substitute))))
 
 (defun spacemacs/init-evil-terminal-cursor-changer ()
-  (unless (display-graphic-p)
-    (require 'evil-terminal-cursor-changer)
-     (setq evil-visual-state-cursor 'box) ; █
-     (setq evil-insert-state-cursor 'bar) ; ⎸
-     (setq evil-emacs-state-cursor 'hbar) ; _
-    ))
+  (use-package evil-terminal-cursor-changer
+    :if (not (display-graphic-p))
+    :init (setq evil-visual-state-cursor 'box
+                evil-insert-state-cursor 'bar
+                evil-emacs-state-cursor 'hbar)))
 
 (defun spacemacs/init-evil-tutor ()
   (use-package evil-tutor
@@ -1080,28 +1122,22 @@ Example: (evil-map visual \"<\" \"<gv\")"
                       'spacemacs/helm-buffers-smart-do-search-region-or-symbol)))
              new-bindings)
             (setq ad-return-value (cons new-msg new-bindings)))))
-      (custom-set-variables
-       '(expand-region-contract-fast-key "V")
-       '(expand-region-reset-fast-key "r")))))
+      (setq expand-region-contract-fast-key "V"
+            expand-region-reset-fast-key "r"))))
 
 (defun spacemacs/init-fancy-battery ()
   (use-package fancy-battery
     :defer t
     :init
     (progn
+      (spacemacs|add-toggle mode-line-battery
+        :status fancy-battery-mode
+        :on (fancy-battery-mode)
+        :off (fancy-battery-mode -1)
+        :documentation "Display battery info in mode-line."
+        :evil-leader "tmb")
 
-      (defun spacemacs/mode-line-battery-info-toggle ()
-        "Toggle display of battery info."
-        (interactive)
-        (if fancy-battery-mode
-            (fancy-battery-mode -1)
-          (fancy-battery-mode)
-          (spacemacs/mode-line-battery-remove-from-global)))
-
-      (defun spacemacs/mode-line-battery-remove-from-global ()
-        "Remove the battery info from the `global-mode-string'."
-        (setq global-mode-string (delq 'fancy-battery-mode-line
-                                       global-mode-string)))
+      (push 'fancy-battery-mode-line spacemacs--global-mode-line-excludes)
 
       (defun spacemacs/mode-line-battery-percentage ()
         "Return the load percentage or an empty string."
@@ -1118,17 +1154,14 @@ Example: (evil-map visual \"<\" \"<gv\")"
            ((string-empty-p time) "")
            (t (concat " (" time ")")))))
 
-      (setq-default fancy-battery-show-percentage t)
-      (evil-leader/set-key "tmb" 'spacemacs/mode-line-battery-info-toggle))
+      (setq-default fancy-battery-show-percentage t))
     :config
     (progn
       ;; redefine this function for Spacemacs,
       ;; basically remove all faces and properties.
       (defun fancy-battery-default-mode-line ()
         "Assemble a mode line string for Fancy Battery Mode."
-        (spacemacs/mode-line-battery-remove-from-global)
         (when fancy-battery-last-status
-
           (let* ((type (cdr (assq ?L fancy-battery-last-status)))
                  (percentage (spacemacs/mode-line-battery-percentage))
                  (time (spacemacs/mode-line-battery-time)))
@@ -1160,11 +1193,11 @@ Example: (evil-map visual \"<\" \"<gv\")"
       ;; lighter
       (push '(fci-mode "") minor-mode-alist)
       (spacemacs|add-toggle fill-column-indicator
-                            :status fci-mode
-                            :on (turn-on-fci-mode)
-                            :off (turn-off-fci-mode)
-                            :documentation "Display the fill column indicator."
-                            :evil-leader "tf"))
+        :status fci-mode
+        :on (turn-on-fci-mode)
+        :off (turn-off-fci-mode)
+        :documentation "Display the fill column indicator."
+        :evil-leader "tf"))
     :config
     (spacemacs|hide-lighter fci-mode)))
 
@@ -1181,13 +1214,11 @@ Example: (evil-map visual \"<\" \"<gv\")"
     :defer t
     :init
     (spacemacs|add-toggle golden-ratio
-                          :status golden-ratio-mode
-                          :on (golden-ratio-mode) (golden-ratio)
-                          :off (golden-ratio-mode -1) (balance-windows)
-                          :documentation
-                          (concat "Dynamically resize the focused window using "
-                                  "the golden ratio.")
-                          :evil-leader "tg")
+      :status golden-ratio-mode
+      :on (golden-ratio-mode) (golden-ratio)
+      :off (golden-ratio-mode -1) (balance-windows)
+      :documentation "Resize the focused window using the golden ratio."
+      :evil-leader "tg")
     :config
     (progn
       (setq golden-ratio-exclude-modes '("bs-mode"
@@ -1209,9 +1240,19 @@ Example: (evil-map visual \"<\" \"<gv\")"
                                          "speedbar-mode"
                                          ))
 
+      (add-to-list 'golden-ratio-exclude-buffer-regexp "^\\*[hH]elm.*")
+
       (setq golden-ratio-extra-commands
             (append golden-ratio-extra-commands
-                    '(windmove-left
+                    '(ace-window
+                      ace-delete-window
+                      ace-select-window
+                      ace-swap-window
+                      ace-maximize-window
+                      avy-pop-mark
+                      evil-avy-goto-word-or-subword-1
+                      evil-avy-goto-line
+                      windmove-left
                       windmove-right
                       windmove-up
                       windmove-down
@@ -1245,7 +1286,6 @@ Example: (evil-map visual \"<\" \"<gv\")"
                       select-window-7
                       select-window-8
                       select-window-9
-                      ace-jump-mode-pop-mark
                       buf-move-left
                       buf-move-right
                       buf-move-up
@@ -1266,6 +1306,7 @@ Example: (evil-map visual \"<\" \"<gv\")"
                    'spacemacs/no-golden-ratio-guide-key)
       (add-to-list 'golden-ratio-exclude-buffer-names " *NeoTree*")
       (add-to-list 'golden-ratio-exclude-buffer-names "*LV*")
+      (add-to-list 'golden-ratio-exclude-buffer-names " *which-key*")
 
       (spacemacs|diminish golden-ratio-mode " ⓖ" " g"))))
 
@@ -1289,70 +1330,75 @@ Example: (evil-map visual \"<\" \"<gv\")"
       (setq google-translate-default-source-language "En")
       (setq google-translate-default-target-language "Fr"))))
 
-(defun spacemacs/init-guide-key-tip ()
-  (use-package guide-key-tip
-    :init
-    (progn
-      (defun spacemacs/toggle-guide-key ()
-        "Toggle golden-ratio mode on and off."
-        (interactive)
-        (if (symbol-value guide-key-mode)
-            (guide-key-mode -1)
-          (guide-key-mode)))
+;; (defun spacemacs/init-guide-key-tip ()
+;;   (use-package guide-key-tip
+;;     :init
+;;     (progn
+;;       (defun spacemacs/toggle-guide-key ()
+;;         "Toggle golden-ratio mode on and off."
+;;         (interactive)
+;;         (if (symbol-value guide-key-mode)
+;;             (guide-key-mode -1)
+;;           (guide-key-mode)))
 
-      (defadvice guide-key/popup-guide-buffer-p
-          (around spacemacs/inhibit-guide-buffer activate)
-        "Prevent the popup of the guide-key buffer in some case."
-        ;; a micro-state is running
-        ;; or
-        ;; bzg-big-fringe-mode is on
-        (unless (or overriding-terminal-local-map
-                    bzg-big-fringe-mode)
-          ad-do-it))
+;;       (defadvice guide-key/popup-guide-buffer-p
+;;           (around spacemacs/inhibit-guide-buffer activate)
+;;         "Prevent the popup of the guide-key buffer in some case."
+;;         ;; a micro-state is running
+;;         ;; or
+;;         ;; bzg-big-fringe-mode is on
+;;         (unless (or overriding-terminal-local-map
+;;                     bzg-big-fringe-mode)
+;;           ad-do-it))
 
-      (spacemacs|add-toggle guide-key
-                      :status guide-key-mode
-                      :on (guide-key-mode)
-                      :off (guide-key-mode -1)
-                      :documentation
-                      "Display a buffer with available key bindings."
-                      :evil-leader "tG")
+;;       (spacemacs|add-toggle guide-key
+;;                       :status guide-key-mode
+;;                       :on (guide-key-mode)
+;;                       :off (guide-key-mode -1)
+;;                       :documentation
+;;                       "Display a buffer with available key bindings."
+;;                       :evil-leader "tG")
 
-      (setq guide-key/guide-key-sequence `("C-x"
-                                           "C-c"
-                                           "C-w"
-                                           ,dotspacemacs-leader-key
-                                           ,dotspacemacs-emacs-leader-key
-                                           ,dotspacemacs-major-mode-leader-key
-                                           ,dotspacemacs-major-mode-emacs-leader-key
-                                           ;; M-m in terminal
-                                           "<ESC>m"
-                                           ;; C-M-m in terminal
-                                           "<ESC><RET>"
-                                           "g"
-                                           "\["
-                                           "\]"
-                                           "z"
-                                           "C-h")
-            guide-key/recursive-key-sequence-flag t
-            guide-key/popup-window-position 'bottom
-            guide-key/idle-delay dotspacemacs-guide-key-delay
-            guide-key/text-scale-amount 0
-            ;; use this in your ~/.spacemacs file to enable tool tip in a
-            ;; graphical envrionment
-            ;; guide-key-tip/enabled (if window-system t)
-            guide-key-tip/enabled nil)
-      (setq guide-key/highlight-command-regexp
-                   (cons spacemacs/prefix-command-string font-lock-warning-face))
-      (guide-key-mode 1)
-      (spacemacs|diminish guide-key-mode " Ⓖ" " G"))))
+;;       (setq guide-key/guide-key-sequence `("C-x"
+;;                                            "C-c"
+;;                                            "C-w"
+;;                                            ,dotspacemacs-leader-key
+;;                                            ,dotspacemacs-emacs-leader-key
+;;                                            ,dotspacemacs-major-mode-leader-key
+;;                                            ,dotspacemacs-major-mode-emacs-leader-key
+;;                                            ;; M-m in terminal
+;;                                            "<ESC>m"
+;;                                            ;; C-M-m in terminal
+;;                                            "<ESC><RET>"
+;;                                            "g"
+;;                                            "\["
+;;                                            "\]"
+;;                                            "z"
+;;                                            "C-h")
+;;             guide-key/recursive-key-sequence-flag t
+;;             guide-key/popup-window-position 'bottom
+;;             guide-key/idle-delay dotspacemacs-guide-key-delay
+;;             guide-key/text-scale-amount 0
+;;             ;; use this in your ~/.spacemacs file to enable tool tip in a
+;;             ;; graphical envrionment
+;;             ;; guide-key-tip/enabled (if window-system t)
+;;             guide-key-tip/enabled nil)
+;;       (setq guide-key/highlight-command-regexp
+;;                    (cons spacemacs/prefix-command-string font-lock-warning-face))
+;;       (guide-key-mode 1)
+;;       (spacemacs|diminish guide-key-mode " Ⓖ" " G"))))
 
 (defun spacemacs/init-helm ()
   (use-package helm
     :defer 1
-    :commands spacemacs/helm-find-files
+    :commands (spacemacs/helm-find-files
+               spacemacs/helm-find-spacemacs-file
+               spacemacs/helm-find-contrib-file)
     :config
     (progn
+      (when dotspacemacs-helm-resize
+        (setq helm-autoresize-min-height 1)
+        (helm-autoresize-mode 1))
       (defun spacemacs/helm-find-files (arg)
         "Custom spacemacs implementation for calling helm-find-files-1.
 
@@ -1375,7 +1421,8 @@ Removes the automatic guessing of the initial value based on thing at point. "
             helm-display-header-line nil
             helm-split-window-in-side-p t
             helm-always-two-windows t
-            helm-echo-input-in-header-line t)
+            helm-echo-input-in-header-line t
+            helm-imenu-execute-action-at-once-if-one nil)
 
       ;; hide minibuffer in Helm session, since we use the header line already
       (defun helm-hide-minibuffer-maybe ()
@@ -1393,10 +1440,12 @@ Removes the automatic guessing of the initial value based on thing at point. "
             helm-file-cache-fuzzy-match t
             helm-imenu-fuzzy-match t
             helm-lisp-fuzzy-completion t
-            helm-locate-fuzzy-match t
             helm-recentf-fuzzy-match t
             helm-semantic-fuzzy-match t
             helm-buffers-fuzzy-matching t)
+
+      ;; helm-locate uses es (from everything on windows, which doesnt like fuzzy)
+      (setq helm-locate-fuzzy-match (executable-find "locate"))
 
       (defun spacemacs/helm-find-files-navigate-back (orig-fun &rest args)
         )
@@ -1433,6 +1482,20 @@ Removes the automatic guessing of the initial value based on thing at point. "
                                               (helm-basename preselection)
                                             preselection))))))
           (helm-do-grep-1 targets nil nil nil nil use-region-or-symbol-p)))
+
+      (defun spacemacs/helm-find-contrib-file ()
+        "Runs helm find files on spacemacs contrib folder"
+        (interactive)
+        (require 'helm-files)
+        (helm-find-files-1
+         (expand-file-name (concat user-emacs-directory "contrib/"))))
+
+      (defun spacemacs/helm-find-spacemacs-file ()
+        "Runs helm find files on spacemacs directory"
+        (interactive)
+        (require 'helm-files)
+        (helm-find-files-1
+         (expand-file-name (concat user-emacs-directory "spacemacs/"))))
 
       (defun spacemacs/helm-file-do-grep ()
         "Search in current file with `grep' using a default input."
@@ -1481,6 +1544,12 @@ Removes the automatic guessing of the initial value based on thing at point. "
                 (switch-to-buffer-other-window "*hgrep*")
                 (message "No previous search buffer found"))))
 
+      ;; use helm by default for contrib and spacemacs layers
+      (unless dotspacemacs-use-ido
+        (evil-leader/set-key
+          "fes" 'spacemacs/helm-find-spacemacs-file
+          "fec" 'spacemacs/helm-find-contrib-file))
+
       ;; use helm by default for M-x
       (unless (configuration-layer/package-usedp 'smex)
         (global-set-key (kbd "M-x") 'helm-M-x))
@@ -1491,16 +1560,18 @@ Removes the automatic guessing of the initial value based on thing at point. "
         "Cl"   'helm-colors
         "ff"   'spacemacs/helm-find-files
         "fF"   'helm-find-files
+        "fL"   'helm-locate
         "fr"   'helm-recentf
-        "hb"   'helm-pp-bookmarks
+        "hb"   'helm-filtered-bookmarks
         "hi"   'helm-info-at-point
         "hl"   'helm-resume
         "hm"   'helm-man-woman
+        "iu"   'helm-ucs
         "ry"   'helm-show-kill-ring
         "rr"   'helm-register
         "rm"   'helm-all-mark-rings
         "sL"   'spacemacs/last-search-buffer
-        "sl"  'spacemacs/jump-in-buffer)
+        "sl"   'spacemacs/jump-in-buffer)
 
       ;; search with grep
       (evil-leader/set-key
@@ -1513,7 +1584,7 @@ Removes the automatic guessing of the initial value based on thing at point. "
 
       ;; define the key binding at the very end in order to allow the user
       ;; to overwrite any key binding
-      (add-hook 'after-init-hook
+      (add-hook 'emacs-startup-hook
                 (lambda ()
                   (unless (configuration-layer/package-usedp 'smex)
                     (evil-leader/set-key dotspacemacs-command-key 'helm-M-x))))
@@ -1611,7 +1682,7 @@ ARG non nil means that the editing style is `vim'."
           (define-key helm-map (kbd "C-k") 'helm-delete-minibuffer-contents)
           (define-key helm-map (kbd "C-h") nil)
           (define-key helm-map (kbd "C-l") 'helm-recenter-top-bottom-other-window))))
-      (spacemacs//helm-hjkl-navigation (eq 'vim dotspacemacs-editing-style))
+      (spacemacs//helm-hjkl-navigation (member dotspacemacs-editing-style '(vim hybrid)))
 
       (defun spacemacs/helm-edit ()
         "Switch in edit mode depending on the current helm buffer."
@@ -2042,6 +2113,11 @@ Search for a search tool in the order provided by `dotspacemacs-search-tools'."
         "pv"  'projectile-vc
         "sgp" 'helm-projectile-grep))))
 
+(defun spacemacs/init-helm-spacemacs ()
+  (use-package helm-spacemacs
+    :commands helm-spacemacs
+    :init
+    (evil-leader/set-key "feh" 'helm-spacemacs)))
 
 (defun spacemacs/init-helm-swoop ()
   (use-package helm-swoop
@@ -2087,17 +2163,21 @@ Search for a search tool in the order provided by `dotspacemacs-search-tools'."
     :init
     (progn
       (spacemacs|add-toggle highlight-indentation
-                            :status highlight-indentation-mode
-                            :on (highlight-indentation-mode)
-                            :off (highlight-indentation-mode -1)
-                            :documentation "Highlight indentation levels."
-                            :evil-leader "thi")
+        :status highlight-indentation-mode
+        :on (highlight-indentation-mode)
+        :off (highlight-indentation-mode -1)
+        :documentation "Highlight indentation levels."
+        :evil-leader "thi")
       (spacemacs|add-toggle highlight-indentation-current-column
-                            :status highlight-indentation-current-column-mode
-                            :on (highlight-indentation-current-column-mode)
-                            :off (highlight-indentation-current-column-mode -1)
-                            :documentation "Highlight indentation level at point."
-                            :evil-leader "thc"))))
+        :status highlight-indentation-current-column-mode
+        :on (highlight-indentation-current-column-mode)
+        :off (highlight-indentation-current-column-mode -1)
+        :documentation "Highlight indentation level at point."
+        :evil-leader "thc"))
+    :config
+    (progn
+      (spacemacs|diminish highlight-indentation-mode " ⓗi" " hi")
+      (spacemacs|diminish highlight-indentation-current-column-mode " ⓗc" " hc"))))
 
 (defun spacemacs/init-highlight-numbers ()
   (use-package highlight-numbers
@@ -2112,54 +2192,94 @@ Search for a search tool in the order provided by `dotspacemacs-search-tools'."
     :defer t
     :init
     (progn
-      (when (eq dotspacemacs-highlight-delimiters 'current)
+      (when (member dotspacemacs-highlight-delimiters '(all current))
         (add-hook 'prog-mode-hook #'highlight-parentheses-mode))
+      (setq hl-paren-delay 0.2)
       (evil-leader/set-key "tCp" 'highlight-parentheses-mode)
       (setq hl-paren-colors '("Springgreen3"
                               "IndianRed1"
                               "IndianRed3"
                               "IndianRed4")))
     :config
+    (spacemacs|hide-lighter highlight-parentheses-mode)
     (set-face-attribute 'hl-paren-face nil :weight 'ultra-bold)))
 
 (defun spacemacs/init-hl-anything ()
   (use-package hl-anything
-    :defer t
     :init
     (progn
-      (setq-default hl-highlight-save-file (concat spacemacs-cache-directory
-                                                   ".hl-save"))
+      (hl-highlight-mode)
+      (setq-default hl-highlight-save-file
+                    (concat spacemacs-cache-directory ".hl-save"))
       (evil-leader/set-key
         "hc"  'hl-unhighlight-all-local
-        "hgc" 'hl-unhighlight-all-global
-        "hgh" 'hl-highlight-thingatpt-global
+        "hC"  'hl-unhighlight-all-global
         "hh"  'hl-highlight-thingatpt-local
+        "hH"  'hl-highlight-thingatpt-global
         "hn"  'hl-find-next-thing
         "hN"  'hl-find-prev-thing
-        "hp"  'hl-paren-mode
         "hr"  'hl-restore-highlights
         "hs"  'hl-save-highlights))
-    :config
+    :config (spacemacs|hide-lighter hl-highlight-mode)))
+
+(defun spacemacs/init-holy-mode ()
+  (use-package holy-mode
+    :commands holy-mode
+    :init
     (progn
-      (spacemacs|diminish hl-paren-mode " (Ⓗ)" " (H)")
-      (spacemacs|hide-lighter hl-highlight-mode))))
+      (when (eq 'emacs dotspacemacs-editing-style)
+        (holy-mode))
+      (spacemacs|add-toggle holy-mode
+        :status holy-mode
+        :on (holy-mode)
+        :off (holy-mode -1)
+        :documentation "Globally toggle holy mode."
+        :evil-leader "E H"))))
 
 (defun spacemacs/init-hungry-delete ()
   (use-package hungry-delete
     :defer t
     :init
     (spacemacs|add-toggle hungry-delete
-                          :status hungry-delete-mode
-                          :on (hungry-delete-mode)
-                          :off (hungry-delete-mode -1)
-                          :documentation "Delete consecutive horizontal whitespace with a single key.
-Put (global-hungry-delete-mode) in dotspacemacs/config to enable by default."
-                          :evil-leader "td")
+      :status hungry-delete-mode
+      :on (hungry-delete-mode)
+      :off (hungry-delete-mode -1)
+      :documentation "Delete consecutive horizontal whitespace with a single key."
+      :evil-leader "td")
     :config
     (progn
       (setq-default hungry-delete-chars-to-skip " \t\f\v") ; only horizontal whitespace
       (define-key hungry-delete-mode-map (kbd "DEL") 'hungry-delete-backward)
       (define-key hungry-delete-mode-map (kbd "S-DEL") 'delete-backward-char))))
+
+(defun spacemacs/init-hybrid-mode ()
+  (use-package hybrid-mode
+    :commands hybrid-mode
+    :init
+    (progn
+      (add-to-list 'spacemacs-evil-cursor-colors
+                   `(hybrid . ,(spacemacs/state-color 'emacs)))
+      (spacemacs/set-state-faces)
+      (setq hybrid-mode-insert-state-cursor
+            (if (and (display-graphic-p)
+                     dotspacemacs-colorize-cursor-according-to-state)
+                `(,(spacemacs/state-color 'hybrid) (bar . 2))
+              'bar))
+      (copy-face 'spacemacs-insert-face 'spacemacs-insert-face-backup)
+      (add-hook 'hybrid-mode-hook
+                (lambda ()
+                  (copy-face (if hybrid-mode
+                                 'spacemacs-emacs-face
+                               'spacemacs-insert-face-backup)
+                             'spacemacs-insert-face)))
+      (when (eq 'hybrid dotspacemacs-editing-style)
+        (hybrid-mode))
+      (spacemacs|add-toggle hybrid-mode
+        :status hybrid-mode
+        :on (hybrid-mode)
+        :off (hybrid-mode -1)
+        :documentation "Globally toggle hybrid mode."
+        :evil-leader "E Y"))))
 
 (defun spacemacs/init-ido-vertical-mode ()
   (use-package ido-vertical-mode
@@ -2201,10 +2321,10 @@ Put (global-hungry-delete-mode) in dotspacemacs/config to enable by default."
         (define-key ido-completion-map (kbd "C-S-n") 'next-history-element)
         (define-key ido-completion-map (kbd "C-S-p") 'previous-history-element)
         ;; ido-other window maps
-        (define-key ido-completion-map (kbd "C-o") 'ido-invoke-in-other-window)
-        (define-key ido-completion-map (kbd "C-s") 'ido-invoke-in-vertical-split)
-        (define-key ido-completion-map (kbd "C-t") 'ido-invoke-in-new-frame)
-        (define-key ido-completion-map (kbd "C-v") 'ido-invoke-in-horizontal-split)
+        (define-key ido-completion-map (kbd "C-o") 'spacemacs/ido-invoke-in-other-window)
+        (define-key ido-completion-map (kbd "C-s") 'spacemacs/ido-invoke-in-vertical-split)
+        (define-key ido-completion-map (kbd "C-t") 'spacemacs/ido-invoke-in-new-frame)
+        (define-key ido-completion-map (kbd "C-v") 'spacemacs/ido-invoke-in-horizontal-split)
         ;; more natural navigation keys: up, down to change current item
         ;; left to go up dir
         ;; right to open the selected item
@@ -2281,16 +2401,62 @@ Put (global-hungry-delete-mode) in dotspacemacs/config to enable by default."
         ("K" ido-prev-match-dir)
         ("l" ido-exit-minibuffer :exit t)
         ("n" ido-next-match-dir)
-        ("o" ido-invoke-in-other-window :exit t)
+        ("o" spacemacs/ido-invoke-in-other-window :exit t)
         ("p" ido-prev-match-dir)
         ("q" nil :exit t)
-        ("s" ido-invoke-in-vertical-split :exit t)
-        ("t" ido-invoke-in-new-frame :exit t)
-        ("v" ido-invoke-in-horizontal-split :exit t)))))
+        ("s" spacemacs/ido-invoke-in-vertical-split :exit t)
+        ("t" spacemacs/ido-invoke-in-new-frame :exit t)
+        ("v" spacemacs/ido-invoke-in-horizontal-split :exit t)))))
 
 (defun spacemacs/init-iedit ()
   (use-package iedit
-    :defer t))
+    :defer t
+    :init
+    (progn
+      (setq iedit-current-symbol-default t
+            iedit-only-at-symbol-boundaries t
+            iedit-toggle-key-default nil))
+    :config
+    (progn
+      (eval-after-load 'evil-iedit-state
+        '(progn
+           (define-key evil-iedit-state-map (kbd "gj")
+             'ex-iedit-toggle-point-overlay-next-line)))
+
+      (defun ex-iedit-toggle-point-overlay-next-line (count)
+        (interactive "p")
+        (unless (iedit-find-current-occurrence-overlay)
+          (iedit-toggle-selection))
+        (let ((i (when count count 1)))
+          (save-excursion
+            (evil-next-line)
+            (while (and (> i 0)
+                        (iedit-find-current-occurrence-overlay))
+              (1- i)
+              (evil-next-line))
+            (when (not (iedit-find-current-occurrence-overlay))
+              (dotimes (j (1+(- count i)))
+                (iedit-toggle-selection)
+                (evil-next-line))))))
+
+      (defun iedit-toggle-selection ()
+        "Override default iedit function to be able to add arbitrary overlays.
+
+It will toggle the overlay under point or create an overlay of one character."
+        (interactive)
+        (iedit-barf-if-buffering)
+        (let ((ov (iedit-find-current-occurrence-overlay)))
+          (if ov
+              (iedit-restrict-region (overlay-start ov) (overlay-end ov) t)
+            (save-excursion
+              (push (iedit-make-occurrence-overlay (point) (1+ (point)))
+                    iedit-occurrences-overlays))
+            (setq iedit-mode
+                  (propertize
+                   (concat " Iedit:" (number-to-string
+                                      (length iedit-occurrences-overlays)))
+                   'face 'font-lock-warning-face))
+            (force-mode-line-update)))))))
 
 (defun spacemacs/init-indent-guide ()
   (use-package indent-guide
@@ -2299,25 +2465,19 @@ Put (global-hungry-delete-mode) in dotspacemacs/config to enable by default."
     (progn
       (setq indent-guide-delay 0.3)
       (spacemacs|add-toggle indent-guide
-                            :status indent-guide-mode
-                            :on (indent-guide-mode)
-                            :off (indent-guide-mode -1)
-                            :documentation
-                            (concat "Enbale a guide to highlight "
-                                    "the current indentation (alternative "
-                                    "to the toggle"
-                                    "highlight-indentation-current-column).")
-                            :evil-leader "ti")
+        :status indent-guide-mode
+        :on (indent-guide-mode)
+        :off (indent-guide-mode -1)
+        :documentation
+        "Highlight indentation level at point. (alternative to highlight-indentation)."
+        :evil-leader "ti")
       (spacemacs|add-toggle indent-guide-globally
-                            :status indent-guide-mode
-                            :on (indent-guide-global-mode)
-                            :off (indent-guide-global-mode -1)
-                            :documentation
-                            (concat "Enbale globally a guide to highlight "
-                                    "the current indentation (alternative "
-                                    "to the toggle"
-                                    "highlight-indentation-current-column).")
-                            :evil-leader "t C-i"))
+        :status indent-guide-mode
+        :on (indent-guide-global-mode)
+        :off (indent-guide-global-mode -1)
+        :documentation
+        "Highlight indentation level at point globally. (alternative to highlight-indentation)."
+        :evil-leader "t C-i"))
     :config
     (spacemacs|diminish indent-guide-mode " ⓘ" " i")))
 
@@ -2333,9 +2493,10 @@ Put (global-hungry-delete-mode) in dotspacemacs/config to enable by default."
   (use-package info+
     :defer t
     :init
-    (add-hook 'Info-mode-hook (lambda () (require 'info+)))
-    :config
-    (setq Info-fontify-angle-bracketed-flag nil)))
+    (progn
+      (eval-after-load 'info
+        '(require 'info+))
+      (setq Info-fontify-angle-bracketed-flag nil))))
 
 (defun spacemacs/init-leuven-theme ()
   (use-package leuven-theme
@@ -2464,8 +2625,8 @@ Put (global-hungry-delete-mode) in dotspacemacs/config to enable by default."
         "pt" 'neotree-find-project-root))
 
     :config
-    (add-to-hook 'neotree-mode-hook '(spacemacs//init-neotree
-                                      spacemacs//neotree-key-bindings))))
+    (spacemacs/add-to-hook 'neotree-mode-hook '(spacemacs//init-neotree
+                                                spacemacs//neotree-key-bindings))))
 
 (defun spacemacs/init-page-break-lines ()
   (use-package page-break-lines
@@ -2551,7 +2712,7 @@ Put (global-hungry-delete-mode) in dotspacemacs/config to enable by default."
 
       ;; buffers that we manage
       (push '("*Help*"                 :dedicated t :position bottom :stick t :noselect nil :height 0.4) popwin:special-display-config)
-      (push '("*compilation*"          :dedicated t :position bottom :stick t :noselect nil :height 0.4) popwin:special-display-config)
+      (push '("*compilation*"          :dedicated t :position bottom :stick t :noselect t   :height 0.4) popwin:special-display-config)
       (push '("*Shell Command Output*" :dedicated t :position bottom :stick t :noselect nil            ) popwin:special-display-config)
       (push '("*Async Shell Command*"  :dedicated t :position bottom :stick t :noselect nil            ) popwin:special-display-config)
       (push '(" *undo-tree*"           :dedicated t :position bottom :stick t :noselect nil :height 0.4) popwin:special-display-config)
@@ -2594,8 +2755,10 @@ Put (global-hungry-delete-mode) in dotspacemacs/config to enable by default."
                                    map)))
                    (split-string (format-mode-line minor-mode-alist))
                    (concat (propertize
-                            (if dotspacemacs-mode-line-unicode-symbols " " "") 'face face)
-                           (unless dotspacemacs-mode-line-unicode-symbols "|"))))
+                            (if (dotspacemacs|symbol-value
+                                 dotspacemacs-mode-line-unicode-symbols) " " "") 'face face)
+                           (unless (dotspacemacs|symbol-value
+                                    dotspacemacs-mode-line-unicode-symbols) "|"))))
 
       (defpowerline spacemacs-powerline-new-version
         (propertize
@@ -2619,32 +2782,48 @@ Put (global-hungry-delete-mode) in dotspacemacs/config to enable by default."
 
       (defvar spacemacs-mode-line-minor-modesp t
         "If not nil, minor modes lighter are displayed in the mode-line.")
-      (defun spacemacs/mode-line-minor-modes-toggle ()
-        "Toggle display of minor modes."
-        (interactive)
-        (if spacemacs-mode-line-minor-modesp
-            (setq spacemacs-mode-line-minor-modesp nil)
-          (setq spacemacs-mode-line-minor-modesp t)))
-      (evil-leader/set-key "tmm" 'spacemacs/mode-line-minor-modes-toggle)
+      (spacemacs|add-toggle mode-line-minor-modes
+        :status spacemacs-mode-line-minor-modesp
+        :on (setq spacemacs-mode-line-minor-modesp t)
+        :off (setq spacemacs-mode-line-minor-modesp nil)
+        :documentation "Show minor modes in mode-line."
+        :evil-leader "tmm")
+
+      (defvar spacemacs-mode-line-major-modep t
+        "If not nil, major mode is displayed in the mode-line.")
+      (spacemacs|add-toggle mode-line-major-mode
+        :status spacemacs-mode-line-major-modep
+        :on (setq spacemacs-mode-line-major-modep t)
+        :off (setq spacemacs-mode-line-major-modep nil)
+        :documentation "Show major mode in mode-line."
+        :evil-leader "tmM")
+
+      (defvar spacemacs-mode-line-version-controlp t
+        "If not nil, version control info is displayed in the mode-line.")
+      (spacemacs|add-toggle mode-line-version-control
+        :status spacemacs-mode-line-version-controlp
+        :on (setq spacemacs-mode-line-version-controlp t)
+        :off (setq spacemacs-mode-line-version-controlp nil)
+        :documentation "Show version control info in mode-line."
+        :evil-leader "tmv")
 
       (defvar spacemacs-mode-line-new-version-lighterp t
         "If not nil, new version lighter is displayed in the mode-line.")
-      (defun spacemacs/mode-line-new-version-lighter-toggle ()
-        "Toggle display of new version lighter."
-        (interactive)
-        (if spacemacs-mode-line-new-version-lighterp
-            (setq spacemacs-mode-line-new-version-lighterp nil)
-          (setq spacemacs-mode-line-new-version-lighterp t)))
-      (evil-leader/set-key "tmv" 'spacemacs/mode-line-new-version-lighter-toggle)
+      (spacemacs|add-toggle mode-line-new-version
+        :status spacemacs-mode-line-new-version-lighterp
+        :on (setq spacemacs-mode-line-new-version-lighterp t)
+        :off (setq spacemacs-mode-line-new-version-lighterp nil)
+        :documentation "Show new version in the mode-line."
+        :evil-leader "tmV")
 
       (defvar spacemacs-mode-line-display-point-p nil
         "If not nil, display point alongside row/column in the mode-line.")
-      (defun spacemacs/mode-line-display-point-toggle ()
-        (interactive)
-        (if spacemacs-mode-line-display-point-p
-            (setq spacemacs-mode-line-display-point-p nil)
-          (setq spacemacs-mode-line-display-point-p t)))
-      (evil-leader/set-key "tmp" 'spacemacs/mode-line-display-point-toggle)
+      (spacemacs|add-toggle mode-line-display-point
+        :status spacemacs-mode-line-display-point-p
+        :on (setq spacemacs-mode-line-display-point-p t)
+        :off (setq spacemacs-mode-line-display-point-p nil)
+        :documentation "Show point in the mode-line."
+        :evil-leader "tmp")
 
       (defvar spacemacs-mode-line-org-clock-current-taskp nil
         "If not nil, the currently clocked org-mode task will be
@@ -2652,12 +2831,48 @@ displayed in the mode-line.")
       (defvar spacemacs-mode-line-org-clock-format-function
         'org-clock-get-clock-string
         "Function used to render the currently clocked org-mode task.")
-      (defun spacemacs/mode-line-org-clock-current-task-toggle ()
-        (interactive)
-        (if spacemacs-mode-line-org-clock-current-taskp
-            (setq spacemacs-mode-line-org-clock-current-taskp nil)
-          (setq spacemacs-mode-line-org-clock-current-taskp t)))
-      (evil-leader/set-key "tmc" 'spacemacs/mode-line-org-clock-current-task-toggle)
+      (spacemacs|add-toggle mode-line-org-clock-current-task
+        :status spacemacs-mode-line-org-clock-current-taskp
+        :on (setq spacemacs-mode-line-org-clock-current-taskp t)
+        :off (setq spacemacs-mode-line-org-clock-current-taskp nil)
+        :documentation "Show org clock in mode-line."
+        :evil-leader "tmc")
+
+      (defvar spacemacs-mode-line-left
+        '(((workspace-number window-number)
+           :fallback state-tag
+           :separator "|"
+           :face state-face)
+          anzu
+          (buffer-modified buffer-size buffer-id remote-host)
+          major-mode
+          ((flycheck-errors flycheck-warnings flycheck-infos)
+           :when active)
+          ((minor-modes process)
+           :when active)
+          (erc-track :when active)
+          (version-control :when active)
+          (org-pomodoro :when active)
+          (org-clock :when active)
+          nyan-cat)
+        "List of modeline segments to render on the left. Each element
+must be a valid segment specification, see documentation for
+`spacemacs//eval-mode-line-segment'.")
+
+      (defvar spacemacs-mode-line-right
+        '((battery :when active)
+          selection-info
+          ((buffer-encoding-abbrev
+            point-position
+            line-column)
+           :separator " | ")
+          ((global-mode new-version)
+           :when active)
+          buffer-position
+          hud)
+        "List of modeline segments to render on the right. Each element
+must be a valid segment specification, see documentation for
+`spacemacs//eval-mode-line-segment'.")
 
       (defun spacemacs//mode-line-file-encoding ()
         "Return the file encoding to be displayed in the mode-line."
@@ -2676,108 +2891,38 @@ displayed in the mode-line.")
                             :inherit 'font-lock-comment-face))
       (spacemacs/customize-powerline-faces)
 
+      (defmacro spacemacs|define-mode-line-segment (name value &rest props)
+        "Defines a modeline segment called `NAME' whose value is
+computed by the form `VALUE'. The optional keyword argument `WHEN'
+defines a condition required for the segment to be shown.
 
-      (defun spacemacs/mode-line-prepare-left ()
-        (let* ((active (powerline-selected-window-active))
-               (line-face (if active 'mode-line 'mode-line-inactive))
-               (face1 (if active 'powerline-active1 'powerline-inactive1))
-               (face2 (if active 'powerline-active2 'powerline-inactive2))
-               (state-face (if active (spacemacs/current-state-face) face2))
-               (eyebrowsep (bound-and-true-p eyebrowse-mode))
-               (window-numberingp (bound-and-true-p window-numbering-mode))
-               (anzup (and (boundp 'anzu--state) anzu--state))
-               (flycheckp (and (bound-and-true-p flycheck-mode)
-                               (or flycheck-current-errors
-                                   (eq 'running flycheck-last-status-change))))
-               (vc-face (if (or flycheckp spacemacs-mode-line-minor-modesp)
-                            face1 line-face))
-               (separator-left (intern (format "powerline-%s-%s"
-                                               powerline-default-separator
-                                               (car powerline-default-separator-dir))))
-               (separator-right (intern (format "powerline-%s-%s"
-                                                powerline-default-separator
-                                                (cdr powerline-default-separator-dir)))))
+This macro defines a function `spacemacs//mode-line-NAME' which
+returns a list of modeline objects (strings or images). If the
+form `VALUE' does not result in a list, the return value will be
+wrapped as a singleton list.
 
-          (append
-           ;; workspace number
-           (when (and eyebrowsep (spacemacs/workspace-number))
-             (list (powerline-raw " " state-face)
-                   (powerline-raw (spacemacs/workspace-number) state-face)))
-           ;; window number
-           (if (and window-numberingp (spacemacs/window-number))
-               (list (if eyebrowsep
-                         (powerline-raw "|" state-face)
-                       (powerline-raw " " state-face))
-                     (powerline-raw (spacemacs/window-number) state-face)
-                     (powerline-raw " " state-face))
-             (list (powerline-raw (evil-state-property evil-state :tag t) state-face)))
-           (if (and active anzup)
-               (list (funcall separator-right state-face face1)
-                     (powerline-raw (anzu--update-mode-line) face1)
-                     (funcall separator-right face1 line-face))
-             (list (funcall separator-right state-face line-face)))
-           ;; evil state
-           ;; (powerline-raw evil-mode-line-tag state-face)
-           ;; (funcall separator-right state-face line-face)
-           ;; buffer name
-           (list
-            (powerline-raw "%*" line-face 'l)
-            (powerline-buffer-size line-face 'l)
-            (powerline-buffer-id line-face 'l)
-            (powerline-raw " " line-face)
-            ;; major mode
-            (funcall separator-left line-face face1)
-            (powerline-major-mode face1 'l)
-            (powerline-raw " " face1)
-            (when active
-              (funcall separator-right face1 line-face)))
-           ;; flycheck
-           (when (and active flycheckp)
-               (list (powerline-raw " " line-face)
-                     (powerline-raw (spacemacs|custom-flycheck-lighter error)
-                                    'spacemacs-mode-line-flycheck-error-face)
-                     (powerline-raw (spacemacs|custom-flycheck-lighter warning)
-                                    'spacemacs-mode-line-flycheck-warning-face)
-                     (powerline-raw (spacemacs|custom-flycheck-lighter info)
-                                    'spacemacs-mode-line-flycheck-info-face)))
-           ;; separator between flycheck and minor modes
-           (when (and active flycheckp spacemacs-mode-line-minor-modesp)
-             (list (funcall separator-left line-face face1)
-                   (powerline-raw "  " face1)
-                   (funcall separator-right face1 line-face)))
-           ;; minor modes
-           (when (and active spacemacs-mode-line-minor-modesp)
-             (list (spacemacs-powerline-minor-modes line-face 'l)
-                   (powerline-raw mode-line-process line-face 'l)
-                   (powerline-raw " " line-face)))
-           ;; erc
-           (when (and active
-                      (bound-and-true-p erc-track-mode))
-             ;; Copied from erc-track.el -> erc-modified-channels-display
-             (let* ((buffers (mapcar 'car erc-modified-channels-alist))
-                    (long-names (mapcar #'(lambda (buf) (or (buffer-name buf) "")) buffers)))
-               long-names))
-           ;; version control
-           (when (and active (or flycheckp spacemacs-mode-line-minor-modesp))
-             (list (funcall separator-left (if vc-face line-face face1) vc-face)))
-           (if active
-               (list (powerline-vc vc-face)
-                     (powerline-raw " " vc-face)
-                     (funcall separator-right vc-face face2))
-             (list (funcall separator-right face1 face2)))
-           ;; org-pomodoro current pomodoro
-           (when (and active
-                      (fboundp 'org-pomodoro-active-p)
-                      (org-pomodoro-active-p))
-             (list " ["(nth 1 org-pomodoro-mode-line) "] "))
-           ;; org clocked task
-           (when (and active
-                      spacemacs-mode-line-org-clock-current-taskp
-                      (fboundp 'org-clocking-p)
-                      (org-clocking-p))
-             (list (powerline-raw " " face2)
-                   (funcall spacemacs-mode-line-org-clock-format-function)
-                   (powerline-raw " " face2))))))
+All properties are stored in a plist attached to the symbol, to be
+inspected at evaluation time by `spacemacs//eval-mode-line-segment'."
+        (declare (indent 1))
+        (let* ((wrapper-func (intern (format "spacemacs//mode-line-%S" name)))
+               (wrapper-func-available (intern (format "%S-available" wrapper-func)))
+               (condition (or (plist-get props :when) t)))
+          `(progn
+             (defun ,wrapper-func ()
+               (when ,condition
+                 (let ((value ,value))
+                   (cond ((spacemacs//imagep value)
+                          (list value))
+                         ((listp value) value)
+                         ((and (stringp value)
+                               (= 0 (length value)))
+                          nil)
+                         (t (list value))))))
+             (setplist ',wrapper-func ',props))))
+
+      ;; An intermediate representation of the value of a modeline segment.
+      (defstruct segment
+        objects face-left face-right tight-left tight-right)
 
       (defun column-number-at-pos (pos)
         "Analog to line-number-at-pos."
@@ -2790,103 +2935,337 @@ It is a string holding:
 - the number of columns in the selection if it covers only one line,
 - the number of lines in the selection if if covers several full lines
 - or rowsxcols if it's a block selection."
-        (let* ((lines (count-lines (region-beginning) (1+ (region-end))))
+        (let* ((lines (count-lines (region-beginning) (min (1+ (region-end)) (point-max))))
                (chars (- (1+ (region-end)) (region-beginning)))
                (cols (1+ (abs (- (column-number-at-pos (region-end))
                                  (column-number-at-pos (region-beginning)))))))
           (if (eq evil-visual-selection 'block)
-              (format "%dx%d block" lines cols)
+              (format "%d×%d block" lines cols)
             (if (> lines 1) (format "%d lines" lines)
               (format "%d chars" chars)))))
 
-      (defun spacemacs/mode-line-prepare-right ()
-        (let* ((active (powerline-selected-window-active))
-               (line-face (if active 'mode-line 'mode-line-inactive))
-               (face1 (if active 'powerline-active1 'powerline-inactive1))
-               (face2 (if active 'powerline-active2 'powerline-inactive2))
-               (state-face (if active (spacemacs/current-state-face) face2))
-               (nyancatp (and (boundp 'nyan-mode) nyan-mode))
-               (batteryp (and (boundp 'fancy-battery-mode)
-                              (symbol-value fancy-battery-mode)))
-               (battery-face (if batteryp (fancy-battery-powerline-face)))
-               (separator-left (intern (format "powerline-%s-%s"
-                                               powerline-default-separator
-                                               (car powerline-default-separator-dir))))
-               (separator-right (intern (format "powerline-%s-%s"
-                                                powerline-default-separator
-                                                (cdr powerline-default-separator-dir)))))
-          (append
-           ;; battery
-           (if (and active batteryp)
-               (list (funcall separator-left face2 battery-face)
-                     (powerline-raw (fancy-battery-default-mode-line)
-                                    battery-face 'r)
-                     (funcall separator-right battery-face face1))
-             (list (funcall separator-right face2 face1)))
-           (if (evil-visual-state-p)
-               ;; selection info, if there is a selection.
-               (list
-                (powerline-raw " " face1)
-                (powerline-raw (selection-info) face1)
-                (powerline-raw " " face1)
-                (funcall separator-left face1 face2)
-                (powerline-raw " " face2)
-                (funcall separator-right face2 face1)))
-           (list
-            ;; row:column
-            (powerline-raw " " face1)
-            ;; buffer encoding
-            (powerline-raw (format "%s |" (spacemacs//mode-line-file-encoding))
-                           face1 'r)
-            (powerline-raw (if spacemacs-mode-line-display-point-p
-                               (concat (format "%d | " (point)) "%l:%2c" )
-                             "%l:%2c")
-                           face1 'r)
-            (funcall separator-left face1 line-face)
-            (powerline-raw " " line-face))
-           (list
-            ;; global-mode
-            (when active
-              (powerline-raw global-mode-string)
-              (powerline-raw " " line-face))
-            ;; new version
-            (if (and active
-                     spacemacs-new-version
-                     spacemacs-mode-line-new-version-lighterp)
-                (spacemacs-powerline-new-version
-                 (spacemacs/get-new-version-lighter-face
-                  spacemacs-version spacemacs-new-version) 'r)))
-           (when (and active (not nyancatp))
-             (let ((progress (format-mode-line "%p")))
-               (list
-                ;; percentage in the file
-                (powerline-raw "%p" line-face 'r)
-                ;; display hud
-                (powerline-chamfer-left line-face face1)
-                (if (string-match "\%" progress)
-                    (powerline-hud state-face face1)))))
-                      )))
+      ;; BEGIN define modeline segments
 
-      (defun spacemacs/mode-line-prepare ()
+      (spacemacs|define-mode-line-segment workspace-number
+        (spacemacs/workspace-number)
+        :when (and (bound-and-true-p eyebrowse-mode)
+                   (spacemacs/workspace-number)))
+
+      (spacemacs|define-mode-line-segment window-number
+        (spacemacs/window-number)
+        :when (and (bound-and-true-p window-numbering-mode)
+                   (spacemacs/window-number)))
+
+      (spacemacs|define-mode-line-segment state-tag
+        (s-trim (evil-state-property evil-state :tag t)))
+
+      (spacemacs|define-mode-line-segment anzu
+        (anzu--update-mode-line)
+        :when (and active (bound-and-true-p anzu--state)))
+
+      (spacemacs|define-mode-line-segment buffer-modified "%*")
+      (spacemacs|define-mode-line-segment buffer-size
+        (powerline-buffer-size))
+      (spacemacs|define-mode-line-segment buffer-id
+        (powerline-buffer-id))
+      (spacemacs|define-mode-line-segment remote-host
+        (concat "@" (file-remote-p default-directory 'host))
+        :when (file-remote-p default-directory 'host))
+
+      (spacemacs|define-mode-line-segment major-mode
+        (powerline-major-mode)
+        :when spacemacs-mode-line-major-modep)
+      (spacemacs|define-mode-line-segment minor-modes
+        (spacemacs-powerline-minor-modes)
+        :when spacemacs-mode-line-minor-modesp)
+      (spacemacs|define-mode-line-segment process
+        (powerline-raw mode-line-process)
+        :when (spacemacs//mode-line-nonempty mode-line-process))
+
+      (spacemacs|define-mode-line-segment erc-track
+        (let* ((buffers (mapcar 'car erc-modified-channels-alist))
+               (long-names (mapconcat (lambda (buf)
+                                        (or (buffer-name buf) ""))
+                                      buffers " ")))
+          long-names)
+        :when (bound-and-true-p erc-track-mode))
+
+      (spacemacs|define-mode-line-segment version-control
+        (s-trim (powerline-vc))
+        :when (and (powerline-vc)
+                   spacemacs-mode-line-version-controlp))
+
+      (spacemacs|define-mode-line-segment selection-info
+        (selection-info)
+        :when (evil-visual-state-p))
+
+      (spacemacs|define-mode-line-segment buffer-encoding
+        (format "%s" buffer-file-coding-system))
+      (spacemacs|define-mode-line-segment buffer-encoding-abbrev
+        (spacemacs//mode-line-file-encoding))
+
+      (spacemacs|define-mode-line-segment point-position
+        (format "%d" (point))
+        :when spacemacs-mode-line-display-point-p)
+      (spacemacs|define-mode-line-segment line-column "%l:%2c")
+      (spacemacs|define-mode-line-segment buffer-position "%p")
+
+      (spacemacs|define-mode-line-segment hud
+        (powerline-hud state-face default-face)
+        :tight t
+        :when (string-match "\%" (format-mode-line "%p")))
+
+      (spacemacs|define-mode-line-segment nyan-cat
+        (powerline-raw (nyan-create) default-face)
+        :when (bound-and-true-p nyan-mode))
+
+      (spacemacs|define-mode-line-segment global-mode
+        (powerline-raw (-difference global-mode-string
+                                    spacemacs--global-mode-line-excludes))
+        :when (spacemacs//mode-line-nonempty global-mode-string))
+
+      (spacemacs|define-mode-line-segment battery
+        (powerline-raw (s-trim (fancy-battery-default-mode-line))
+                       (fancy-battery-powerline-face))
+        :when (bound-and-true-p fancy-battery-mode))
+
+      (spacemacs|define-mode-line-segment new-version
+        (spacemacs-powerline-new-version
+         (spacemacs/get-new-version-lighter-face
+          spacemacs-version spacemacs-new-version))
+        :when (and spacemacs-new-version
+                   spacemacs-mode-line-new-version-lighterp))
+
+      ;; flycheck-errors, flycheck-warnings, flycheck-infos
+      (dolist (type '(error warning info))
+        (let ((segment-name (intern (format "flycheck-%ss" type)))
+              (face (intern (format "spacemacs-mode-line-flycheck-%s-face" type))))
+          (eval
+           `(spacemacs|define-mode-line-segment ,segment-name
+              (powerline-raw (s-trim (spacemacs|custom-flycheck-lighter ,type)) ',face)
+              :when (and (bound-and-true-p flycheck-mode)
+                         (or flycheck-current-errors
+                             (eq 'running flycheck-last-status-change))
+                         (spacemacs|custom-flycheck-lighter ,type))))))
+
+      (spacemacs|define-mode-line-segment org-clock
+        (substring-no-properties (funcall spacemacs-mode-line-org-clock-format-function))
+        :when (and spacemacs-mode-line-org-clock-current-taskp
+                   (fboundp 'org-clocking-p)
+                   (org-clocking-p)))
+      (push 'org-mode-line-string spacemacs--global-mode-line-excludes)
+
+      (spacemacs|define-mode-line-segment org-pomodoro
+        (nth 1 org-pomodoro-mode-line)
+        :when (and (fboundp 'org-pomodoro-active-p)
+                   (org-pomodoro-active-p)))
+      (push 'org-pomodoro-mode-line spacemacs--global-mode-line-excludes)
+
+      ;; END define modeline segments
+
+      (defun spacemacs//eval-mode-line-segment (segment-spec &rest outer-props)
+        "Evaluates a modeline segment given by `SEGMENT-SPEC' with
+additional properties given by `OUTER-PROPS'.
+
+`SEGMENT-SPEC' may be either:
+- A literal value (number or string, for example)
+- A symbol previously defined by `spacemacs|define-mode-line-segment'
+- A list whose car is a segment-spec and whose cdr is a plist of properties
+- A list of segment-specs
+
+The properties applied are, in order of priority:
+- Those given by `SEGMENT-SPEC', if applicable
+- The properties attached to the segment symbol, if applicable
+- `OUTER-PROPS'
+
+Valid properties are:
+- `:tight-left' => if true, the segment should be rendered with no padding
+  or separator on its left side
+- `:tight-right' => corresponding option for the right side
+- `:tight' => shorthand option to set both `:tight-left' and `:tight-right'
+- `:when' => condition that determines whether this segment is shown
+- `:fallback' => segment to evaluate if this segment produces no output
+- `:separator' => string with which to separate nested segments
+- `:face' => the face with which to render the segment
+
+When calling nested or fallback segments, the full property list is passed
+as `OUTER-PROPS', with the exception of `:fallback'. This means that more
+deeply specified properties, as a rule, override the higher level ones.
+The exception is `:when', which must be true at all levels.
+
+The return vaule is a `segment' struct. Its `OBJECTS' list may be nil."
+
+        ;; We get a property list from `SEGMENT-SPEC' if it's a list
+        ;; with more than one element whose second element is a symbol
+        ;; starting with a colon
+        (let* ((input (if (and (listp segment-spec)
+                               (cdr segment-spec)
+                               (keywordp (cadr segment-spec)))
+                          segment-spec
+                        (cons segment-spec nil)))
+               (segment (car input))
+               (segment-symbol (when (symbolp segment)
+                                 (intern (format "spacemacs//mode-line-%S" segment))))
+
+               ;; Assemble the properties in the correct order
+               (props (append (cdr input)
+                              (when (symbolp segment) (symbol-plist segment-symbol))
+                              outer-props))
+
+               ;; Property list to be passed to nested or fallback segments
+               (nest-props (append '(:fallback nil) (cdr input) outer-props))
+
+               ;; Parse property list
+               (condition (if (plist-member props :when)
+                              (eval (plist-get props :when))
+                            t))
+               (face (eval (or (plist-get props :face) 'default-face)))
+               (separator (powerline-raw (or (plist-get props :separator) " ") face))
+               (tight-left (or (plist-member props :tight)
+                               (plist-member props :tight-left)))
+               (tight-right (or (plist-member props :tight)
+                                (plist-member props :tight-right)))
+
+               ;; Final output
+               (result (make-segment :objects nil
+                                     :face-left face
+                                     :face-right face
+                                     :tight-left tight-left
+                                     :tight-right tight-right)))
+
+          ;; Evaluate the segment based on its type
+          (when condition
+            (cond
+             ;; A list of segments
+             ((listp segment)
+              (let ((results (remove-if-not
+                              'segment-objects
+                              (mapcar (lambda (s)
+                                        (apply 'spacemacs//eval-mode-line-segment
+                                               s nest-props))
+                                      segment))))
+                (when results
+                  (setf (segment-objects result)
+                        (apply 'append (spacemacs//intersperse
+                                        (mapcar 'segment-objects results)
+                                        (list separator))))
+                  (setf (segment-face-left result)
+                        (segment-face-left (car results)))
+                  (setf (segment-face-right result)
+                        (segment-face-right (car (last results))))
+                  (setf (segment-tight-left result)
+                        (segment-tight-left (car results)))
+                  (setf (segment-tight-right result)
+                        (segment-tight-right (car (last results)))))))
+             ;; A single symbol
+             ((symbolp segment)
+              (setf (segment-objects result)
+                    (mapcar (lambda (s)
+                              (if (spacemacs//imagep s) s (powerline-raw s face)))
+                            (funcall segment-symbol))))
+             ;; A literal value
+             (t (setf (segment-objects result)
+                      (list (powerline-raw (format "%s" segment) face))))))
+
+          (cond
+           ;; This segment produced output, so return it
+           ((segment-objects result) result)
+           ;; Return the fallback segment, if any
+           ((plist-get props :fallback)
+            (apply 'spacemacs//eval-mode-line-segment
+                   (plist-get props :fallback) nest-props))
+           ;; No output (objects = nil)
+           (t result))))
+
+      (defun spacemacs//mode-line-prepare-any (spec side)
+        "Prepares one side of the modeline. `SPEC' is a list of segment
+specifications (see `spacemacs//eval-mode-line-segment'), and `SIDE' is
+one of `l' or `r'."
         (let* ((active (powerline-selected-window-active))
-               (face2 (if active 'powerline-active2 'powerline-inactive2))
-               (lhs (spacemacs/mode-line-prepare-left))
-               (rhs (spacemacs/mode-line-prepare-right))
-               (nyancatp (and (boundp 'nyan-mode) nyan-mode)))
+               (line-face (if active 'powerline-active2 'powerline-inactive2))
+               (default-face (if active 'powerline-active1 'powerline-inactive1))
+               (other-face (if active 'mode-line 'mode-line-inactive))
+               (state-face (if active (spacemacs/current-state-face) line-face))
+
+               ;; Loop through the segments and collect the results
+               (segments (loop with result
+                               for s in spec
+                               do (setq result (spacemacs//eval-mode-line-segment s))
+                               if (segment-objects result)
+                                 collect result
+                                 and do (rotatef default-face other-face)))
+
+               (dummy (make-segment :face-left line-face :face-right line-face))
+               (separator-style (format "powerline-%S" powerline-default-separator))
+               (default-separator (intern (format "%s-%S" separator-style
+                                                  (car powerline-default-separator-dir))))
+               (other-separator (intern (format "%s-%S" separator-style
+                                                (cdr powerline-default-separator-dir)))))
+
+          ;; Collect all segment values and add separators
+          (apply 'append
+                 (mapcar
+                  (lambda (pair)
+                    (let* ((lhs (car pair))
+                           (rhs (cdr pair))
+                           (objs (if (eq 'l side) lhs rhs))
+                           (add-sep (not (or (segment-tight-right lhs)
+                                             (segment-tight-left rhs)))))
+                      (rotatef default-separator other-separator)
+                      (append
+                       (when (and (eq 'r side) add-sep)
+                         (list (funcall default-separator
+                                        (segment-face-right lhs)
+                                        (segment-face-left rhs))))
+                       (unless (segment-tight-left objs)
+                         (list (powerline-raw " " (segment-face-left objs))))
+                       (segment-objects objs)
+                       (unless (segment-tight-right objs)
+                         (list (powerline-raw " " (segment-face-right objs))))
+                       (when (and (eq 'l side) add-sep)
+                         (list (funcall default-separator
+                                        (segment-face-right lhs)
+                                        (segment-face-left rhs)))))))
+                  (-zip (if (eq 'l side) segments (cons dummy segments))
+                        (if (eq 'l side) (append (cdr segments) (list dummy)) segments))))))
+
+      (defun spacemacs//mode-line-prepare-left ()
+        (spacemacs//mode-line-prepare-any spacemacs-mode-line-left 'l))
+
+      (defun spacemacs//mode-line-prepare-right ()
+        (spacemacs//mode-line-prepare-any spacemacs-mode-line-right 'r))
+
+      (defun spacemacs//mode-line-prepare ()
+        ;; diminish the lighters
+        (when spacemacs-mode-line-minor-modesp
+          (let ((unicodep (dotspacemacs|symbol-value
+                           dotspacemacs-mode-line-unicode-symbols)))
+            (dolist (mm spacemacs--diminished-minor-modes)
+              (let ((mode (car mm)))
+                (when (and (boundp mode) (symbol-value mode))
+                  (let* ((unicode (cadr mm))
+                         (ascii (caddr mm))
+                         (dim (if unicodep
+                                  unicode
+                                (if ascii ascii unicode))))
+                    (diminish mode dim)))))))
+        (let* ((active (powerline-selected-window-active))
+               (lhs (spacemacs//mode-line-prepare-left))
+               (rhs (spacemacs//mode-line-prepare-right))
+               (line-face (if active 'powerline-active2 'powerline-inactive2)))
+          ;; create the line
           (concat (powerline-render lhs)
-                  (when (and active nyancatp)
-                    (powerline-render (spacemacs/powerline-nyan-cat)))
-                  (powerline-fill face2 (powerline-width rhs))
+                  (powerline-fill line-face (powerline-width rhs))
                   (powerline-render rhs))))
 
       (setq-default mode-line-format
-                    '("%e" (:eval (spacemacs/mode-line-prepare))))
+                    '("%e" (:eval (spacemacs//mode-line-prepare))))
 
       (defun spacemacs//restore-powerline (buffer)
         "Restore the powerline in buffer"
         (with-current-buffer buffer
               (setq-local mode-line-format
-                          '("%e" (:eval (spacemacs/mode-line-prepare))))
+                          '("%e" (:eval (spacemacs//mode-line-prepare))))
               (powerline-set-selected-window)
               (powerline-reset)))
 
@@ -2894,9 +3273,10 @@ It is a string holding:
         "Set the powerline for buffers created when Emacs starts."
         (unless configuration-layer-error-count
           (dolist (buffer '("*Messages*" "*spacemacs*" "*Compile-Log*"))
-            (when (get-buffer buffer)
+            (when (and (get-buffer buffer)
+                       (configuration-layer/package-usedp 'powerline))
               (spacemacs//restore-powerline buffer)))))
-      (add-hook 'after-init-hook
+      (add-hook 'emacs-startup-hook
                 'spacemacs//set-powerline-for-startup-buffers))))
 
 (defun spacemacs/init-projectile ()
@@ -2924,11 +3304,17 @@ It is a string holding:
                projectile-vc)
     :init
     (progn
-      (setq-default projectile-enable-caching t)
-      (setq projectile-sort-order 'recentf)
-      (setq projectile-cache-file (concat spacemacs-cache-directory
-                                          "projectile.cache"))
-      (setq projectile-known-projects-file (concat spacemacs-cache-directory
+      ;; note for Windows: GNU find or Cygwin find must be in path
+      ;; default parameters are not supported on Windows, we default
+      ;; to simplest call to find.
+      (when (spacemacs/system-is-mswindows)
+        (setq projectile-generic-command "find . -type f"))
+      (setq projectile-enable-caching t
+            projectile-indexing-method 'alien
+            projectile-sort-order 'recentf
+            projectile-cache-file (concat spacemacs-cache-directory
+                                          "projectile.cache")
+            projectile-known-projects-file (concat spacemacs-cache-directory
                                                    "projectile-bookmarks.eld"))
       (unless (configuration-layer/package-usedp 'helm-projectile)
         (evil-leader/set-key
@@ -2941,6 +3327,7 @@ It is a string holding:
       (evil-leader/set-key
         "p!" 'projectile-run-shell-command-in-root
         "p&" 'projectile-run-async-shell-command-in-root
+        "pa" 'projectile-toggle-between-implementation-and-test
         "pc" 'projectile-compile-project
         "pD" 'projectile-dired
         "pG" 'projectile-regenerate-tags
@@ -2955,14 +3342,16 @@ It is a string holding:
       (projectile-global-mode)
       (spacemacs|hide-lighter projectile-mode))))
 
+(defun spacemacs/init-quelpa ())
+
 (defun spacemacs/init-rainbow-delimiters ()
   (use-package rainbow-delimiters
     :defer t
     :init
     (progn
       (evil-leader/set-key "tCd" 'rainbow-delimiters-mode)
-      (when (eq dotspacemacs-highlight-delimiters 'all)
-        (add-to-hooks 'rainbow-delimiters-mode '(prog-mode-hook))))))
+      (when (member dotspacemacs-highlight-delimiters '(any all))
+        (spacemacs/add-to-hooks 'rainbow-delimiters-mode '(prog-mode-hook))))))
 
 (defun spacemacs/init-recentf ()
   (use-package recentf
@@ -2985,15 +3374,39 @@ It is a string holding:
   (use-package rfringe
     :defer t))
 
+(defun spacemacs/init-savehist ()
+  (use-package savehist
+    :init
+    (progn
+      ;; Minibuffer history
+      (setq savehist-file (concat spacemacs-cache-directory "savehist")
+            enable-recursive-minibuffers t ; Allow commands in minibuffers
+            history-length 1000
+            savehist-additional-variables '(mark-ring
+                                            global-mark-ring
+                                            search-ring
+                                            regexp-search-ring
+                                            extended-command-history)
+            savehist-autosave-interval 60)
+      (savehist-mode t))))
+
+(defun spacemacs/init-saveplace ()
+  (use-package saveplace
+    :init
+    (progn
+      ;; Save point position between sessions
+      (setq save-place t
+            save-place-file (concat spacemacs-cache-directory "places")))))
+
 (defun spacemacs/init-smartparens ()
   (use-package smartparens
     :defer t
     :init
     (progn
-      (add-to-hooks (if dotspacemacs-smartparens-strict-mode
-                        'smartparens-strict-mode
-                      'smartparens-mode)
-                    '(prog-mode-hook))
+      (spacemacs/add-to-hooks (if dotspacemacs-smartparens-strict-mode
+                                  'smartparens-strict-mode
+                                'smartparens-mode)
+                              '(prog-mode-hook))
 
       ;; enable smartparens-mode in `eval-expression'
       (defun conditionally-enable-smartparens-mode ()
@@ -3004,21 +3417,22 @@ It is a string holding:
       (add-hook 'minibuffer-setup-hook 'conditionally-enable-smartparens-mode)
 
       (spacemacs|add-toggle smartparens
-                            :status smartparens-mode
-                            :on (smartparens-mode)
-                            :off (smartparens-mode -1)
-                            :documentation "Enable smartparens."
-                            :evil-leader "tp")
+        :status smartparens-mode
+        :on (smartparens-mode)
+        :off (smartparens-mode -1)
+        :documentation "Enable smartparens."
+        :evil-leader "tp")
 
       (spacemacs|add-toggle smartparens-globally
-                            :status smartparens-mode
-                            :on (smartparens-global-mode)
-                            :off (smartparens-global-mode -1)
-                            :documentation "Enable smartparens globally."
-                            :evil-leader "t C-p")
+        :status smartparens-mode
+        :on (smartparens-global-mode)
+        :off (smartparens-global-mode -1)
+        :documentation "Enable smartparens globally."
+        :evil-leader "t C-p")
 
-      (setq sp-show-pair-delay 0
-            sp-show-pair-from-inside t ; fix paren highlighting in normal mode
+      (setq sp-show-pair-delay 0.2
+            ;; fix paren highlighting in normal mode
+            sp-show-pair-from-inside (not evil-move-beyond-eol)
             sp-cancel-autoskip-on-backward-movement nil))
     :config
     (progn
@@ -3063,6 +3477,36 @@ It is a string holding:
     (ad-disable-advice 'isearch-repeat 'after 'isearch-smooth-scroll)
     (ad-activate 'isearch-repeat)))
 
+(defun spacemacs/init-solarized-theme ()
+  (use-package solarized
+    :init
+    (progn
+      (deftheme solarized-dark "The dark variant of the Solarized colour theme")
+      (deftheme solarized-light "The light variant of the Solarized colour theme"))))
+
+(defun spacemacs/init-spray ()
+  (use-package spray
+    :commands spray-mode
+    :init
+    (progn
+      (defun spacemacs/start-spray ()
+        "Start spray speed reading on current buffer at current point."
+        (interactive)
+        (evil-insert-state)
+        (spray-mode t)
+        (evil-insert-state-cursor-hide))
+      (evil-leader/set-key "asr" 'spacemacs/start-spray)
+
+      (defadvice spray-quit (after spacemacs//quit-spray activate)
+        "Correctly quit spray."
+        (set-default-evil-insert-state-cursor)
+        (evil-normal-state)))
+    :config
+    (progn
+      (define-key spray-mode-map (kbd "h") 'spray-backward-word)
+      (define-key spray-mode-map (kbd "l") 'spray-forward-word)
+      (define-key spray-mode-map (kbd "q") 'spray-quit))))
+
 (defun spacemacs/init-subword ()
   (unless (version< emacs-version "24.4")
     (use-package subword
@@ -3083,17 +3527,17 @@ It is a string holding:
                   (default-value 'evil-cjk-word-separating-categories))))
         (add-hook 'subword-mode-hook 'spacemacs//subword-enable-camel-case)
         (spacemacs|add-toggle camel-case-motion
-                              :status subword-mode
-                              :on (subword-mode +1)
-                              :off (subword-mode -1)
-                              :documentation "Toggle CamelCase motion."
-                              :evil-leader "tc")
+          :status subword-mode
+          :on (subword-mode +1)
+          :off (subword-mode -1)
+          :documentation "Toggle CamelCase motions."
+          :evil-leader "tc")
         (spacemacs|add-toggle camel-case-motion-globally
-                              :status subword-mode
-                              :on (global-subword-mode +1)
-                              :off (global-subword-mode -1)
-                              :documentation "Globally toggle CamelCase motion."
-                              :evil-leader "t C-c"))
+          :status subword-mode
+          :on (global-subword-mode +1)
+          :off (global-subword-mode -1)
+          :documentation "Globally toggle CamelCase motions."
+          :evil-leader "t C-c"))
       :config
       (spacemacs|diminish subword-mode " ⓒ" " c"))))
 
@@ -3120,13 +3564,12 @@ It is a string holding:
     (progn
       (global-vi-tilde-fringe-mode)
       (spacemacs|add-toggle vi-tilde-fringe
-                            :status vi-tilde-fringe-mode
-                            :on (global-vi-tilde-fringe-mode)
-                            :off (global-vi-tilde-fringe-mode -1)
-                            :documentation
-                            (concat "Globally display a ~ on "
-                                    "empty lines in the fringe.")
-                            :evil-leader "t~")
+        :status vi-tilde-fringe-mode
+        :on (global-vi-tilde-fringe-mode)
+        :off (global-vi-tilde-fringe-mode -1)
+        :documentation
+        "Globally display a ~ on empty lines in the fringe."
+        :evil-leader "t~")
       ;; don't enable it on spacemacs home buffer
       (with-current-buffer  "*spacemacs*"
         (vi-tilde-fringe-mode -1))
@@ -3172,17 +3615,17 @@ It is a string holding:
     :init
     (progn
       (spacemacs|add-toggle whitespace
-                            :status whitespace-mode
-                            :on (whitespace-mode)
-                            :off (whitespace-mode -1)
-                            :documentation "Display whitespace."
-                            :evil-leader "tw")
+        :status whitespace-mode
+        :on (whitespace-mode)
+        :off (whitespace-mode -1)
+        :documentation "Display whitespace."
+        :evil-leader "tw")
       (spacemacs|add-toggle whitespace-globally
-                            :status global-whitespace-mode
-                            :on (global-whitespace-mode)
-                            :off (global-whitespace-mode -1)
-                            :documentation "Globally display whitespace."
-                            :evil-leader "t C-w")
+        :status global-whitespace-mode
+        :on (global-whitespace-mode)
+        :off (global-whitespace-mode -1)
+        :documentation "Display whitespace globally."
+        :evil-leader "t C-w")
       (defun spacemacs//set-whitespace-style-for-diff ()
         "Whitespace configuration for `diff-mode'"
         (setq-local whitespace-style '(face
@@ -3209,10 +3652,73 @@ It is a string holding:
       (spacemacs|diminish whitespace-mode " ⓦ" " w")
       (spacemacs|diminish global-whitespace-mode " Ⓦ" " W"))))
 
+(defun spacemacs/init-which-key ()
+  (use-package which-key
+    :init
+    (progn
+      (spacemacs|add-toggle which-key
+        :status which-key-mode
+        :on (which-key-mode)
+        :off (which-key-mode -1)
+        :documentation
+        "Display a buffer with available key bindings."
+        :evil-leader "tK")
+      ;; (defadvice which-key--update
+      ;;     (around spacemacs/inhibit-which-key-buffer activate)
+      ;;   "Prevent the popup of the which-key buffer in some case."
+      ;;   ;; a micro-state is running
+      ;;   ;; or
+      ;;   ;; bzg-big-fringe-mode is on
+      ;;   (if (or overriding-terminal-local-map
+      ;;           bzg-big-fringe-mode)
+      ;;       (let ((which-key-inhibit t)) ad-do-it)
+      ;;     ad-do-it))
+      (let ((new-descriptions
+             ;; being higher in this list means the replacement is applied later
+             '(
+               ("spacemacs/\\(.+\\)" . "\\1")
+               ("spacemacs/toggle-\\(.+\\)" . "\\1")
+               ("select-window-\\([0-9]\\)" . "window \\1")
+               ("spacemacs/alternate-buffer" . "last buffer")
+               ("avy-goto-word-or-subword-1" . "avy word")
+               ("shell-command" . "shell cmd")
+               ("spacemacs/default-pop-shell" . "open shell")
+               ("spacemacs/helm-project-smart-do-search-region-or-symbol" . "smart search")
+               ("helm-descbinds" . "show keybindings")
+               ("sp-split-sexp" . "split sexp")
+               ("avy-goto-line" . "avy line")
+               ("universal-argument" . "universal arg")
+               ("er/expand-region" . "expand region")
+               ("helm-apropos" . "apropos"))))
+        (dolist (nd new-descriptions)
+          ;; ensure the target matches the whole string
+          (push (cons (concat "\\`" (car nd) "\\'") (cdr nd))
+                which-key-description-replacement-alist)))
+      (dolist (leader-key `(,dotspacemacs-leader-key ,dotspacemacs-emacs-leader-key))
+        (which-key-add-key-based-replacements
+         (concat leader-key " m")    "major mode commands"
+         (concat leader-key " " dotspacemacs-command-key) "M-x"))
+      ;; disable special key handling for spacemacs, since it can be
+      ;; disorienting if you don't understand it
+      (setq which-key-prefix-title-alist
+            `((,(listify-key-sequence
+                 (kbd (concat dotspacemacs-leader-key " m"))) . "Major mode commands")
+              (,(listify-key-sequence
+                 (kbd (concat dotspacemacs-emacs-leader-key " m"))) . "Major mode commands")
+              (,(listify-key-sequence
+                 (kbd dotspacemacs-leader-key)) . "Spacemacs root")
+              (,(listify-key-sequence
+                 (kbd dotspacemacs-emacs-leader-key)) . "Spacemacs root")))
+      (nconc which-key-prefix-title-alist spacemacs/prefix-titles)
+      (setq which-key-special-keys nil
+            which-key-use-C-h-for-paging t
+            which-key-echo-keystrokes 0.02
+            which-key-max-description-length 32)
+      (which-key-mode)
+      (spacemacs|diminish which-key-mode " Ⓚ" " K"))))
+
 (defun spacemacs/init-window-numbering ()
   (use-package window-numbering
-    ;; not deferred on puprose
-    :init (require 'window-numbering)
     :config
     (progn
       (when (configuration-layer/package-usedp 'powerline)
@@ -3237,7 +3743,8 @@ It is a string holding:
       (let* ((num (window-numbering-get-number))
              (str (if num (int-to-string num))))
         (cond
-         ((not dotspacemacs-mode-line-unicode-symbols) str)
+         ((not (dotspacemacs|symbol-value
+                dotspacemacs-mode-line-unicode-symbols)) str)
          ((equal str "1")  "➊")
          ((equal str "2")  "➋")
          ((equal str "3")  "➌")
@@ -3276,3 +3783,58 @@ It is a string holding:
       (setq winner-boring-buffers
             (append winner-boring-buffers spacemacs/winner-boring-buffers))
       (winner-mode t))))
+
+(defun spacemacs/init-zoom-frm ()
+  (use-package zoom-frm
+    :commands (zoom-frm-unzoom
+               zoom-frm-out
+               zoom-frm-in)
+    :init
+    (progn
+      (spacemacs|define-micro-state zoom-frm
+        :doc "[+] zoom frame in [-] zoom frame out [=] reset zoom"
+        :evil-leader "zf"
+        :use-minibuffer t
+        :bindings
+        ("+" spacemacs/zoom-frm-in :post (spacemacs//zoom-frm-powerline-reset))
+        ("-" spacemacs/zoom-frm-out :post (spacemacs//zoom-frm-powerline-reset))
+        ("=" spacemacs/zoom-frm-unzoom :post (spacemacs//zoom-frm-powerline-reset)))
+
+      (defun spacemacs//zoom-frm-powerline-reset ()
+        (when (fboundp 'powerline-reset)
+          (setq-default powerline-height (spacemacs/compute-powerline-height))
+          (powerline-reset)))
+
+      (defun spacemacs//zoom-frm-do (arg)
+        "Perform a zoom action depending on ARG value."
+        (let ((zoom-action (cond ((eq arg 0) 'zoom-frm-unzoom)
+                                 ((< arg 0) 'zoom-frm-out)
+                                 ((> arg 0) 'zoom-frm-in)))
+              (fm (cdr (assoc 'fullscreen (frame-parameters))))
+              (fwp (* (frame-char-width) (frame-width)))
+              (fhp (* (frame-char-height) (frame-height))))
+          (when (equal fm 'maximized)
+            (toggle-frame-maximized))
+          (funcall zoom-action)
+          (set-frame-size nil fwp fhp t)
+          (when (equal fm 'maximized)
+            (toggle-frame-maximized))))
+
+      (defun spacemacs/zoom-frm-in ()
+        "zoom in frame, but keep the same pixel size"
+        (interactive)
+        (spacemacs//zoom-frm-do 1))
+
+      (defun spacemacs/zoom-frm-out ()
+        "zoom out frame, but keep the same pixel size"
+        (interactive)
+        (spacemacs//zoom-frm-do -1))
+
+      (defun spacemacs/zoom-frm-unzoom ()
+        "Unzoom current frame, keeping the same pixel size"
+        (interactive)
+        (spacemacs//zoom-frm-do 0))
+
+      ;; Font size, either with ctrl + mouse wheel
+      (global-set-key (kbd "<C-wheel-up>") 'spacemacs/zoom-frm-in)
+      (global-set-key (kbd "<C-wheel-down>") 'spacemacs/zoom-frm-out))))
