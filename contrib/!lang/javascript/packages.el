@@ -95,7 +95,9 @@
       (evil-leader/set-key-for-mode 'js2-mode "mzr" 'js2-mode-show-all)
       (evil-leader/set-key-for-mode 'js2-mode "mze" 'js2-mode-toggle-element)
       (evil-leader/set-key-for-mode 'js2-mode "mzF" 'js2-mode-toggle-hide-functions)
-      (evil-leader/set-key-for-mode 'js2-mode "mzC" 'js2-mode-toggle-hide-comments))))
+      (evil-leader/set-key-for-mode 'js2-mode "mzC" 'js2-mode-toggle-hide-comments)
+      (spacemacs/helm-gtags-define-keys-for-mode 'js2-mode)
+      )))
 
 (defun javascript/init-js2-refactor ()
   (use-package js2-refactor

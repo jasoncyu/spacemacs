@@ -40,6 +40,11 @@
       (spacemacs/helm-gtags-define-keys-for-mode 'compilation-mode)
       (spacemacs/helm-gtags-define-keys-for-mode 'shell-mode)
 
+      ;; experimental
+      (eval-after-load 'anaconda-mode
+        (spacemacs/helm-gtags-define-keys-for-mode 'python-mode)
+        )
+
       (spacemacs/ggtags-enable-eldoc 'tcl-mode)
       (spacemacs/ggtags-enable-eldoc 'java-mode)
       (spacemacs/ggtags-enable-eldoc 'vhdl-mode))

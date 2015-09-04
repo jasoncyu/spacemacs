@@ -12,19 +12,32 @@
 
 (setq git-packages
       '(
+        browse-at-remote
         gitattributes-mode
         gitconfig-mode
         gitignore-mode
         git-commit
         git-messenger
         git-timemachine
-        helm-gitignore
         magit
         magit-gitflow
         ;; not compatible with magit 2.1 at the time of release
         ;; magit-svn
         smeargle
-        ))
+        helm-gitignore))
+
+(defun git/init-browse-at-remote ()
+  "Browse github/bitbucket file corresponding to the file you're currently in.
+   Will also jump to the correct line number."
+  (use-package browse-at-remote)
+  :if  git-enable-github-support
+  :defer t
+  :init
+  (progn
+    (evil-leader/set-key
+      ;; *g*ithub *o* open in remote repository.
+      "go" 'browse-at-remote)
+    ))
 
 (defun git/init-helm-gitignore ()
   (use-package helm-gitignore
@@ -245,14 +258,14 @@
       (defun magit-toggle-whitespace ()
         (interactive)
         (if (member "-w" (if (derived-mode-p 'magit-diff-mode)
-			     magit-refresh-args
-			   magit-diff-section-arguments))
+           magit-refresh-args
+         magit-diff-section-arguments))
             (magit-dont-ignore-whitespace)
           (magit-ignore-whitespace)))
       (defun magit-ignore-whitespace ()
         (interactive)
         (add-to-list (if (derived-mode-p 'magit-diff-mode)
-			 'magit-refresh-args 'magit-diff-section-arguments) "-w")
+       'magit-refresh-args 'magit-diff-section-arguments) "-w")
         (magit-refresh))
       (defun magit-dont-ignore-whitespace ()
         (interactive)

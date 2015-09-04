@@ -12,9 +12,10 @@
 
 (setq python-packages
   '(
-    anaconda-mode
+    ;; Anaconda mode's been giving me weird errors
+    ;; anaconda-mode
     company
-    company-anaconda
+    ;; company-anaconda
     cython-mode
     eldoc
     evil-jumper
@@ -273,20 +274,33 @@
         (call-interactively 'sp-backward-delete-char)))))
 
 (when (configuration-layer/layer-usedp 'auto-completion)
+  ;; Hook company to python-mode
   (defun python/post-init-company ()
     (spacemacs|add-company-hook python-mode)
     (spacemacs|add-company-hook inferior-python-mode)
     (push '(company-files company-capf) company-backends-inferior-python-mode)
     (add-hook 'inferior-python-mode-hook (lambda ()
                                            (setq-local company-minimum-prefix-length 0)
-                                           (setq-local company-idle-delay 0.5))))
+                                           (setq-local company-idle-delay 0.5)))))
 
-  (defun python/init-company-anaconda ()
-    (use-package company-anaconda
-      :if (configuration-layer/package-usedp 'company)
-      :defer t
-      :init
-      (push 'company-anaconda company-backends-python-mode))))
+  ;;; Anaconda is too slow.
+  ;; Add the backend to the major-mode specific backend list
+  ;; (defun python/init-company-anaconda ()
+  ;;   (use-package company-anaconda
+  ;;     :if (configuration-layer/package-usedp 'company)
+  ;;     :defer t
+  ;;     :init (push 'company-anaconda company-backends-python-mode))))
+
+;; (when (configuration-layer/layer-usedp 'auto-completion)
+;;   (defun python/post-init-company ()
+;;     (spacemacs|add-company-hook python-mode))
+
+;;   (defun python/init-company-anaconda ()
+;;     (use-package company-anaconda
+;;       :if (configuration-layer/package-usedp 'company)
+;;       :defer t
+;;       :init
+;;       (push 'company-anaconda company-backends-python-mode))))
 
 (defun python/post-init-semantic ()
   (semantic/enable-semantic-mode 'python-mode)
