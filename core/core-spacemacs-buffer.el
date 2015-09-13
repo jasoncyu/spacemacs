@@ -67,28 +67,29 @@ Doge special text banner can be reachable via `999', `doge' or `random*'.
 
 (defun spacemacs-buffer//choose-banner ()
   "Return the full path of a banner based on the dotfile value."
-  (cond
-   ((eq 'official dotspacemacs-startup-banner)
-    (if (and (display-graphic-p) (image-type-available-p 'png))
-        spacemacs-banner-official-png
-      (spacemacs-buffer//get-banner-path 1)))
-   ((eq 'random dotspacemacs-startup-banner)
-    (spacemacs-buffer//choose-random-text-banner))
-   ((eq 'random* dotspacemacs-startup-banner)
-    (spacemacs-buffer//choose-random-text-banner t))
-   ((eq 'doge dotspacemacs-startup-banner)
-    (spacemacs-buffer//get-banner-path 999))
-   ((integerp dotspacemacs-startup-banner)
-    (spacemacs-buffer//get-banner-path dotspacemacs-startup-banner))
-   ((and dotspacemacs-startup-banner
-         (image-type-available-p (intern (file-name-extension
-                                          dotspacemacs-startup-banner))))
-    (if (file-exists-p dotspacemacs-startup-banner)
-        dotspacemacs-startup-banner
-      (spacemacs-buffer/warning (format "could not find banner %s"
-                                        dotspacemacs-startup-banner))
-      (spacemacs-buffer//get-banner-path 1))
-    (spacemacs-buffer//get-banner-path 1))))
+  (when dotspacemacs-startup-banner
+    (cond ((eq 'official dotspacemacs-startup-banner)
+           (if (and (display-graphic-p) (image-type-available-p 'png))
+               spacemacs-banner-official-png
+             (spacemacs-buffer//get-banner-path 1)))
+          ((eq 'random dotspacemacs-startup-banner)
+           (spacemacs-buffer//choose-random-text-banner))
+          ((eq 'random* dotspacemacs-startup-banner)
+           (spacemacs-buffer//choose-random-text-banner t))
+          ((eq 'doge dotspacemacs-startup-banner)
+           (spacemacs-buffer//get-banner-path 999))
+          ((integerp dotspacemacs-startup-banner)
+           (spacemacs-buffer//get-banner-path dotspacemacs-startup-banner))
+          ((and dotspacemacs-startup-banner
+                (image-type-available-p (intern (file-name-extension
+                                                 dotspacemacs-startup-banner)))
+                (display-graphic-p))
+           (if (file-exists-p dotspacemacs-startup-banner)
+               dotspacemacs-startup-banner
+             (spacemacs-buffer/warning (format "could not find banner %s"
+                                               dotspacemacs-startup-banner))
+             (spacemacs-buffer//get-banner-path 1)))
+          (t (spacemacs-buffer//get-banner-path 1)))))
 
 (defun spacemacs-buffer//choose-random-text-banner (&optional all)
   "Return the full path of a banner chosen randomly.
@@ -121,22 +122,32 @@ If ALL is non-nil then truly all banners can be selected."
                               (floor (/ (- width (length title)) 2))) ?\ ))
       (insert (format "%s\n\n" title)))))
 
-(defun spacemacs-buffer//inject-version ()
+(defun spacemacs-buffer//inject-version (&optional insert-distro)
   "Inject the current version of spacemacs in the first line of the
 buffer, right justified."
-  (save-excursion
-    (beginning-of-buffer)
-    (let* ((maxcol spacemacs-buffer--banner-length)
-           (injected (format "(%s)" spacemacs-version))
-           (pos (- maxcol (length injected)))
-           (buffer-read-only nil))
-      ;; fill the first line with spaces if required
-      (when (< (line-end-position) maxcol)
-        (end-of-line)
-        (insert-char ?\s (- maxcol (line-end-position))))
-      (goto-char pos)
-      (delete-char (length injected))
-      (insert injected))))
+  (with-current-buffer (get-buffer-create "*spacemacs*")
+    (save-excursion
+      (let* ((maxcol spacemacs-buffer--banner-length)
+             (injected (if insert-distro
+                           (format "(%s-%s)"
+                                   dotspacemacs-distribution
+                                   spacemacs-version)
+                         (format "(%s)" spacemacs-version)))
+             (pos (- maxcol (length injected)))
+             (buffer-read-only nil))
+        ;; reset first line
+        (beginning-of-buffer)
+        (let ((buffer-read-only nil))
+          (end-of-line)
+          (kill-line (- maxcol)))
+        (beginning-of-buffer)
+        ;; fill the first line with spaces if required
+        (when (< (line-end-position) maxcol)
+          (end-of-line)
+          (insert-char ?\s (- maxcol (line-end-position))))
+        (goto-char pos)
+        (delete-char (length injected))
+        (insert injected)))))
 
 (defun spacemacs-buffer//insert-note (file caption &optional additional-widgets)
   "Insert the release note just under the banner.

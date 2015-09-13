@@ -40,8 +40,8 @@
   (expand-file-name (concat spacemacs-core-directory "templates/"))
   "Configuration layer templates directory.")
 
-(defconst configuration-layer-contrib-directory
-  (expand-file-name (concat user-emacs-directory "contrib/"))
+(defconst configuration-layer-directory
+  (expand-file-name (concat user-emacs-directory "layers/"))
   "Spacemacs contribution layers base directory.")
 
 (defconst configuration-layer-private-directory
@@ -76,7 +76,11 @@
    (variables :initarg :variables
               :initform nil
               :type list
-              :documentation "A list of variable-value pairs."))
+              :documentation "A list of variable-value pairs.")
+   (disabled :initarg :disabled-for
+             :initform nil
+             :type list
+             :documentation "A list of layer where this layer is disabled."))
   "A configuration layer.")
 
 (defclass cfgl-package ()
@@ -108,7 +112,8 @@
    (excluded :initarg :excluded
              :initform nil
              :type boolean
-             :documentation "If non-nil this package is ignored.")))
+             :documentation
+             "If non-nil this package is excluded from all layers.")))
 
 (defvar configuration-layer--layers '()
   "A non-sorted list of `cfgl-layer' objects.")
@@ -129,11 +134,12 @@ the path for this layer.")
 
 (defvar configuration-layer-categories '()
   "List of strings corresponding to category names. A category is a
-directory with a name starting with `!'.")
+directory with a name starting with `+'.")
 
 (defun configuration-layer/sync ()
   "Synchronize declared layers in dotfile with spacemacs."
   (dotspacemacs|call-func dotspacemacs/layers "Calling dotfile layers...")
+  (spacemacs-buffer//inject-version t)
   ;; layers
   (setq configuration-layer--layers (configuration-layer//declare-layers))
   (configuration-layer//configure-layers configuration-layer--layers)
@@ -191,6 +197,8 @@ layer directory."
   (let* ((name-sym (if (listp layer) (car layer) layer))
          (name-str (symbol-name name-sym))
          (base-dir (configuration-layer/get-layer-path name-sym))
+         (disabled (when (listp layer)
+                     (spacemacs/mplist-get layer :disabled-for)))
          (variables (when (listp layer)
                       (spacemacs/mplist-get layer :variables))))
     (if base-dir
@@ -198,6 +206,7 @@ layer directory."
           (cfgl-layer name-str
                       :name name-sym
                       :dir dir
+                      :disabled-for disabled
                       :variables variables))
       (spacemacs-buffer/warning "Cannot find layer %S !" name-sym)
       nil)))
@@ -337,16 +346,16 @@ Properties that can be copied are `:location', `:step' and `:excluded'."
   (sort packages (lambda (x y) (string< (symbol-name (oref x :name))
                                         (symbol-name (oref y :name))))))
 
-(defun configuration-layer/filter-packages (packages ffunc)
-  "Return a filtered PACKAGES list where each element satisfies FFUNC."
+(defun configuration-layer/filter-objects (objects ffunc)
+  "Return a filtered OBJECTS list where each element satisfies FFUNC."
   (reverse (reduce (lambda (acc x)
                      (if (funcall ffunc x) (push x acc) acc))
-                   packages
+                   objects
                    :initial-value nil)))
 
 (defun configuration-layer//get-distant-used-packages (packages)
   "Return the distant packages (ie to be intalled) that are effectively used."
-  (configuration-layer/filter-packages
+  (configuration-layer/filter-objects
    packages (lambda (x) (and (not (null (oref x :owner)))
                              (not (eq 'local (oref x :location)))
                              (not (oref x :excluded))))))
@@ -382,9 +391,9 @@ Possible return values:
   nil      - the directory is a regular directory."
   (when (file-directory-p path)
     (if (string-match
-         "^!" (file-name-nondirectory
+         "^+" (file-name-nondirectory
                (directory-file-name
-                (concat configuration-layer-contrib-directory path))))
+                (concat configuration-layer-directory path))))
         'category
       (let ((files (directory-files path)))
         ;; most frequent files encoutered in a layer are tested first
@@ -397,14 +406,14 @@ Possible return values:
 
 (defun configuration-layer//get-category-from-path (dirpath)
   "Return a category symbol from the given DIRPATH.
-The directory name must start with `!'.
+The directory name must start with `+'.
 Returns nil if the directory is not a category."
   (when (file-directory-p dirpath)
     (let ((dirname (file-name-nondirectory
                     (directory-file-name
-                     (concat configuration-layer-contrib-directory
+                     (concat configuration-layer-directory
                              dirpath)))))
-      (when (string-match "^!" dirname)
+      (when (string-match "^+" dirname)
         (intern (substring dirname 1))))))
 
 (defun configuration-layer//discover-layers ()
@@ -413,7 +422,7 @@ path."
   ;; load private layers at the end on purpose we asume that the user layers
   ;; must have the final word on configuration choices. Let
   ;; `dotspacemacs-directory' override the private directory if it exists.
-  (let ((search-paths (append (list configuration-layer-contrib-directory)
+  (let ((search-paths (append (list configuration-layer-directory)
                               dotspacemacs-configuration-layer-path
                               (list configuration-layer-private-layer-directory)
                               (when dotspacemacs-directory
@@ -447,8 +456,6 @@ path."
                (t
                 ;; layer not found, add it to search path
                 (setq search-paths (cons sub search-paths)))))))))
-    ;; add the spacemacs layer
-    (puthash 'spacemacs (expand-file-name user-emacs-directory) result)
     ;; add discovered layers to hash table
     (mapc (lambda (l)
             (if (ht-contains? result (car l))
@@ -464,18 +471,25 @@ path."
     result))
 
 (defun configuration-layer//declare-layers ()
-  "Add default layers and user layers declared in the dotfile."
+  "Declare default layers and user layers declared in the dotfile."
+  (setq configuration-layer--layers nil)
   (setq configuration-layer-paths (configuration-layer//discover-layers))
-  (if (eq 'all dotspacemacs-configuration-layers)
-      (setq dotspacemacs-configuration-layers
-            ;; spacemacs is contained in configuration-layer-paths
-            (ht-keys configuration-layer-paths))
-    (setq configuration-layer--layers
-          (list (configuration-layer/make-layer 'spacemacs))))
-  (setq configuration-layer--layers
-        (append (configuration-layer//make-layers
-                 dotspacemacs-configuration-layers)
-                configuration-layer--layers)))
+  (when (eq 'all dotspacemacs-configuration-layers)
+    (setq dotspacemacs-configuration-layers
+          (ht-keys configuration-layer-paths)))
+  (dolist (layer dotspacemacs-configuration-layers)
+    (let ((layer-name (if (listp layer) (car layer) layer)))
+      (if (ht-contains? configuration-layer-paths layer-name)
+          (unless (string-match-p "+distribution"
+                                  (ht-get configuration-layer-paths layer-name))
+            (push (configuration-layer/make-layer layer)
+                  configuration-layer--layers))
+        (spacemacs-buffer/warning "Unknown layer %s declared in dotfile."
+                                  layer-name))))
+  (setq configuration-layer--layers (reverse configuration-layer--layers))
+  ;; distribution layer is always first
+  (push (configuration-layer/make-layer dotspacemacs-distribution)
+        configuration-layer--layers))
 
 (defun configuration-layer/declare-layers (layer-names)
   "Add layer with LAYER-NAMES to used layers."
@@ -524,7 +538,7 @@ path."
   ;; FIFO loading of layers, this allow the user to put her layers at the
   ;; end of the list to override previous layers.
   (let ((warning-minimum-level :error))
-    (dolist (l (reverse layers))
+    (dolist (l layers)
       (configuration-layer//configure-layer l))))
 
 (defun configuration-layer//configure-layer (layer)
@@ -536,7 +550,7 @@ path."
 
 (defun configuration-layer//declare-packages (layers)
   "Declare all packages contained in LAYERS."
-  (let ((layers2 (reverse layers))
+  (let ((layers2 layers)
         (warning-minimum-level :error))
     ;; TODO remove extensions in 0.105.0
     (configuration-layer//load-layers-files layers2 '("packages.el" "extensions.el"))
@@ -699,13 +713,13 @@ path."
 (defun configuration-layer//configure-packages (packages)
   "Configure all passed PACKAGES honoring the steps order."
   (configuration-layer//configure-packages-2
-   (configuration-layer/filter-packages
+   (configuration-layer/filter-objects
     packages (lambda (x) (eq 'pre (oref x :step)))))
   (configuration-layer//configure-packages-2
-   (configuration-layer/filter-packages
+   (configuration-layer/filter-objects
     packages (lambda (x) (null (oref x :step)))))
   (configuration-layer//configure-packages-2
-   (configuration-layer/filter-packages
+   (configuration-layer/filter-objects
     packages (lambda (x) (eq 'post (oref x :step))))))
 
 (defun configuration-layer//configure-packages-2 (packages)
@@ -738,39 +752,47 @@ path."
 
 (defun configuration-layer//configure-package (pkg)
   "Configure PKG."
-  (let ((pkg-name (oref pkg :name)))
+  (let* ((pkg-name (oref pkg :name))
+         (owner (oref pkg :owner))
+         (owner-layer (object-assoc owner :name configuration-layer--layers))
+         (disabled-for-layers (oref owner-layer :disabled-for)))
     (spacemacs-buffer/message (format "Configuring %S..." pkg-name))
     ;; pre-init
     (mapc (lambda (layer)
-            (spacemacs-buffer/message
-             (format "  -> pre-init (%S)..." layer))
-            (condition-case err
-                (funcall (intern (format "%S/pre-init-%S" layer pkg-name)))
-              ('error
-               (configuration-layer//set-error)
-               (spacemacs-buffer/append
-                (format
-                 (concat "An error occurred while pre-configuring %S "
-                         "in layer %S (error: %s)\n")
-                 pkg-name layer err)))))
+            (if (memq layer disabled-for-layers)
+                (spacemacs-buffer/message
+                 (format "  -> ignored pre-init (%S)..." layer))
+              (spacemacs-buffer/message
+               (format "  -> pre-init (%S)..." layer))
+              (condition-case err
+                  (funcall (intern (format "%S/pre-init-%S" layer pkg-name)))
+                ('error
+                 (configuration-layer//set-error)
+                 (spacemacs-buffer/append
+                  (format
+                   (concat "An error occurred while pre-configuring %S "
+                           "in layer %S (error: %s)\n")
+                   pkg-name layer err))))))
           (oref pkg :pre-layers))
     ;; init
-    (let ((owner (oref pkg :owner)))
-      (spacemacs-buffer/message (format "  -> init (%S)..." owner))
-      (funcall (intern (format "%S/init-%S" owner pkg-name))))
+    (spacemacs-buffer/message (format "  -> init (%S)..." owner))
+    (funcall (intern (format "%S/init-%S" owner pkg-name)))
     ;; post-init
     (mapc (lambda (layer)
-            (spacemacs-buffer/message
-             (format "  -> post-init (%S)..." layer))
-            (condition-case err
-                (funcall (intern (format "%S/post-init-%S" layer pkg-name)))
-              ('error
-               (configuration-layer//set-error)
-               (spacemacs-buffer/append
-                (format
-                 (concat "An error occurred while post-configuring %S "
-                         "in layer %S (error: %s)\n")
-                 pkg-name layer err)))))
+            (if (memq layer disabled-for-layers)
+                (spacemacs-buffer/message
+                 (format "  -> ignored post-init (%S)..." layer))
+              (spacemacs-buffer/message
+               (format "  -> post-init (%S)..." layer))
+              (condition-case err
+                  (funcall (intern (format "%S/post-init-%S" layer pkg-name)))
+                ('error
+                 (configuration-layer//set-error)
+                 (spacemacs-buffer/append
+                  (format
+                   (concat "An error occurred while post-configuring %S "
+                           "in layer %S (error: %s)\n")
+                   pkg-name layer err))))))
           (oref pkg :post-layers))))
 
 (defun configuration-layer/update-packages (&optional always-update)
@@ -939,7 +961,7 @@ to select one."
   (let ((result (make-hash-table :size 512)))
     (dolist (pkg package-alist)
       (let* ((pkg-sym (car pkg))
-             (deps (configuration-layer//get-package-deps-from-archive pkg-sym)))
+             (deps (configuration-layer//get-package-dependencies pkg-sym)))
         (dolist (dep deps)
           (let* ((dep-sym (car dep))
                  (value (ht-get result dep-sym)))

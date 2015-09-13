@@ -52,6 +52,11 @@ exists. Otherwise, fallback to ~/.spacemacs")
 (defvar dotspacemacs-verbose-loading nil
   "If non nil output loading progess in `*Messages*' buffer.")
 
+(defvar dotspacemacs-distribution 'spacemacs
+  "Base distribution to use. This is a layer contained in the directory
+`+distribution'. For now available distributions are `spacemacs-core'
+or `spacemacs'.")
+
 (defvar dotspacemacs-configuration-layer-path '()
   "List of additional paths where to look for configuration layers.
 Paths must have a trailing slash (ie. `~/.mycontribs/')")
@@ -73,7 +78,7 @@ banner, `random' chooses a random text banner in `core/banners'
 directory. A string value must be a path to a .PNG file.
 If the value is nil then no banner is displayed.")
 
-(defvar dotspacemacs-configuration-layers '()
+(defvar dotspacemacs-configuration-layers '(emacs-lisp)
   "List of configuration layers to load. If it is the symbol `all' instead
 of a list then all discovered layers will be installed.")
 
@@ -122,6 +127,12 @@ with `:' and Emacs commands are executed with `<leader> :'.")
 (defvar dotspacemacs-helm-resize nil
   "If non nil, `helm' will try to miminimize the space it uses.")
 
+(defvar dotspacemacs-helm-no-header nil
+  "if non nil, the helm header is hidden when there is only one source.")
+
+(defvar dotspacemacs-helm-position 'bottom
+  "Position in which to show the `helm' mini-buffer.")
+
 (defvar dotspacemacs-auto-save-file-location 'cache
   "Location where to auto-save files. Possible values are `original' to
 auto-save the file in-place, `cache' to auto-save the file to another
@@ -132,8 +143,16 @@ Default value is `cache'.")
   "If non nil the paste micro-state is enabled. While enabled pressing `p`
 several times cycle between the kill ring content.'")
 
-(defvar dotspacemacs-guide-key-delay 0.4
-  "Guide-key delay in seconds.")
+(defvar dotspacemacs-which-key-delay 0.4
+  "Delay in seconds starting from the last keystroke after which
+the which-key buffer will be shown if you have not completed a
+key sequence. Setting this variable is equivalent to setting
+`which-key-idle-delay'.")
+
+(defvar dotspacemacs-which-key-position 'bottom
+  "Location of the which-key popup buffer. Possible choices are bottom,
+right, and right-then-bottom. The last one will display on the
+right if possible and fallback to bottom if not.")
 
 (defvar dotspacemacs-loading-progress-bar t
   "If non nil a progress bar is displayed when spacemacs is loading. This
@@ -207,25 +226,33 @@ Possible values are: `recents' `bookmarks' `projects'.")
 (defun dotspacemacs/sync-configuration-layers (&optional arg)
   "Synchronize declared layers in dotfile with spacemacs.
 
-If ARG is non nil then `dotspacemacs/config' is skipped."
+Called with `C-u' skips `dotspacemacs/user-config'.
+Called with `C-u C-u' skips `dotspacemacs/user-config' and preleminary tests."
   (interactive "P")
   (when (file-exists-p dotspacemacs-filepath)
     (with-current-buffer (find-file-noselect dotspacemacs-filepath)
       (let ((dotspacemacs-loading-progress-bar nil))
         (setq spacemacs-loading-string "")
         (save-buffer)
-        (let ((tests-ok (dotspacemacs/test-dotfile t)))
+        (let ((tests-ok (or (equal arg '(16)) (dotspacemacs/test-dotfile t))))
           (if tests-ok
               (progn
                 (load-file buffer-file-name)
                 (dotspacemacs|call-func dotspacemacs/init
                                         "Calling dotfile init...")
                 (configuration-layer/sync)
-                (if arg
+                (if (member arg '(4 16))
                     (message (concat "Done (`dotspacemacs/config'function has "
                                      "been skipped)."))
-                  (dotspacemacs|call-func dotspacemacs/config
-                                          "Calling dotfile config...")
+                  ;; TODO remove support for dotspacemacs/config in 0.105
+                  (if (fboundp 'dotspacemacs/user-config)
+                      (dotspacemacs|call-func dotspacemacs/user-config
+                                              "Calling dotfile user config...")
+                    (spacemacs-buffer/warning (concat "`dotspacemacs/config' is deprecated, "
+                                                      "please rename your function to "
+                                                      "`dotspacemacs/user-config'"))
+                    (dotspacemacs|call-func dotspacemacs/config
+                                            "Calling dotfile user config..."))
                   (message "Done."))
                 (when (configuration-layer/package-usedp 'powerline)
                   (spacemacs//restore-powerline (current-buffer))))
@@ -294,7 +321,16 @@ If ARG is non nil then Ask questions to the user before installing the dotfile."
                  '(("Among the stars aboard the Evil flagship (vim)"
                     vim)
                    ("On the planet Emacs in the Holy control tower (emacs)"
-                    emacs)))))))))
+                    emacs)))))
+             ("dotspacemacs-distribution 'spacemacs-core"
+              ,(format
+                "dotspacemacs-distribution '%S"
+                (dotspacemacs//ido-completing-read
+                 "What distribution of spacemacs would you like to start with? "
+                 '(("The standard distribution with many goodies built-in (spacemacs)"
+                    spacemacs)
+                   ("A distribution with the spacemacs essentials that you can build on (spacemacs-core)"
+                    spacemacs-core)))))))))
     (with-current-buffer (find-file-noselect
                        (concat dotspacemacs-template-directory
                                ".spacemacs.template"))

@@ -493,6 +493,93 @@
                     (configuration-layer/get-packages layers))))))
 
 ;; ---------------------------------------------------------------------------
+;; configuration-layer//configure-package
+;; ---------------------------------------------------------------------------
+
+
+(ert-deftest test-configure-package--init-is-evaluated ()
+  (let ((pkg (cfgl-package "pkg" :name 'pkg :owner 'layer1))
+        (configuration-layer--layers `(,(cfgl-layer "layer1" :name 'layer1)))
+        (mocker-mock-default-record-cls 'mocker-stub-record))
+    (defun layer1/init-pkg nil)
+    (mocker-let
+     ((spacemacs-buffer/message (m) ((:output nil)))
+      (layer1/init-pkg nil ((:output nil :occur 1))))
+     (configuration-layer//configure-package pkg))))
+
+(ert-deftest test-configure-packages--pre-init-is-evaluated ()
+  (let ((pkg (cfgl-package "pkg" :name 'pkg :owner 'layer1 :pre-layers '(layer2)))
+        (configuration-layer--layers
+         `(,(cfgl-layer "layer1" :name 'layer1)
+           ,(cfgl-layer "layer2" :name 'layer2)))
+        (mocker-mock-default-record-cls 'mocker-stub-record))
+    (defun layer1/init-pkg nil)
+    (defun layer2/pre-init-pkg nil)
+    (mocker-let
+     ((spacemacs-buffer/message (m) ((:output nil)))
+      (layer2/pre-init-pkg nil ((:output nil :occur 1))))
+     (configuration-layer//configure-package pkg))))
+
+(ert-deftest test-configure-package--post-init-is-evaluated ()
+  (let ((pkg (cfgl-package "pkg" :name 'pkg :owner 'layer1 :post-layers '(layer2)))
+        (configuration-layer--layers
+         `(,(cfgl-layer "layer1" :name 'layer1)
+           ,(cfgl-layer "layer2" :name 'layer2)))
+        (mocker-mock-default-record-cls 'mocker-stub-record))
+    (defun layer1/init-pkg nil)
+    (defun layer2/post-init-pkg nil)
+    (mocker-let
+     ((spacemacs-buffer/message (m) ((:output nil)))
+      (layer2/post-init-pkg nil ((:output nil :occur 1))))
+     (configuration-layer//configure-package pkg))))
+
+(ert-deftest test-configure-package--pre-init-is-evaluated-before-init ()
+  (let ((pkg (cfgl-package "pkg" :name 'pkg :owner 'layer1 :pre-layers '(layer2)))
+        (configuration-layer--layers
+         `(,(cfgl-layer "layer1" :name 'layer1)
+           ,(cfgl-layer "layer2" :name 'layer2)))
+        (witness nil)
+        (mocker-mock-default-record-cls 'mocker-stub-record))
+    (defun layer1/init-pkg () (push 'init witness))
+    (defun layer2/pre-init-pkg () (push 'pre-init witness))
+    (mocker-let
+     ((spacemacs-buffer/message (m) ((:output nil))))
+     (configuration-layer//configure-package pkg)
+     (should (equal '(init pre-init) witness)))))
+
+(ert-deftest test-configure-package--post-init-is-evaluated-after-init ()
+  (let ((pkg (cfgl-package "pkg" :name 'pkg :owner 'layer1 :post-layers '(layer2)))
+        (configuration-layer--layers
+         `(,(cfgl-layer "layer1" :name 'layer1)
+           ,(cfgl-layer "layer2" :name 'layer2)))
+        (witness nil)
+        (mocker-mock-default-record-cls 'mocker-stub-record))
+    (defun layer1/init-pkg () (push 'init witness))
+    (defun layer2/post-init-pkg () (push 'post-init witness))
+    (mocker-let
+     ((spacemacs-buffer/message (m) ((:output nil))))
+     (configuration-layer//configure-package pkg)
+     (should (equal '(post-init init) witness)))))
+
+(ert-deftest test-configure-package--disabled-for-does-not-call-pre-post-init ()
+  (let ((pkg (cfgl-package "pkg" :name 'pkg :owner 'layer1
+                           :pre-layers '(layer2)
+                           :post-layers '(layer3)))
+        (configuration-layer--layers
+         `(,(cfgl-layer "layer1" :name 'layer1 :disabled-for '(layer2 layer3))
+           ,(cfgl-layer "layer2" :name 'layer2)
+           ,(cfgl-layer "layer2" :name 'layer3)))
+        (witness nil)
+        (mocker-mock-default-record-cls 'mocker-stub-record))
+    (defun layer1/init-pkg () (push 'init witness))
+    (defun layer2/pre-init-pkg () (push 'pre-init witness))
+    (defun layer3/post-init-pkg () (push 'post-init witness))
+    (mocker-let
+     ((spacemacs-buffer/message (m) ((:output nil))))
+     (configuration-layer//configure-package pkg)
+     (should (equal '(init) witness)))))
+
+;; ---------------------------------------------------------------------------
 ;; configuration-layer//sort-packages
 ;; ---------------------------------------------------------------------------
 
@@ -543,7 +630,7 @@
     (should (not (configuration-layer//get-package-recipe 'pkg2)))))
 
 ;; ---------------------------------------------------------------------------
-;; configuration-layer/filter-packages
+;; configuration-layer/filter-objects
 ;; ---------------------------------------------------------------------------
 
 (ert-deftest test-filter-packages--example-filter-excluded-packages ()
@@ -564,7 +651,7 @@
                          (cfgl-package "pkg4" :name 'pkg4)
                          (cfgl-package "pkg7" :name 'pkg7)
                          (cfgl-package "pkg8" :name 'pkg8))
-                   (configuration-layer/filter-packages
+                   (configuration-layer/filter-objects
                     pkgs (lambda (x)
                            (not (oref x :excluded))))))))
 
@@ -586,7 +673,7 @@
                          (cfgl-package "pkg4" :name 'pkg4)
                          (cfgl-package "pkg7" :name 'pkg7)
                          (cfgl-package "pkg8" :name 'pkg8))
-                   (configuration-layer/filter-packages
+                   (configuration-layer/filter-objects
                     pkgs (lambda (x)
                            (not (eq 'local (oref x :location)))))))))
 
@@ -611,7 +698,7 @@
     (should (equal (list (cfgl-package "pkg2" :name 'pkg2)
                          (cfgl-package "pkg4" :name 'pkg4)
                          (cfgl-package "pkg8" :name 'pkg8))
-                   (configuration-layer/filter-packages
+                   (configuration-layer/filter-objects
                     pkgs (lambda (x)
                            (and (not (eq 'local (oref x :location)))
                                 (not (oref x :excluded)))))))))
@@ -638,7 +725,7 @@
                          (cfgl-package "pkg5" :name 'pkg5 :excluded t)
                          (cfgl-package "pkg7" :name 'pkg7)
                          (cfgl-package "pkg8" :name 'pkg8))
-                   (configuration-layer/filter-packages
+                   (configuration-layer/filter-objects
                     pkgs (lambda (x)
                            (or (not (eq 'local (oref x :location)))
                                (not (oref x :excluded)))))))))
@@ -685,7 +772,7 @@
      (should (null (configuration-layer//directory-type input))))))
 
 (ert-deftest test-directory-type--category ()
-  (let ((input (concat configuration-layer-contrib-directory "!vim/")))
+  (let ((input (concat configuration-layer-directory "+vim/")))
     (mocker-let
      ((file-directory-p (f)
                         ((:record-cls 'mocker-stub-record :output t :occur 1))))
@@ -788,7 +875,7 @@
      (should (null (configuration-layer//get-category-from-path input))))))
 
 (ert-deftest test-get-category-from-path--return-category ()
-  (let ((input "/a/path/to/a/!cat/"))
+  (let ((input "/a/path/to/a/+cat/"))
     (mocker-let
      ((file-directory-p (f)
                         ((:record-cls 'mocker-stub-record :output t :occur 1))))
