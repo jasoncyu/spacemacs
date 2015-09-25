@@ -18,8 +18,12 @@
     evil-org
     gnuplot
     htmlize
-    org
+    ;; org is installed by `org-plus-contrib'
+    (org :location built-in)
+    (org-plus-contrib :step pre)
     org-bullets
+    ;; org-mime is installed by `org-plus-contrib'
+    (org-mime :location built-in)
     org-pomodoro
     org-present
     org-repo-todo
@@ -46,8 +50,14 @@
       (evil-leader/set-key-for-mode 'org-mode
         "mC" 'evil-org-recompute-clocks
 
-        ;; evil-org binds these keys, so we unbind them
-        "t" nil "a" nil "b" nil "c" nil "l" nil "o" nil)
+        ;; evil-org binds these keys, so we bind them back to their original
+        ;; value
+        "t" (lookup-key evil-leader--default-map "t")
+        "a" (lookup-key evil-leader--default-map "a")
+        "b" (lookup-key evil-leader--default-map "b")
+        "c" (lookup-key evil-leader--default-map "c")
+        "l" (lookup-key evil-leader--default-map "l")
+        "o" (lookup-key evil-leader--default-map "o"))
       (evil-define-key 'normal evil-org-mode-map
         "O" 'evil-open-above)
       (spacemacs|diminish evil-org-mode " ⓔ" " e"))))
@@ -57,6 +67,9 @@
     :defer t
     :init (evil-leader/set-key-for-mode 'org-mode
             "mtp" 'org-plot/gnuplot)))
+
+;; dummy init function to force installation of `org-plus-contrib'
+(defun org/init-org-plus-contrib ())
 
 (defun org/init-org ()
   (use-package org
@@ -106,9 +119,29 @@ Will work on both org-mode and any mode that accepts plain html."
         "ml" 'org-open-at-point
         "mT" 'org-show-todo-tree
 
+        "m." 'org-time-stamp
+
         ;; headings
         "mhi" 'org-insert-heading-after-current
         "mhI" 'org-insert-heading
+
+        ;; More cycling options (timestamps, headlines, items, properties)
+        "mL" 'org-shiftright
+        "mH" 'org-shiftleft
+        "mJ" 'org-shiftdown
+        "mK" 'org-shiftup
+
+        ;; Change between TODO sets
+        "m C-S-l" 'org-shiftcontrolright
+        "m C-S-h" 'org-shiftcontrolleft
+        "m C-S-j" 'org-shiftcontroldown
+        "m C-S-k" 'org-shiftcontrolup
+
+        ;; Subtree editing
+        "mSl" 'org-demote-subtree
+        "mSh" 'org-promote-subtree
+        "mSj" 'org-move-subtree-down
+        "mSk" 'org-move-subtree-up
 
         ;; tables
         "mta" 'org-table-align
@@ -203,6 +236,17 @@ Will work on both org-mode and any mode that accepts plain html."
     :defer t
     :init (add-hook 'org-mode-hook 'org-bullets-mode)))
 
+(defun org/init-org-mime ()
+  (use-package org-mime
+    :defer t
+    :commands (org-mime-htmlize org-mime-org-buffer-htmlize)
+    :init
+    (progn
+      (evil-leader/set-key-for-mode 'message-mode
+        "mM" 'org-mime-htmlize)
+      (evil-leader/set-key-for-mode 'org-mode
+        "mm" 'org-mime-org-buffer-htmlize))))
+
 (defun org/init-org-pomodoro ()
   (use-package org-pomodoro
     :defer t
@@ -239,17 +283,14 @@ Will work on both org-mode and any mode that accepts plain html."
       (add-hook 'org-present-mode-hook 'spacemacs//org-present-start)
       (add-hook 'org-present-mode-quit-hook 'spacemacs//org-present-end))))
 
-
 (defun org/init-org-repo-todo ()
   (use-package org-repo-todo
-    :commands (ort/capture-todo
-               ort/capture-todo-check
-               ort/goto-todos)
+    :defer t
     :init
     (progn
       (evil-leader/set-key
         "Ct"  'ort/capture-todo
-        "CT"  'ort/capture-todo-check)
+        "CT"  'ort/capture-checkitem)
       (evil-leader/set-key-for-mode 'org-mode
         "mgt" 'ort/goto-todos))))
 

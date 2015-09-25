@@ -14,6 +14,7 @@
 ;;
 ;;; Code:
 
+(require 'cl-lib)
 (require 'eieio)
 (require 'package)
 (require 'ht)
@@ -24,7 +25,6 @@
 (unless package--initialized
   (setq package-archives '(("melpa" . "http://melpa.org/packages/")
                            ("org" . "http://orgmode.org/elpa/")
-                           ("ELPA" . "http://tromey.com/elpa/")
                            ("gnu" . "http://elpa.gnu.org/packages/")))
   ;; optimization, no need to activate all the packages so early
   (setq package-enable-at-startup nil)
@@ -102,12 +102,12 @@
    (location :initarg :location
              :initform elpa
              :type (satisfies (lambda (x)
-                                (or (member x '(local elpa))
+                                (or (member x '(built-in local elpa))
                                     (and (listp x) (eq 'recipe (car x))))))
              :documentation "Location of the package.")
    (step :initarg :step
          :initform nil
-         :type (satisfies (lambda (x) (member x '(nil pre post))))
+         :type (satisfies (lambda (x) (member x '(nil pre))))
          :documentation "Initialization step.")
    (excluded :initarg :excluded
              :initform nil
@@ -123,6 +123,9 @@
 
 (defvar configuration-layer--used-distant-packages '()
   "A list of all distant packages that are effectively used.")
+
+(defvar configuration-layer--skipped-packages nil
+  "A list of all packages that were skipped during last update attempt.")
 
 (defvar configuration-layer-error-count nil
   "Non nil indicates the number of errors occurred during the
@@ -189,8 +192,8 @@ layer directory."
                        "this layer already exists.") name))
      (t
       (make-directory layer-dir t)
-      (configuration-layer//copy-template "extensions" layer-dir)
-      (configuration-layer//copy-template "packages" layer-dir)
+      (configuration-layer//copy-template name "extensions" layer-dir)
+      (configuration-layer//copy-template name "packages" layer-dir)
       (message "Configuration layer \"%s\" successfully created." name)))))
 
 (defun configuration-layer/make-layer (layer)
@@ -325,15 +328,17 @@ Properties that can be copied are `:location', `:step' and `:excluded'."
                         (when (fboundp post-init-func)
                           (push name (oref obj :post-layers)))
                         (oset obj :location 'local)
-                        (oset obj :step step)))))))))))
+                        (oset obj :step (when (eq 'pre step) step))))))))))))
     ;; additional and excluded packages from dotfile
     (when dotfile
-      (dolist (apkg dotspacemacs-additional-packages)
-        (let ((obj (object-assoc apkg :name result)))
-          (unless obj
-            (setq obj (configuration-layer/make-package apkg))
-            (push obj result))
-          (oset obj :owner 'dotfile)))
+      (dolist (pkg dotspacemacs-additional-packages)
+        (let* ((pkg-name (if (listp pkg) (car pkg) pkg))
+               (obj (object-assoc pkg-name :name result)))
+          (if obj
+              (setq obj (configuration-layer/make-package pkg obj))
+            (setq obj (configuration-layer/make-package pkg))
+            (push obj result)
+            (oset obj :owner 'dotfile))))
       (dolist (xpkg dotspacemacs-excluded-packages)
         (let ((obj (object-assoc xpkg :name result)))
           (unless obj
@@ -358,17 +363,17 @@ Properties that can be copied are `:location', `:step' and `:excluded'."
   "Return the distant packages (ie to be intalled) that are effectively used."
   (configuration-layer/filter-objects
    packages (lambda (x) (and (not (null (oref x :owner)))
-                             (not (eq 'local (oref x :location)))
+                             (not (memq (oref x :location) '(built-in local)))
                              (not (oref x :excluded))))))
 
 (defun configuration-layer//get-private-layer-dir (name)
-  "Return an absolute path the the private configuration layer with name
-NAME."
-  (concat configuration-layer-private-layer-directory name "/"))
+  "Return an absolute path to the private configuration layer string NAME."
+  (file-name-as-directory
+   (concat configuration-layer-private-layer-directory name)))
 
-(defun configuration-layer//copy-template (template &optional layer-dir)
-  "Copy and replace special values of TEMPLATE to LAYER_DIR. If
-LAYER_DIR is nil, the private directory is used."
+(defun configuration-layer//copy-template (name template &optional layer-dir)
+  "Copy and replace special values of TEMPLATE to layer string NAME.
+If LAYER_DIR is nil, the private directory is used."
   (let ((src (concat configuration-layer-template-directory
                      (format "%s.template" template)))
         (dest (if layer-dir
@@ -653,15 +658,18 @@ path."
                "to add a recipe for it in alist %S.")
        pkg-name recipes-var))))
 
-(defun configuration-layer//filter-packages-with-deps (pkg-names filter)
+(defun configuration-layer//filter-packages-with-deps
+    (pkg-names filter &optional use-archive)
   "Return a filtered PACKAGES list where each elements satisfies FILTER."
   (when pkg-names
     (let (result)
       (dolist (pkg-name pkg-names)
         ;; recursively check dependencies
         (let* ((deps
-                (configuration-layer//get-package-deps-from-archive
-                 pkg-name))
+                (if use-archive
+                    (configuration-layer//get-package-deps-from-archive
+                     pkg-name)
+                  (configuration-layer//get-package-deps-from-alist pkg-name)))
                (install-deps
                 (when deps (configuration-layer//filter-packages-with-deps
                             (mapcar 'car deps) filter))))
@@ -704,12 +712,15 @@ path."
               (configuration-layer//get-latest-package-version-string
                pkg-name)))
       ;; (message "%s: %s > %s ?" pkg-name cur-version new-version)
-      (version< cur-version new-version))))
+      (if new-version
+          (version< cur-version new-version)
+        (cl-pushnew pkg-name configuration-layer--skipped-packages :test #'eq)
+        nil))))
 
 (defun configuration-layer//get-packages-to-update (pkg-names)
   "Return a filtered list of PKG-NAMES to update."
   (configuration-layer//filter-packages-with-deps
-   pkg-names 'configuration-layer//new-version-available-p))
+   pkg-names 'configuration-layer//new-version-available-p 'use-archive))
 
 (defun configuration-layer//configure-packages (packages)
   "Configure all passed PACKAGES honoring the steps order."
@@ -718,10 +729,7 @@ path."
     packages (lambda (x) (eq 'pre (oref x :step)))))
   (configuration-layer//configure-packages-2
    (configuration-layer/filter-objects
-    packages (lambda (x) (null (oref x :step)))))
-  (configuration-layer//configure-packages-2
-   (configuration-layer/filter-objects
-    packages (lambda (x) (eq 'post (oref x :step))))))
+    packages (lambda (x) (null (oref x :step))))))
 
 (defun configuration-layer//configure-packages-2 (packages)
   "Configure all passed PACKAGES."
@@ -735,21 +743,31 @@ path."
        ((null (oref pkg :owner))
         (spacemacs-buffer/message
          (format "%S ignored since it has no owner layer." pkg-name)))
-       ((eq 'dotfile (oref pkg :owner))
-        (configuration-layer//activate-package pkg-name)
-        (spacemacs-buffer/message
-         (format "%S is configured in the dotfile." pkg-name)))
-       ((eq 'local (oref pkg :location))
-        (let* ((owner (object-assoc (oref pkg :owner)
-                                    :name configuration-layer--layers))
-               (dir (oref owner :dir)))
-          (push (format "%slocal/%S/" dir pkg-name) load-path)
-          ;; TODO remove extensions in 0.105.0
-          (push (format "%sextensions/%S/" dir pkg-name) load-path))
-        (configuration-layer//configure-package pkg))
        (t
-        (configuration-layer//activate-package pkg-name)
-        (configuration-layer//configure-package pkg))))))
+        ;; load-path
+        (when (eq 'local (oref pkg :location))
+          (if (eq 'dotfile (oref pkg :owner))
+              ;; local packages owned by dotfile are stored in private/local
+              (push (file-name-as-directory
+                     (concat configuration-layer-private-directory
+                             "local/"
+                             (symbol-name (oref pkg :name))))
+                    load-path)
+            (let* ((owner (object-assoc (oref pkg :owner)
+                                        :name configuration-layer--layers))
+                   (dir (when owner (oref owner :dir))))
+              (push (format "%slocal/%S/" dir pkg-name) load-path)
+              ;; TODO remove extensions in 0.105.0
+              (push (format "%sextensions/%S/" dir pkg-name) load-path))))
+        ;; configuration
+        (cond
+         ((eq 'dotfile (oref pkg :owner))
+          (configuration-layer//activate-package pkg-name)
+          (spacemacs-buffer/message
+           (format "%S is configured in the dotfile." pkg-name)))
+         (t
+          (configuration-layer//activate-package pkg-name)
+          (configuration-layer//configure-package pkg))))))))
 
 (defun configuration-layer//configure-package (pkg)
   "Configure PKG."
@@ -808,10 +826,12 @@ If called with a prefix argument ALWAYS-UPDATE, assume yes to update."
    "--> fetching new package repository indexes...\n")
   (spacemacs//redisplay)
   (package-refresh-contents)
+  (setq configuration-layer--skipped-packages nil)
   (let* ((update-packages
           (configuration-layer//get-packages-to-update
            (mapcar 'car (object-assoc-list
                          :name configuration-layer--used-distant-packages))))
+         (skipped-count (length configuration-layer--skipped-packages))
          (date (format-time-string "%y-%m-%d_%H.%M.%S"))
          (rollback-dir (expand-file-name
                         (concat configuration-layer-rollback-directory
@@ -819,10 +839,22 @@ If called with a prefix argument ALWAYS-UPDATE, assume yes to update."
          (upgrade-count (length update-packages))
          (upgraded-count 0)
          (update-packages-alist))
+    (when configuration-layer--skipped-packages
+      (spacemacs-buffer/append
+       (format (concat "--> Warning: cannot update %s package(s), possibly due"
+                       " to a temporary network problem: %s\n")
+               skipped-count
+               (mapconcat #'symbol-name
+                          configuration-layer--skipped-packages
+                          " "))))
     ;; (message "packages to udpate: %s" update-packages)
     (if (> upgrade-count 0)
         (if (and (not always-update)
                  (not (yes-or-no-p (format (concat "%s package(s) to update, "
+                                                   (if (> skipped-count 0)
+                                                       (format "%s package(s) skipped, "
+                                                               skipped-count)
+                                                     "")
                                                    "do you want to continue ? ")
                                            upgrade-count))))
             (spacemacs-buffer/append
@@ -957,12 +989,12 @@ to select one."
   "Return the path for LAYER symbol."
   (ht-get configuration-layer-paths layer))
 
-(defun configuration-layer//get-all-packages-dependencies ()
+(defun configuration-layer//get-packages-dependencies ()
   "Returns dependencies hash map for all packages in `package-alist'."
   (let ((result (make-hash-table :size 512)))
     (dolist (pkg package-alist)
       (let* ((pkg-sym (car pkg))
-             (deps (configuration-layer//get-package-dependencies pkg-sym)))
+             (deps (configuration-layer//get-package-deps-from-alist pkg-sym)))
         (dolist (dep deps)
           (let* ((dep-sym (car dep))
                  (value (ht-get result dep-sym)))
@@ -1016,12 +1048,13 @@ to select one."
         (expand-file-name (concat elpa-dir pkg-dir-name))))
      (t (package-desc-dir (cadr pkg-desc))))))
 
-(defun configuration-layer//get-package-dependencies (pkg-name)
+(defun configuration-layer//get-package-deps-from-alist (pkg-name)
   "Return the dependencies alist for package with name PKG-NAME."
   (let ((pkg-desc (assq pkg-name package-alist)))
-    (cond
-     ((version< emacs-version "24.3.50") (aref (cdr pkg-desc) 1))
-     (t (package-desc-reqs (cadr pkg-desc))))))
+    (when pkg-desc
+      (cond
+       ((version< emacs-version "24.3.50") (aref (cdr pkg-desc) 1))
+       (t (package-desc-reqs (cadr pkg-desc)))))))
 
 (defun configuration-layer//get-package-deps-from-archive (pkg-name)
   "Return the dependencies alist for a PKG-NAME from the archive data."
@@ -1077,7 +1110,7 @@ to select one."
    ((version<= "25.0.50" emacs-version)
     (let ((p (cadr (assq pkg-name package-alist))))
       ;; add force flag to ignore dependency checks in Emacs25
-      (when p (package-delete p t))))
+      (when p (package-delete p t t))))
    (t (let ((p (cadr (assq pkg-name package-alist))))
         (when p (package-delete p))))))
 
@@ -1091,7 +1124,7 @@ Returns the filtered list."
 (defun configuration-layer/delete-orphan-packages (packages)
   "Delete PACKAGES if they are orphan."
   (interactive)
-  (let* ((dependencies (configuration-layer//get-all-packages-dependencies))
+  (let* ((dependencies (configuration-layer//get-packages-dependencies))
          (implicit-packages (configuration-layer//get-implicit-packages
                              configuration-layer--used-distant-packages))
          (orphans (configuration-layer//filter-used-themes

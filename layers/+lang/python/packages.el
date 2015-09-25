@@ -18,8 +18,8 @@
     ;; company-anaconda
     cython-mode
     eldoc
-    evil-matchit
     evil-jumper
+    evil-matchit
     flycheck
     helm-cscope
     helm-pydoc
@@ -38,7 +38,11 @@
 (defun python/init-anaconda-mode ()
   (use-package anaconda-mode
     :defer t
-    :init (add-hook 'python-mode-hook 'anaconda-mode)
+    :init
+    (progn
+      (setq anaconda-mode-installation-directory
+            (concat spacemacs-cache-directory "anaconda-mode"))
+      (add-hook 'python-mode-hook 'anaconda-mode))
     :config
     (progn
       (evil-leader/set-key-for-mode 'python-mode
@@ -256,13 +260,7 @@
               #'spacemacs/python-imenu-create-index-python-or-semantic)))))
 
 (defun python/post-init-evil-matchit ()
-  (use-package evil-matchit-python
-    :defer t
-    :init
-    (add-hook `python-mode-hook `turn-on-evil-matchit-mode)
-    :config
-    (plist-put evilmi-plugins 'python-mode '((evilmi-simple-get-tag evilmi-simple-jump)
-                                             (evilmi-python-get-tag evilmi-python-jump)))))
+    (add-hook `python-mode-hook `turn-on-evil-matchit-mode))
 
 (defun python/post-init-flycheck ()
   (add-hook 'python-mode-hook 'flycheck-mode))

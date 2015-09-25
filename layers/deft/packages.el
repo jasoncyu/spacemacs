@@ -18,7 +18,7 @@
     :defer t
     :init
     (progn
-      (setq deft-extension deft-custom-extension
+      (setq deft-extensions '("org" "md" "txt")
             deft-text-mode 'org-mode
             deft-use-filename-as-title t)
       (evil-leader/set-key "an" 'spacemacs/deft)
