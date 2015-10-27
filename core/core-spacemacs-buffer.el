@@ -61,7 +61,7 @@ Doge special text banner can be reachable via `999', `doge' or `random*'.
                  (or (not spacemacs-buffer--release-note-version)
                      (version< spacemacs-buffer--release-note-version
                                spacemacs-version)))
-        (spacemacs-buffer/toggle-note (concat spacemacs-release-notes-directory "0.104.txt")
+        (spacemacs-buffer/toggle-note (concat spacemacs-release-notes-directory "0.105.txt")
                                       'release-note))
       (spacemacs//redisplay))))
 
@@ -135,13 +135,8 @@ buffer, right justified."
                          (format "(%s)" spacemacs-version)))
              (pos (- maxcol (length injected)))
              (buffer-read-only nil))
-        ;; reset first line
-        (beginning-of-buffer)
-        (let ((buffer-read-only nil))
-          (end-of-line)
-          (kill-line (- maxcol)))
-        (beginning-of-buffer)
         ;; fill the first line with spaces if required
+        (beginning-of-buffer)
         (when (< (line-end-position) maxcol)
           (end-of-line)
           (insert-char ?\s (- maxcol (line-end-position))))
@@ -158,7 +153,7 @@ TAG-STRING is the label of the button for additional action.
 HELP-STRING is the help message of the button for additional action."
   (save-excursion
     (beginning-of-buffer)
-    (search-forward "Spacemacs\]")
+    (search-forward "Search in Spacemacs\]")
     (next-line)
     (let* ((note (concat "\n" (spacemacs//render-framed-text file
                                                              spacemacs-buffer--banner-length
@@ -238,12 +233,12 @@ If TYPE is nil, just remove widgets."
                                                    :action (lambda (&rest ignore)
                                                              (funcall 'spacemacs/view-org-file
                                                                       (concat user-emacs-directory "CHANGELOG.org")
-                                                                      "Release 0.104.x"
+                                                                      "Release 0.105.x"
                                                                       'subtree))
                                                    :mouse-face 'highlight
                                                    :follow-link "\C-m")))))
     (spacemacs-buffer//insert-note file
-                                   " Important Notes (Release 0.104.x) "
+                                   " Important Notes (Release 0.105.x) "
                                    widget-func))
 
   (setq spacemacs-buffer--release-note-version nil)
@@ -265,8 +260,8 @@ If TYPE is nil, just remove widgets."
 
 (defun spacemacs-buffer/message (msg &rest args)
   "Display MSG in message prepended with '(Spacemacs)'.
-The message is displayed only if `dotspacemacs-verbose-loading' is non nil."
-  (when dotspacemacs-verbose-loading
+The message is displayed only if `init-file-debug' is non nil."
+  (when init-file-debug
     (message "(Spacemacs) %s" (apply 'format msg args))))
 
 (defun spacemacs-buffer/warning (msg &rest args)
@@ -445,25 +440,32 @@ HPADDING is the horizontal spacing betwee the content line and the frame border.
                  "https://gitter.im/syl20bnr/spacemacs")
   (insert " ")
   (widget-create 'push-button
+                 :help-echo "Update Spacemacs core and layers."
+                 :action (lambda (&rest ignore) (spacemacs/switch-to-version))
+                 :mouse-face 'highlight
+                 :follow-link "\C-m"
+                 (propertize "Update Spacemacs" 'face 'font-lock-keyword-face))
+  (insert "\n               ")
+  (widget-create 'push-button
                  :help-echo "Update all ELPA packages to the latest versions."
                  :action (lambda (&rest ignore) (configuration-layer/update-packages))
                  :mouse-face 'highlight
                  :follow-link "\C-m"
-                 (propertize "Update" 'face 'font-lock-keyword-face))
+                 (propertize "Update Packages" 'face 'font-lock-keyword-face))
   (insert " ")
   (widget-create 'push-button
-                 :help-echo "Rollback ELPA package upgrades if something got borked."
+                 :help-echo "Rollback ELPA package updates if something got borked."
                  :action (lambda (&rest ignore) (call-interactively 'configuration-layer/rollback))
                  :mouse-face 'highlight
                  :follow-link "\C-m"
-                 (propertize "Rollback" 'face 'font-lock-keyword-face))
+                 (propertize "Rollback Package Update" 'face 'font-lock-keyword-face))
   (insert "\n")
   (insert "                  ")
   (widget-create 'push-button
                  :tag (propertize "Release Notes" 'face 'font-lock-preprocessor-face)
                  :help-echo "Hide or show the Changelog"
                  :action (lambda (&rest ignore)
-                           (spacemacs-buffer/toggle-note (concat spacemacs-release-notes-directory "0.104.txt")
+                           (spacemacs-buffer/toggle-note (concat spacemacs-release-notes-directory "0.105.txt")
                                                          ;; if nil is returned, just delete the current note widgets
                                                          (spacemacs-buffer//insert-note-p 'release-note)))
                  :mouse-face 'highlight

@@ -17,6 +17,7 @@
 (require 'cl-lib)
 (require 'eieio)
 (require 'package)
+(require 'warnings)
 (require 'ht)
 (require 'core-dotspacemacs)
 (require 'core-funcs)
@@ -102,7 +103,8 @@
    (location :initarg :location
              :initform elpa
              :type (satisfies (lambda (x)
-                                (or (member x '(built-in local elpa))
+                                (or (stringp x)
+                                    (member x '(built-in local elpa))
                                     (and (listp x) (eq 'recipe (car x))))))
              :documentation "Location of the package.")
    (step :initarg :step
@@ -354,7 +356,7 @@ Properties that can be copied are `:location', `:step' and `:excluded'."
 
 (defun configuration-layer/filter-objects (objects ffunc)
   "Return a filtered OBJECTS list where each element satisfies FFUNC."
-  (reverse (reduce (lambda (acc x)
+  (reverse (cl-reduce (lambda (acc x)
                      (if (funcall ffunc x) (push x acc) acc))
                    objects
                    :initial-value nil)))
@@ -364,6 +366,7 @@ Properties that can be copied are `:location', `:step' and `:excluded'."
   (configuration-layer/filter-objects
    packages (lambda (x) (and (not (null (oref x :owner)))
                              (not (memq (oref x :location) '(built-in local)))
+                             (not (stringp (oref x :location)))
                              (not (oref x :excluded))))))
 
 (defun configuration-layer//get-private-layer-dir (name)
@@ -745,20 +748,26 @@ path."
          (format "%S ignored since it has no owner layer." pkg-name)))
        (t
         ;; load-path
-        (when (eq 'local (oref pkg :location))
-          (if (eq 'dotfile (oref pkg :owner))
-              ;; local packages owned by dotfile are stored in private/local
-              (push (file-name-as-directory
-                     (concat configuration-layer-private-directory
-                             "local/"
-                             (symbol-name (oref pkg :name))))
-                    load-path)
-            (let* ((owner (object-assoc (oref pkg :owner)
-                                        :name configuration-layer--layers))
+        (let ((location (oref pkg :location)))
+          (cond
+           ((stringp location)
+            (if (file-directory-p location)
+                (push (file-name-as-directory location) load-path)
+              (spacemacs-buffer/warning
+               "Location path for package %S does not exists (value: %s)."
+               pkg location)))
+           ((and (eq 'local location)
+                 (eq 'dotfile (oref pkg :owner)))
+            (push (file-name-as-directory
+                   (concat configuration-layer-private-directory "local/"
+                           (symbol-name (oref pkg :name))))
+                  load-path))
+           ((eq 'local location)
+            (let* ((owner (object-assoc (oref pkg :owner) :name configuration-layer--layers))
                    (dir (when owner (oref owner :dir))))
               (push (format "%slocal/%S/" dir pkg-name) load-path)
               ;; TODO remove extensions in 0.105.0
-              (push (format "%sextensions/%S/" dir pkg-name) load-path))))
+              (push (format "%sextensions/%S/" dir pkg-name) load-path)))))
         ;; configuration
         (cond
          ((eq 'dotfile (oref pkg :owner))
@@ -821,7 +830,7 @@ If called with a prefix argument ALWAYS-UPDATE, assume yes to update."
   (interactive "P")
   (spacemacs-buffer/insert-page-break)
   (spacemacs-buffer/append
-   "\nUpdating Spacemacs... (for now only ELPA packages are updated)\n")
+   "\nUpdating Emacs packages from remote repositories (ELPA, MELPA, etc.)... \n")
   (spacemacs-buffer/append
    "--> fetching new package repository indexes...\n")
   (spacemacs//redisplay)

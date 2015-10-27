@@ -17,7 +17,7 @@
 |
 <b><a href="doc/DOCUMENTATION.org#achievements">achievements</a></b>
 |
-<b><a href="#faq">FAQ</a></b>
+<b><a href="doc/FAQ.org">FAQ</a></b>
 </p>
 ***
 
@@ -42,6 +42,7 @@
 - [Update](#update)
     - [Automatic update](#automatic-update)
     - [On develop branch](#on-develop-branch)
+    - [Revert to a specific version](#revert-to-a-specific-version)
 - [Contributions](#contributions)
 - [License](#license)
 - [Supporting Spacemacs](#supporting-spacemacs)
@@ -50,18 +51,21 @@
 
 # Introduction
 
-Spacemacs is a proposition of a complete new experience for Emacs focused
-on ergonomics, mnemonics and consistency. 
+Spacemacs is a new way to experience Emacs -- a sophisticated and
+polished set-up focused on ergonomics, mnemonics and consistency.
 
-Clone it, launch it then press the space bar and let you guided by the built-in
-interactive list of key-bindings. You can also press the `[?]` button on the
-home buffer for the first essential key bindings to know.
+Just clone it, launch it, then press the space bar to explore the
+interactive list of carefully-chosen key bindings. You can also press
+the home buffer's `[?]` button for some great first key bindings to
+try.
 
-Spacemacs can be used by Emacs or Vim users flawlessly, it is even possible
-to mix the two styles. You can switch between any style at any moment which
-make it a very good tool for pair-programming.
+Spacemacs can be used naturally by both Emacs and Vim users -- you can
+even mix the two editing styles. Switching easily between input styles
+makes Spacemacs a great tool for pair-programming.
 
 Spacemacs is currently in beta, and contributions are very welcome.
+
+![spacemacs_python](doc/img/spacemacs-python.png)
 
 # Features
 
@@ -100,7 +104,7 @@ If you prefer IRC, connect to the [Gitter Chat IRC server][] and join the
 
 ## Emacs
 
-`Spacemacs` is operational with Emacs 24.3 but Emacs 24.4 and above are
+Spacemacs is operational with Emacs 24.3 but Emacs 24.4 and above are
 recommended to enjoy the full experience.
 
 Some modes require third-party tools that you'll have to install via your
@@ -110,12 +114,16 @@ favorite package manager.
 
 Install Emacs from the package manager of your Linux distribution.
 
+You should install the "emacs" package, not the "xemacs" package.
+XEmacs is an old fork of Emacs. The X in its name is unrelated to X11.
+Both Emacs and XEmacs have graphical support.
+
 ### OS X
 
 We recommend the homebrew [emacs-mac-port][] formula:
 
 ```sh
-$ brew tap railwaycat/emacsmacport
+$ brew tap railwaycat/homebrew-emacsmacport
 $ brew install emacs-mac --with-spacemacs-icon  # OR, brew cask install emacs-mac
 ```
 
@@ -169,17 +177,17 @@ For efficient searches we recommend to install `pt` ([the platinum searcher][]).
    git clone --recursive https://github.com/syl20bnr/spacemacs ~/.emacs.d
    ```
 
-`master` is the stable branch and it is _immutable_, **DO NOT** make any
-modification to it or you will break the update mechanism. If you want to
-fork Spacemacs safely use the `develop` branch where you handle the update
-manually.
+   `master` is the stable branch and it is _immutable_, **DO NOT** make any
+   modification to it or you will break the update mechanism. If you want to
+   fork Spacemacs safely use the `develop` branch where you handle the update
+   manually.
 
 3. Launch Emacs. Spacemacs will automatically install the packages it requires.
 
 4. Restart Emacs to complete the installation.
 
 If the mode-line turns red then be sure to visit the
-[troubleshooting][troubleshoot] guide and consult the [FAQ](#faq).
+[troubleshooting][troubleshoot] guide and consult the [FAQ][FAQ.org].
 
 ## Spacemacs logo
 
@@ -204,7 +212,7 @@ Its color depends on the number of versions available since your last update.
 Green means that your current version is recent, orange and red that your
 current version is older.
 
-[[file:doc/img/powerline-update.png]]
+![powerline_update](doc/img/powerline-update.png)
 
 Click on the arrow to update Spacemacs to the last version.
 
@@ -221,9 +229,18 @@ the starting page.
 
 3. Restart Emacs to complete the upgrade.
 
+## Revert to a specific version
+
+To revert to a specific version you just have to checkout the corresponding
+branch, for instance to revert to the last `0.103`:
+
+   ```sh
+   git checkout origin/release-0.103
+   ```
+
 # Contributions
 
-`Spacemacs` is a community-driven project, it needs _you_ to keep it up to
+Spacemacs is a community-driven project, it needs _you_ to keep it up to
 date and propose useful and complete configuration!
 
 Before contributing be sure to consult the
@@ -231,7 +248,7 @@ Before contributing be sure to consult the
 
 # License
 
-The license is GPLv3 for all parts specific to `Spacemacs`, this includes:
+The license is GPLv3 for all parts specific to Spacemacs, this includes:
 - the initialization and core files
 - all the layer files.
 - the documentation
@@ -261,7 +278,7 @@ Thank you !
 [VIMUSERS.org]: doc/VIMUSERS.org
 [dotfile]: doc/DOCUMENTATION.org#dotfile-configuration
 [troubleshoot]: doc/DOCUMENTATION.org#troubleshoot
-[osx layer]: contrib/osx/README.org
+[osx layer]: layers/osx/README.org
 [Gitter Chat]: https://gitter.im/syl20bnr/spacemacs
 [Gitter Chat IRC server]: https://irc.gitter.im/
 [emacs-mac-port]: https://github.com/railwaycat/homebrew-emacsmacport

@@ -24,8 +24,8 @@
     :defer t
     :init
     (progn
-      (spacemacs/add-to-hook 'rcirc-mode-hook '(flyspell-mode
-                                                rcirc-omit-mode
+      (spacemacs/add-flyspell-hook 'rcirc-mode)
+      (spacemacs/add-to-hook 'rcirc-mode-hook '(rcirc-omit-mode
                                                 rcirc-track-minor-mode))
 
       (defun spacemacs//rcirc-with-authinfo (arg)
@@ -33,7 +33,7 @@
         (unless arg
           (if (file-exists-p "~/.authinfo.gpg")
               (spacemacs//rcirc-authinfo-config)
-            (spacemacs/warning "Cannot find file ~/.authinfo.gpg")))
+            (message "Cannot find file ~/.authinfo.gpg")))
         (rcirc arg))
 
       (defun spacemacs//rcirc-with-znc (arg)

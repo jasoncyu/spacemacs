@@ -95,6 +95,7 @@ is achieved by adding the relevant text properties."
       (defun spacemacs//init-eshell ()
         "Stuff to do when enabling eshell."
         (setq pcomplete-cycle-completions nil)
+        (if linum-mode (linum-mode -1))
         (unless shell-enable-smart-eshell
           ;; we don't want auto-jump to prompt when smart eshell is enabled.
           ;; Idea: maybe we could make auto-jump smarter and jump only if the
@@ -247,13 +248,6 @@ is achieved by adding the relevant text properties."
       (make-shell-pop-command multiterm)
       (make-shell-pop-command ansi-term shell-pop-term-shell)
 
-      (defun spacemacs//term-kill-buffer-hook ()
-        "Function that hook `kill-buffer-hook'."
-        (when (eq major-mode 'term-mode)
-          (when (term-check-proc (current-buffer))
-            (term-quit-subjob))))
-      (add-hook 'kill-buffer-hook 'spacemacs//term-kill-buffer-hook)
-
       (defun ansi-term-handle-close ()
         "Close current term buffer when `exit' from term buffer."
         (when (ignore-errors (get-buffer-process (current-buffer)))
@@ -263,6 +257,7 @@ is achieved by adding the relevant text properties."
                                     (kill-buffer (process-buffer proc))
                                     (delete-window))))))
       (add-hook 'term-mode-hook 'ansi-term-handle-close)
+      (add-hook 'term-mode-hook (lambda () (linum-mode -1)))
 
       (defun spacemacs/default-pop-shell ()
         "Open the default shell in a popup."

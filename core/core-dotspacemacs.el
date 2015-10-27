@@ -49,9 +49,6 @@ then this is used. If ~/.spacemacs does not exist, then check
 for init.el in dotspacemacs-directory and use this if it
 exists. Otherwise, fallback to ~/.spacemacs")
 
-(defvar dotspacemacs-verbose-loading nil
-  "If non nil output loading progess in `*Messages*' buffer.")
-
 (defvar dotspacemacs-distribution 'spacemacs
   "Base distribution to use. This is a layer contained in the directory
 `+distribution'. For now available distributions are `spacemacs-base'
@@ -65,7 +62,7 @@ Paths must have a trailing slash (ie. `~/.mycontribs/')")
   "List of additional packages that will be installed wihout being
 wrapped in a layer. If you need some configuration for these
 packages then consider to create a layer, you can also put the
-configuration in `dotspacemacs/config'.")
+configuration in `dotspacemacs/user-config'.")
 
 (defvar dotspacemacs-editing-style 'vim
   "Either `vim' or `emacs'. Evil is always enabled but if the variable
@@ -92,7 +89,7 @@ Press <SPC> T n to cycle to the next theme in the list (works great
 with 2 themes variants, one dark and one light")
 
 (defvar dotspacemacs-colorize-cursor-according-to-state t
-  "If non nil the cursor color matches the state color.")
+  "If non nil the cursor color matches the state color in GUI Emacs.")
 
 (defvar dotspacemacs-leader-key "SPC"
   "The leader key.")
@@ -120,12 +117,15 @@ size to make separators look not too crappy.")
 By default the command key is `:' so ex-commands are executed like in Vim
 with `:' and Emacs commands are executed with `<leader> :'.")
 
+(defvaralias 'dotspacemacs-remap-Y-to-y$ 'evil-want-Y-yank-to-eol
+  "If non nil `Y' is remapped to `y$'.")
+
 (defvar dotspacemacs-use-ido nil
   "If non nil then `ido' replaces `helm' for some commands. For now only
 `find-files' (SPC f f) is replaced.")
 
 (defvar dotspacemacs-helm-resize nil
-  "If non nil, `helm' will try to miminimize the space it uses.")
+  "If non nil, `helm' will try to minimize the space it uses.")
 
 (defvar dotspacemacs-helm-no-header nil
   "if non nil, the helm header is hidden when there is only one source.")
@@ -227,7 +227,7 @@ Possible values are: `recents' `bookmarks' `projects'.")
   "Synchronize declared layers in dotfile with spacemacs.
 
 Called with `C-u' skips `dotspacemacs/user-config'.
-Called with `C-u C-u' skips `dotspacemacs/user-config' and preleminary tests."
+Called with `C-u C-u' skips `dotspacemacs/user-config' _and_ preleminary tests."
   (interactive "P")
   (when (file-exists-p dotspacemacs-filepath)
     (with-current-buffer (find-file-noselect dotspacemacs-filepath)
@@ -242,7 +242,7 @@ Called with `C-u C-u' skips `dotspacemacs/user-config' and preleminary tests."
                                         "Calling dotfile init...")
                 (configuration-layer/sync)
                 (if (member arg '(4 16))
-                    (message (concat "Done (`dotspacemacs/config'function has "
+                    (message (concat "Done (`dotspacemacs/user-config' function has "
                                      "been skipped)."))
                   ;; TODO remove support for dotspacemacs/config in 0.105
                   (if (fboundp 'dotspacemacs/user-config)
@@ -254,11 +254,13 @@ Called with `C-u C-u' skips `dotspacemacs/user-config' and preleminary tests."
                     (dotspacemacs|call-func dotspacemacs/config
                                             "Calling dotfile user config..."))
                   (message "Done."))
-                (when (configuration-layer/package-usedp 'powerline)
+                (when (configuration-layer/package-usedp 'spaceline)
                   (spacemacs//restore-powerline (current-buffer))))
             (switch-to-buffer-other-window dotspacemacs-test-results-buffer)
             (spacemacs-buffer/warning "Some tests failed, check `%s' buffer"
-                                      dotspacemacs-test-results-buffer)))))))
+                                      dotspacemacs-test-results-buffer))))))
+  (when (configuration-layer/package-usedp 'spaceline)
+    (spacemacs//set-powerline-for-startup-buffers)))
 
 (defun dotspacemacs/get-variable-string-list ()
   "Return a list of all the dotspacemacs variables as strings."
@@ -359,7 +361,7 @@ value."
   "Load ~/.spacemacs if it exists."
   (let ((dotspacemacs (dotspacemacs/location)))
     (if (file-exists-p dotspacemacs)
-        (unless (ignore-errors (load dotspacemacs))
+        (unless (with-demoted-errors "Error loading .spacemacs: %S" (load dotspacemacs))
           (dotspacemacs/safe-load)))))
 
 (defun dotspacemacs/safe-load ()
@@ -399,10 +401,19 @@ error recovery."
 
 (defmacro dotspacemacs|call-func (func &optional msg)
   "Call the function from the dotfile only if it is bound.
-If MSG is not nil then display a message in `*Messages'."
+If MSG is not nil then display a message in `*Messages'. Errors
+are caught and signalled to user in spacemacs buffer."
   `(progn
      (when ,msg (spacemacs-buffer/message ,msg))
-     (if (fboundp ',func) (,func))))
+     (when (fboundp ',func)
+         (condition-case-unless-debug err
+             (,func)
+           (error
+            (configuration-layer//set-error)
+            (spacemacs-buffer/append (format "Error in %s: %s\n"
+                                             ',(symbol-name func)
+                                             (error-message-string err))
+                                     t))))))
 
 (defun dotspacemacs//test-dotspacemacs/layers ()
   "Tests for `dotspacemacs/layers'"
@@ -470,7 +481,11 @@ If MSG is not nil then display a message in `*Messages'."
    (spacemacs//test-var 'stringp 'dotspacemacs-leader-key "is a string")
    (spacemacs//test-var 'stringp 'dotspacemacs-emacs-leader-key "is a string")
    (spacemacs//test-var
-    'stringp 'dotspacemacs-major-mode-leader-key "is a string")
+    (lambda (x) (or (null x) (stringp x)))
+    'dotspacemacs-major-mode-leader-key "is a string or nil")
+   (spacemacs//test-var
+    (lambda (x) (or (null x) (stringp x)))
+    'dotspacemacs-major-mode-emacs-leader-key "is a string or nil")
    (spacemacs//test-var 'stringp 'dotspacemacs-command-key "is a string")
    (insert (format
             (concat "** RESULTS: "

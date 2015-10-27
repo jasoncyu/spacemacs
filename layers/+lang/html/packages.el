@@ -50,6 +50,9 @@
     (progn
       (push 'company-css company-backends-css-mode)
 
+      ;; Mark `css-indent-offset' as safe-local variable
+      (put 'css-indent-offset 'safe-local-variable #'integerp)
+
       (defun css-expand-statement ()
         "Expand CSS block"
         (interactive)
@@ -89,19 +92,16 @@
       (evil-define-key 'insert emmet-mode-keymap (kbd "<tab>") 'emmet-expand-yas)
       (evil-define-key 'emacs emmet-mode-keymap (kbd "TAB") 'emmet-expand-yas)
       (evil-define-key 'emacs emmet-mode-keymap (kbd "<tab>") 'emmet-expand-yas)
+      (evil-define-key 'hybrid emmet-mode-keymap (kbd "TAB") 'emmet-expand-yas)
+      (evil-define-key 'hybrid emmet-mode-keymap (kbd "<tab>") 'emmet-expand-yas)
       (spacemacs|hide-lighter emmet-mode))))
 
 (defun html/post-init-evil-matchit ()
-  (add-hook 'web-mode-hook 'evil-matchit-mode))
+  (add-hook 'web-mode-hook 'turn-on-evil-matchit-mode))
 
 (defun html/post-init-flycheck ()
-  (spacemacs/add-to-hooks 'flycheck-mode '(haml-mode-hook
-                                           jade-mode-hook
-                                           less-mode-hook
-                                           sass-mode-hook
-                                           scss-mode-hook
-                                           slim-mode-hook
-                                           web-mode-hook)))
+  (dolist (mode '(haml-mode jade-mode less-mode sass-mode scss-mode slim-mode web-mode))
+    (spacemacs/add-flycheck-hook mode)))
 
 (defun html/init-haml-mode ()
   (use-package haml-mode
@@ -138,10 +138,28 @@
     :defer t))
 
 (defun html/post-init-smartparens ()
-  (spacemacs/add-to-hooks (if dotspacemacs-smartparens-strict-mode
-                              'smartparens-strict-mode
-                            'smartparens-mode)
-                          '(css-mode-hook scss-mode-hook sass-mode-hook less-css-mode-hook)))
+  (spacemacs/add-to-hooks
+   (if dotspacemacs-smartparens-strict-mode
+       'smartparens-strict-mode
+     'smartparens-mode)
+   '(css-mode-hook scss-mode-hook sass-mode-hook less-css-mode-hook))
+
+  ;; Only use smartparens in web-mode
+  (spacemacs|use-package-add-hook web-mode
+    :post-config
+    (progn
+      (setq web-mode-enable-auto-pairing nil)
+      (sp-local-pair 'web-mode "<% " " %>")
+      (sp-local-pair 'web-mode "{ " " }")
+      (sp-local-pair 'web-mode "<%= "  " %>")
+      (sp-local-pair 'web-mode "<%# "  " %>")
+      (sp-local-pair 'web-mode "<%$ "  " %>")
+      (sp-local-pair 'web-mode "<%@ "  " %>")
+      (sp-local-pair 'web-mode "<%: "  " %>")
+      (sp-local-pair 'web-mode "{{ "  " }}")
+      (sp-local-pair 'web-mode "{% "  " %}")
+      (sp-local-pair 'web-mode "{%- "  " %}")
+      (sp-local-pair 'web-mode "{# "  " #}"))))
 
 (defun html/init-tagedit ()
   (use-package tagedit
@@ -166,21 +184,6 @@
     (push 'company-web-html company-backends-web-mode)
     :config
     (progn
-      ;; Only use smartparens in web-mode
-      (setq web-mode-enable-auto-pairing nil)
-
-      (sp-local-pair 'web-mode "<% " " %>")
-      (sp-local-pair 'web-mode "{ " " }")
-      (sp-local-pair 'web-mode "<%= "  " %>")
-      (sp-local-pair 'web-mode "<%# "  " %>")
-      (sp-local-pair 'web-mode "<%$ "  " %>")
-      (sp-local-pair 'web-mode "<%@ "  " %>")
-      (sp-local-pair 'web-mode "<%: "  " %>")
-      (sp-local-pair 'web-mode "{{ "  " }}")
-      (sp-local-pair 'web-mode "{% "  " %}")
-      (sp-local-pair 'web-mode "{%- "  " %}")
-      (sp-local-pair 'web-mode "{# "  " #}")
-
       (evil-leader/set-key-for-mode 'web-mode
         "meh" 'web-mode-dom-errors-show
         "mgb" 'web-mode-element-beginning

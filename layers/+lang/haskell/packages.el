@@ -30,7 +30,7 @@
     :defer t))
 
 (defun haskell/post-init-flycheck ()
-  (add-hook 'haskell-mode-hook 'flycheck-mode))
+  (spacemacs/add-flycheck-hook 'haskell-mode))
 
 (when (configuration-layer/layer-usedp 'syntax-checking)
   (defun haskell/init-flycheck-haskell ()
@@ -78,12 +78,19 @@
        ;; To enable tags generation on save.
        haskell-tags-on-save t
        ;; Remove annoying error popups
-       haskell-interactive-popup-error nil
+       haskell-interactive-popup-errors nil
        ;; Better import handling
        haskell-process-suggest-remove-import-lines t
        haskell-process-auto-import-loaded-modules t
        ;; Disable haskell-stylish on save, it breaks flycheck highlighting
        haskell-stylish-on-save nil)
+
+      ;; prefixes
+      (spacemacs/declare-prefix-for-mode 'haskell-mode "mg" "haskell/navigation")
+      (spacemacs/declare-prefix-for-mode 'haskell-mode "ms" "haskell/repl")
+      (spacemacs/declare-prefix-for-mode 'haskell-mode "mc" "haskell/cabal")
+      (spacemacs/declare-prefix-for-mode 'haskell-mode "mh" "haskell/documentation")
+      (spacemacs/declare-prefix-for-mode 'haskell-mode "md" "haskell/debug")
 
       ;; key bindings
       (defun spacemacs/haskell-process-do-type-on-prev-line ()
@@ -94,6 +101,7 @@
 
       (evil-leader/set-key-for-mode 'haskell-mode
         "mgg"  'haskell-mode-jump-to-def-or-tag
+        "mgi"  'haskell-navigate-imports
         "mf"   'haskell-mode-stylish-buffer
 
         "msb"  'haskell-process-load-or-reload
@@ -108,8 +116,9 @@
 
         "mhd"  'inferior-haskell-find-haddock
         "mhh"  'hoogle
-        "mhi"  'haskell-process-do-info
-        "mht"  'haskell-process-do-type
+        "mhH"  'hoogle-lookup-from-local
+        "mhi"  (lookup-key haskell-mode-map (kbd "C-c C-i"))
+        "mht"  (lookup-key haskell-mode-map (kbd "C-c C-t"))
         "mhT"  'spacemacs/haskell-process-do-type-on-prev-line
         "mhy"  'hayoo
 
@@ -124,7 +133,7 @@
 
       ;; Switch back to editor from REPL
       (evil-leader/set-key-for-mode 'haskell-interactive-mode
-        "msS"  'haskell-interactive-switch)
+        "msS"  'haskell-interactive-switch-back)
 
       ;; Compile
       (evil-leader/set-key-for-mode 'haskell-cabal
@@ -160,36 +169,35 @@
         (setq haskell-process-path-ghci "ghci-ng")
 
         (evil-leader/set-key-for-mode 'haskell-mode
+          ;; function suggested in
+          ;; https://github.com/chrisdone/ghci-ng#using-with-haskell-mode
           "mu"   'haskell-mode-find-uses
           "mht"  'haskell-mode-show-type-at
           "mgg"  'haskell-mode-goto-loc))
 
       ;; Useful to have these keybindings for .cabal files, too.
-      (eval-after-load 'haskell-cabal-mode-map
-        '(define-key haskell-cabal-mode-map
-           [?\C-c ?\C-z] 'haskell-interactive-switch))))
+      (with-eval-after-load 'haskell-cabal-mode-map
+        (define-key haskell-cabal-mode-map
+          [?\C-c ?\C-z] 'haskell-interactive-switch))))
 
-
-  (eval-after-load 'haskell-indentation
-    '(progn
-       ;; Show indentation guides in insert or emacs state only.
-       (defun spacemacs//haskell-indentation-show-guides ()
-         "Show visual indentation guides."
-         (when (and (boundp 'haskell-indentation-mode) haskell-indentation-mode)
-           (haskell-indentation-enable-show-indentations)))
-
-       (defun spacemacs//haskell-indentation-hide-guides ()
-         "Hide visual indentation guides."
-         (when (and (boundp 'haskell-indentation-mode) haskell-indentation-mode)
-           (haskell-indentation-disable-show-indentations)))
-
-       ;; first entry in normal state
-       (add-hook 'evil-normal-state-entry-hook 'spacemacs//haskell-indentation-hide-guides)
-
-       (add-hook 'evil-insert-state-entry-hook 'spacemacs//haskell-indentation-show-guides)
-       (add-hook 'evil-emacs-state-entry-hook 'spacemacs//haskell-indentation-show-guides)
-       (add-hook 'evil-insert-state-exit-hook 'spacemacs//haskell-indentation-hide-guides)
-       (add-hook 'evil-emacs-state-exit-hook 'spacemacs//haskell-indentation-hide-guides))))
+  ;; align rules for Haskell
+  (with-eval-after-load 'align
+    (add-to-list 'align-rules-list
+                 '(haskell-types
+                   (regexp . "\\(\\s-+\\)\\(::\\|∷\\)\\s-+")
+                   (modes . '(haskell-mode literate-haskell-mode))))
+    (add-to-list 'align-rules-list
+                 '(haskell-assignment
+                   (regexp . "\\(\\s-+\\)=\\s-+")
+                   (modes . '(haskell-mode literate-haskell-mode))))
+    (add-to-list 'align-rules-list
+                 '(haskell-arrows
+                   (regexp . "\\(\\s-+\\)\\(->\\|→\\)\\s-+")
+                   (modes . '(haskell-mode literate-haskell-mode))))
+    (add-to-list 'align-rules-list
+                 '(haskell-left-arrows
+                   (regexp . "\\(\\s-+\\)\\(<-\\|←\\)\\s-+")
+                   (modes . '(haskell-mode literate-haskell-mode))))))
 
 (defun haskell/init-haskell-snippets ()
   ;; manually load the package since the current implementation is not lazy
@@ -202,7 +210,7 @@
       (add-to-list 'yas-snippet-dirs snip-dir t)
       (yas-load-directory snip-dir)))
 
-  (eval-after-load 'yasnippet '(haskell-snippets-initialize)))
+  (with-eval-after-load 'yasnippet (haskell-snippets-initialize)))
 
 (defun haskell/init-hindent ()
   (use-package hindent

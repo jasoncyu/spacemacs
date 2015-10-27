@@ -14,7 +14,7 @@
 ;; (package-initialize)
 
 (setq gc-cons-threshold 100000000)
-(defconst spacemacs-version          "0.104.0" "Spacemacs version.")
+(defconst spacemacs-version          "0.105.0" "Spacemacs version.")
 (defconst spacemacs-emacs-min-version   "24.3" "Minimal version of Emacs.")
 
 (defun spacemacs/emacs-version-ok ()
@@ -22,6 +22,8 @@
 
 (when (spacemacs/emacs-version-ok)
   (load-file (concat user-emacs-directory "core/core-load-paths.el"))
+  (when init-file-debug
+    (require 'core-debug))
   (require 'core-spacemacs)
   (require 'core-configuration-layer)
   (spacemacs/init)
