@@ -8,7 +8,7 @@
 (when (spacemacs/system-is-mac)
   ;; Note: `delete-by-moving-to-trash' is set to true globaly in
   ;; `spacemacs/config.el'
-  ;; (setq trash-directory "~/.Trash/emacs") ; bare minimum
+  (setq trash-directory "~/.Trash")
 
   ;; Use `trash' cli tool, if installed.
   ;; See brew info trash (or osx-tools)
