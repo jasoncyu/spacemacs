@@ -3,6 +3,8 @@
     company
     company-emoji
     emoji-cheat-sheet-plus
+    flyspell
+    persp-mode
     rcirc
     rcirc-color
     rcirc-notify
@@ -19,12 +21,25 @@
 (defun rcirc/post-init-emoji-cheat-sheet-plus ()
   (add-hook 'rcirc-mode-hook 'emoji-cheat-sheet-plus-display-mode))
 
+(defun rcirc/post-init-flyspell ()
+  (spell-checking/add-flyspell-hook 'rcirc-mode-hook))
+
+(defun rcirc/post-init-persp-mode ()
+  (spacemacs|define-custom-layout "@RCIRC"
+    :binding "i"
+    :body
+    (call-interactively 'spacemacs/rcirc))
+  ;; do not save rcirc buffers
+  (spacemacs|use-package-add-hook persp-mode
+    :post-config
+    (push (lambda (b) (with-current-buffer b (eq major-mode 'rcirc-mode)))
+          persp-filter-save-buffers-functions)))
+
 (defun rcirc/init-rcirc ()
   (use-package rcirc
     :defer t
     :init
     (progn
-      (spacemacs/add-flyspell-hook 'rcirc-mode)
       (spacemacs/add-to-hook 'rcirc-mode-hook '(rcirc-omit-mode
                                                 rcirc-track-minor-mode))
 
@@ -47,7 +62,7 @@
                  rcirc-server-alist))
           (spacemacs//znc-rcirc-connect)))
 
-      (evil-leader/set-key "air" 'spacemacs/rcirc)
+      (spacemacs/set-leader-keys "air" 'spacemacs/rcirc)
       (defun spacemacs/rcirc (arg)
         "Launch rcirc."
         (interactive "P")

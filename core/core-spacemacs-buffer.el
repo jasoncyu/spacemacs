@@ -30,6 +30,32 @@ version the release note it displayed")
 (defvar spacemacs-buffer--previous-insert-type nil
   "Previous type of note inserted.")
 
+(defvar spacemacs-buffer-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map [tab] 'widget-forward)
+    (define-key map (kbd "C-i") 'widget-forward)
+    (define-key map [backtab] 'widget-backward)
+    (define-key map (kbd "RET") 'widget-button-press)
+    (define-key map [down-mouse-1] 'widget-button-click)
+    map)
+  "Keymap for spacemacs buffer mode.")
+
+(define-derived-mode spacemacs-buffer-mode special-mode "Spacemacs buffer"
+  "Spacemacs major mode for startup screen.
+
+\\<spacemacs-buffer-mode-map>
+"
+  :group 'spacemacs
+  :syntax-table nil
+  :abbrev-table nil
+  (setq truncate-lines t)
+  (page-break-lines-mode)
+  ;; needed to make tab work correctly in terminal
+  (evil-define-key 'motion spacemacs-buffer-mode-map (kbd "C-i") 'widget-forward)
+  ;; motion state since this is a special mode
+  (unless (eq dotspacemacs-editing-style 'emacs)
+    (add-to-list 'evil-motion-state-modes 'spacemacs-buffer-mode)))
+
 (defun spacemacs-buffer/insert-banner-and-buttons ()
   "Choose a banner according to `dotspacemacs-startup-banner'and insert it
 in spacemacs buffer along with quick buttons underneath.
@@ -54,6 +80,11 @@ Doge special text banner can be reachable via `999', `doge' or `random*'.
           (setq spacemacs-buffer--release-note-version spacemacs-version)
           (spacemacs/dump-vars-to-file
            '(spacemacs-buffer--release-note-version) spacemacs-buffer--cache-file)))
+      ;; if there is no installed dotfile we assume the user is
+      ;; new to spacemacs and open the quickhelp
+      (when (not (file-exists-p dotspacemacs-filepath))
+        (spacemacs-buffer/toggle-note (concat spacemacs-info-directory "quickhelp.txt")
+                                      (spacemacs-buffer//insert-note-p 'quickhelp)))
       ;; if there is an installed dotfile we check the variable
       ;; spacemacs-buffer--release-note-version to decide whether
       ;; we show the release note
@@ -128,21 +159,19 @@ buffer, right justified."
   (with-current-buffer (get-buffer-create "*spacemacs*")
     (save-excursion
       (let* ((maxcol spacemacs-buffer--banner-length)
-             (injected (if insert-distro
+             (lhs (format "(emacs-%s)" emacs-version))
+             (rhs (if insert-distro
                            (format "(%s-%s)"
                                    dotspacemacs-distribution
                                    spacemacs-version)
                          (format "(%s)" spacemacs-version)))
-             (pos (- maxcol (length injected)))
+             (len (- maxcol (length lhs)))
              (buffer-read-only nil))
-        ;; fill the first line with spaces if required
-        (beginning-of-buffer)
-        (when (< (line-end-position) maxcol)
-          (end-of-line)
-          (insert-char ?\s (- maxcol (line-end-position))))
-        (goto-char pos)
-        (delete-char (length injected))
-        (insert injected)))))
+        (goto-char (point-min))
+        (delete-region (point) (progn (end-of-line) (point)))
+        (insert (format
+                 (format "%%s %%%ds" len)
+                 lhs rhs))))))
 
 (defun spacemacs-buffer//insert-note (file caption &optional additional-widgets)
   "Insert the release note just under the banner.
@@ -395,13 +424,13 @@ HPADDING is the horizontal spacing betwee the content line and the frame border.
       (spacemacs//redisplay))))
 
 (defmacro spacemacs//insert--shortcut (shortcut-char search-label &optional no-next-line)
-  `(define-key spacemacs-mode-map ,shortcut-char (lambda ()
-                                                   (interactive)
-                                                   (unless (search-forward ,search-label (point-max) t)
-                                                     (search-backward ,search-label (point-min) t))
-                                                   ,@(unless no-next-line
-                                                       '((forward-line 1)))
-                                                   (back-to-indentation))))
+  `(define-key spacemacs-buffer-mode-map ,shortcut-char (lambda ()
+                                                          (interactive)
+                                                          (unless (search-forward ,search-label (point-max) t)
+                                                            (search-backward ,search-label (point-min) t))
+                                                          ,@(unless no-next-line
+                                                              '((forward-line 1)))
+                                                          (back-to-indentation))))
 
 (defun spacemacs-buffer//insert-buttons ()
   (goto-char (point-max))
@@ -513,17 +542,16 @@ HPADDING is the horizontal spacing betwee the content line and the frame border.
 
 (defun spacemacs-buffer/insert-startupify-lists ()
   (interactive)
-  (with-current-buffer (get-buffer-create "*spacemacs*")
+  (with-current-buffer (get-buffer spacemacs-buffer-name)
     (let ((buffer-read-only nil)
           (list-separator "\n\n"))
       (goto-char (point-max))
-      (page-break-lines-mode)
       (spacemacs-buffer/insert-page-break)
       (mapc (lambda (el)
               (cond
                ((eq el 'recents)
                 (recentf-mode)
-                (when (spacemacs-buffer//insert-file-list "Recent Files:" (recentf-elements 5))
+                (when (spacemacs-buffer//insert-file-list "Recent Files:" (recentf-elements dotspacemacs-startup-recent-list-size))
                   (spacemacs//insert--shortcut "r" "Recent Files:")
                   (insert list-separator)))
                ((eq el 'bookmarks)
@@ -542,8 +570,44 @@ HPADDING is the horizontal spacing betwee the content line and the frame border.
   (interactive)
   (with-current-buffer spacemacs-buffer-name
     (goto-char (point-min))
-    (re-search-forward "Homepage")
-    (beginning-of-line)
-    (widget-forward 1)))
+    (with-demoted-errors "spacemacs buffer error: %s"
+      (widget-forward 1))))
+
+(defun spacemacs-buffer/goto-buffer ()
+  "Create the special buffer for `spacemacs-buffer-mode' if it doesn't
+already exist, and switch to it."
+  (interactive)
+  (unless (buffer-live-p (get-buffer spacemacs-buffer-name))
+    (with-current-buffer (get-buffer-create spacemacs-buffer-name)
+      (save-excursion
+        (spacemacs-buffer/set-mode-line "")
+        ;; needed in case the buffer was deleted and we are recreating it
+        (setq spacemacs-buffer--note-widgets nil)
+        (spacemacs-buffer/insert-banner-and-buttons)
+        ;; non-nil if emacs is loaded
+        (if after-init-time
+            (progn
+              (when dotspacemacs-startup-lists
+                (spacemacs-buffer/insert-startupify-lists))
+              (spacemacs-buffer/set-mode-line spacemacs--default-mode-line)
+              (force-mode-line-update)
+              (spacemacs-buffer-mode))
+          (add-hook 'emacs-startup-hook
+                    (lambda ()
+                      (with-current-buffer (get-buffer spacemacs-buffer-name)
+                        (when dotspacemacs-startup-lists
+                          (spacemacs-buffer/insert-startupify-lists))
+                        (if configuration-layer-error-count
+                            (spacemacs-buffer/set-mode-line
+                             (format (concat "%s error(s) at startup! "
+                                             "Spacemacs may not be able to operate properly.")
+                                     configuration-layer-error-count))
+                          (spacemacs-buffer/set-mode-line spacemacs--default-mode-line))
+                        (force-mode-line-update)
+                        (spacemacs-buffer-mode)
+                        (spacemacs-buffer/goto-link-line))) t)))))
+  (spacemacs-buffer/goto-link-line)
+  (switch-to-buffer spacemacs-buffer-name)
+  (spacemacs//redisplay))
 
 (provide 'core-spacemacs-buffer)

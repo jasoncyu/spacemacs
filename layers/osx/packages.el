@@ -5,6 +5,7 @@
         pbcopy
         launchctl
         reveal-in-osx-finder
+        helm
         ))
 
 (when (spacemacs/system-is-mac)
@@ -42,32 +43,42 @@
     :init
     (progn
       (add-to-list 'auto-mode-alist '("\\.plist$" . nxml-mode))
-      (evil-leader/set-key "al" 'launchctl))
+      (spacemacs/set-leader-keys "al" 'launchctl))
     :config
     (progn
-      (evilify launchctl-mode launchctl-mode-map
-               (kbd "q") 'quit-window
-               (kbd "s") 'tabulated-list-sort
-               (kbd "g") 'launchctl-refresh
-               (kbd "n") 'launchctl-new
-               (kbd "e") 'launchctl-edit
-               (kbd "v") 'launchctl-view
-               (kbd "l") 'launchctl-load
-               (kbd "u") 'launchctl-unload
-               (kbd "r") 'launchctl-reload
-               (kbd "S") 'launchctl-start
-               (kbd "K") 'launchctl-stop
-               (kbd "R") 'launchctl-restart
-               (kbd "D") 'launchctl-remove
-               (kbd "d") 'launchctl-disable
-               (kbd "E") 'launchctl-enable
-               (kbd "i") 'launchctl-info
-               (kbd "f") 'launchctl-filter
-               (kbd "=") 'launchctl-setenv
-               (kbd "#") 'launchctl-unsetenv
-               (kbd "h") 'launchctl-help))))
+      (evilified-state-evilify launchctl-mode launchctl-mode-map
+        (kbd "q") 'quit-window
+        (kbd "s") 'tabulated-list-sort
+        (kbd "g") 'launchctl-refresh
+        (kbd "n") 'launchctl-new
+        (kbd "e") 'launchctl-edit
+        (kbd "v") 'launchctl-view
+        (kbd "l") 'launchctl-load
+        (kbd "u") 'launchctl-unload
+        (kbd "r") 'launchctl-reload
+        (kbd "S") 'launchctl-start
+        (kbd "K") 'launchctl-stop
+        (kbd "R") 'launchctl-restart
+        (kbd "D") 'launchctl-remove
+        (kbd "d") 'launchctl-disable
+        (kbd "E") 'launchctl-enable
+        (kbd "i") 'launchctl-info
+        (kbd "f") 'launchctl-filter
+        (kbd "=") 'launchctl-setenv
+        (kbd "#") 'launchctl-unsetenv
+        (kbd "h") 'launchctl-help))))
 
 (defun osx/init-reveal-in-osx-finder ()
   (use-package reveal-in-osx-finder
     :if (spacemacs/system-is-mac)
     :commands reveal-in-osx-finder))
+
+(defun osx/pre-init-helm ()
+  ;; Use `mdfind' instead of `locate'.
+  (when (spacemacs/system-is-mac)
+    (spacemacs|use-package-add-hook helm
+      :post-config
+      ;; Disable fuzzy matchting to make mdfind work with helm-locate
+      ;; https://github.com/emacs-helm/helm/issues/799
+      (setq helm-locate-fuzzy-match nil)
+      (setq helm-locate-command "mdfind -name %s %s"))))

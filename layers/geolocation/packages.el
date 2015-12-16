@@ -42,13 +42,13 @@
     :defer t
     :init
     (progn
-      (evil-leader/set-key
+      (spacemacs/set-leader-keys
         "aw" 'sunshine-forecast
         "aW" 'sunshine-quick-forecast)
 
-      (evilify sunshine-mode sunshine-mode-map
-               (kbd "q") 'quit-window
-               (kbd "i") 'sunshine-toggle-icons))
+      (evilified-state-evilify sunshine-mode sunshine-mode-map
+        (kbd "q") 'quit-window
+        (kbd "i") 'sunshine-toggle-icons))
     :config
     ;; just in case location was not set by user, or on OS X,
     ;; if wasn't set up automatically, will not work with Emac's

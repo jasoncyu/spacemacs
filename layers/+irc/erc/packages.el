@@ -25,6 +25,8 @@
         erc-social-graph
         erc-view-log
         erc-yt
+        persp-mode
+        smooth-scrolling
         ))
 
 (when (spacemacs/system-is-mac)
@@ -46,7 +48,7 @@
   (use-package erc
     :defer t
     :init
-    (evil-leader/set-key
+    (spacemacs/set-leader-keys
       "aie" 'erc
       "aiE" 'erc-tls
       "aii" 'erc-track-switch-buffer)
@@ -96,13 +98,13 @@
         (add-hook 'erc-text-matched-hook 'erc-global-notify))
 
       ;; keybindings
-      (evil-leader/set-key-for-mode 'erc-mode
-        "md" 'erc-input-action
-        "mj" 'erc-join-channel
-        "mn" 'erc-channel-names
-        "ml" 'erc-list-command
-        "mp" 'erc-part-from-channel
-        "mq" 'erc-quit-server))))
+      (spacemacs/set-leader-keys-for-major-mode 'erc-mode
+        "d" 'erc-input-action
+        "j" 'erc-join-channel
+        "n" 'erc-channel-names
+        "l" 'erc-list-command
+        "p" 'erc-part-from-channel
+        "q" 'erc-quit-server))))
 
 (defun erc/init-erc-gitter ()
   (use-package erc-gitter
@@ -123,8 +125,8 @@
       ;; does not exist ?
       ;; (erc-social-graph-enable)
       (setq erc-social-graph-dynamic-graph t)
-      (evil-leader/set-key-for-mode 'erc-mode
-        "mD" 'erc-social-graph-draw))))
+      (spacemacs/set-leader-keys-for-major-mode 'erc-mode
+        "D" 'erc-social-graph-draw))))
 
 (defun erc/init-erc-yt ()
   (use-package erc-yt
@@ -175,3 +177,17 @@
     :init (with-eval-after-load 'erc (add-to-list 'erc-modules 'image))))
 
 (defun erc/init-erc-terminal-notifier ())
+
+(defun erc/post-init-persp-mode ()
+  (spacemacs|define-custom-layout "@ERC"
+    :binding "E"
+    :body
+    (call-interactively 'erc))
+  ;; do not save erc buffers
+  (spacemacs|use-package-add-hook persp-mode
+    :post-config
+    (push (lambda (b) (with-current-buffer b (eq major-mode 'erc-mode)))
+          persp-filter-save-buffers-functions)))
+
+(defun erc/post-init-smooth-scrolling ()
+  (add-hook 'erc-mode-hook 'spacemacs//unset-scroll-margin))

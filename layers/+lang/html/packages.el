@@ -76,9 +76,9 @@
         (while (not (looking-at "}"))
           (join-line -1)))
 
-      (evil-leader/set-key-for-mode 'css-mode
-        "mzc" 'css-contract-statement
-        "mzo" 'css-expand-statement))))
+      (spacemacs/set-leader-keys-for-major-mode 'css-mode
+        "zc" 'css-contract-statement
+        "zo" 'css-expand-statement))))
 
 (defun html/init-emmet-mode ()
   (use-package emmet-mode
@@ -100,8 +100,14 @@
   (add-hook 'web-mode-hook 'turn-on-evil-matchit-mode))
 
 (defun html/post-init-flycheck ()
-  (dolist (mode '(haml-mode jade-mode less-mode sass-mode scss-mode slim-mode web-mode))
-    (spacemacs/add-flycheck-hook mode)))
+  (dolist (hook '(haml-mode-hook
+                  jade-mode-hook
+                  less-mode-hook
+                  sass-mode-hook
+                  scss-mode-hook
+                  slim-mode-hook
+                  web-mode-hook))
+    (spacemacs/add-flycheck-hook hook)))
 
 (defun html/init-haml-mode ()
   (use-package haml-mode
@@ -112,7 +118,7 @@
     :defer t
     :init
     (dolist (mode '(css-mode scss-mode))
-      (evil-leader/set-key-for-mode mode "mgh" 'helm-css-scss))))
+      (spacemacs/set-leader-keys-for-major-mode mode "gh" 'helm-css-scss))))
 
 (defun html/init-jade-mode ()
   (use-package jade-mode
@@ -145,21 +151,19 @@
    '(css-mode-hook scss-mode-hook sass-mode-hook less-css-mode-hook))
 
   ;; Only use smartparens in web-mode
-  (spacemacs|use-package-add-hook web-mode
-    :post-config
-    (progn
-      (setq web-mode-enable-auto-pairing nil)
-      (sp-local-pair 'web-mode "<% " " %>")
-      (sp-local-pair 'web-mode "{ " " }")
-      (sp-local-pair 'web-mode "<%= "  " %>")
-      (sp-local-pair 'web-mode "<%# "  " %>")
-      (sp-local-pair 'web-mode "<%$ "  " %>")
-      (sp-local-pair 'web-mode "<%@ "  " %>")
-      (sp-local-pair 'web-mode "<%: "  " %>")
-      (sp-local-pair 'web-mode "{{ "  " }}")
-      (sp-local-pair 'web-mode "{% "  " %}")
-      (sp-local-pair 'web-mode "{%- "  " %}")
-      (sp-local-pair 'web-mode "{# "  " #}"))))
+  (with-eval-after-load 'smartparens
+    (setq web-mode-enable-auto-pairing nil)
+    (sp-local-pair 'web-mode "<% " " %>")
+    (sp-local-pair 'web-mode "{ " " }")
+    (sp-local-pair 'web-mode "<%= "  " %>")
+    (sp-local-pair 'web-mode "<%# "  " %>")
+    (sp-local-pair 'web-mode "<%$ "  " %>")
+    (sp-local-pair 'web-mode "<%@ "  " %>")
+    (sp-local-pair 'web-mode "<%: "  " %>")
+    (sp-local-pair 'web-mode "{{ "  " }}")
+    (sp-local-pair 'web-mode "{% "  " %}")
+    (sp-local-pair 'web-mode "{%- "  " %}")
+    (sp-local-pair 'web-mode "{# "  " #}")))
 
 (defun html/init-tagedit ()
   (use-package tagedit
@@ -181,22 +185,22 @@
   (use-package web-mode
     :defer t
     :init
-    (push 'company-web-html company-backends-web-mode)
+    (push '(company-web-html company-css) company-backends-web-mode)
     :config
     (progn
-      (evil-leader/set-key-for-mode 'web-mode
-        "meh" 'web-mode-dom-errors-show
-        "mgb" 'web-mode-element-beginning
-        "mgc" 'web-mode-element-child
-        "mgp" 'web-mode-element-parent
-        "mgs" 'web-mode-element-sibling-next
-        "mhp" 'web-mode-dom-xpath
-        "mrc" 'web-mode-element-clone
-        "mrd" 'web-mode-element-vanish
-        "mrk" 'web-mode-element-kill
-        "mrr" 'web-mode-element-rename
-        "mrw" 'web-mode-element-wrap
-        "mz" 'web-mode-fold-or-unfold
+      (spacemacs/set-leader-keys-for-major-mode 'web-mode
+        "eh" 'web-mode-dom-errors-show
+        "gb" 'web-mode-element-beginning
+        "gc" 'web-mode-element-child
+        "gp" 'web-mode-element-parent
+        "gs" 'web-mode-element-sibling-next
+        "hp" 'web-mode-dom-xpath
+        "rc" 'web-mode-element-clone
+        "rd" 'web-mode-element-vanish
+        "rk" 'web-mode-element-kill
+        "rr" 'web-mode-element-rename
+        "rw" 'web-mode-element-wrap
+        "z" 'web-mode-fold-or-unfold
         ;; TODO element close would be nice but broken with evil.
         )
 

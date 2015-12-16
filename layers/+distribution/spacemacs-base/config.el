@@ -26,6 +26,7 @@
                                        ("f"   "files")
                                        ("fC"  "files/convert")
                                        ("fe"  "emacs(spacemacs)")
+                                       ("fv"  "variables")
                                        ("g"   "git/versions-control")
                                        ("h"   "helm/help/highlight")
                                        ("hd"  "help-describe")
@@ -40,6 +41,8 @@
                                        ("p$"  "projects/shell")
                                        ("q"   "quit")
                                        ("r"   "registers/rings")
+                                       ("Re"  "elisp")
+                                       ("Rp"  "pcre")
                                        ("s"   "search/symbol")
                                        ("sa"  "ag")
                                        ("sg"  "grep")
@@ -51,7 +54,8 @@
                                        ("tE"  "editing-styles")
                                        ("th"  "highlight")
                                        ("tm"  "modeline")
-                                       ("T"   "toggles/themes")
+                                       ("T"   "UI toggles/themes")
+                                       ("C-t" "other toggles")
                                        ("w"   "windows")
                                        ("wp"  "popup")
                                        ("x"   "text")
@@ -75,6 +79,10 @@
 ;; Also auto refresh dired, but be quiet about it
 (setq global-auto-revert-non-file-buffers t
       auto-revert-verbose nil)
+
+;; Make dired "guess" target directory for some operations, like copy to
+;; directory visited in other split buffer.
+(setq dired-dwim-target t)
 
 ;; Regexp for useful and useless buffers for smarter buffer switching
 (defvar spacemacs-useless-buffers-regexp '("*\.\+")
@@ -135,8 +143,8 @@ It runs `tabulated-list-revert-hook', then calls `tabulated-list-print'."
 ;; on OS X, see contrib/osx layer
 (setq delete-by-moving-to-trash t)
 
-;; auto fill breaks line beyond current-fill-column
-(setq-default default-fill-column 80)
+;; auto fill breaks line beyond buffer's fill-column
+(setq-default fill-column 80)
 (spacemacs|diminish auto-fill-function " Ⓕ" " F")
 
 ;; persistent abbreviation file
@@ -154,6 +162,44 @@ It runs `tabulated-list-revert-hook', then calls `tabulated-list-print'."
 (with-eval-after-load 'comint
   (define-key comint-mode-map (kbd "C-d") nil))
 
+;; whitespace-cleanup configuration
+(pcase dotspacemacs-whitespace-cleanup
+  (`all (add-hook 'before-save-hook 'whitespace-cleanup))
+  (`trailing (add-hook 'before-save-hook 'delete-trailing-whitespace)))
+
+;; Thanks to `editorconfig-emacs' for many of these
+(defvar spacemacs--indent-variable-alist
+  '(((awk-mode c-mode c++-mode java-mode groovy-mode
+      idl-mode java-mode objc-mode pike-mode) . c-basic-offset)
+    (python-mode . python-indent-offset)
+    (cmake-mode . cmake-tab-width)
+    (coffee-mode . coffee-tab-width)
+    (cperl-mode . cperl-indent-level)
+    (css-mode . css-indent-offset)
+    (elixir-mode . elixir-smie-indent-basic)
+    ((emacs-lisp-mode lisp-mode) . lisp-indent-offset)
+    (enh-ruby-mode . enh-ruby-indent-level)
+    (erlang-mode . erlang-indent-level)
+    ((js-mode json-mode) . js-indent-level)
+    (js2-mode . js2-basic-offset)
+    (js3-mode . js3-indent-level)
+    (latex-mode . (LaTeX-indent-level tex-indent-basic))
+    (livescript-mode . livescript-tab-width)
+    (mustache-mode . mustache-basic-offset)
+    (nxml-mode . nxml-child-indent)
+    (perl-mode . perl-indent-level)
+    (puppet-mode . puppet-indent-level)
+    (ruby-mode . ruby-indent-level)
+    (scala-mode . scala-indent:step)
+    (sgml-mode . sgml-basic-offset)
+    (sh-mode . sh-basic-offset)
+    (web-mode . web-mode-markup-indent-offset)
+    (yaml-mode . yaml-indent-offset))
+  "An alist where each key is either a symbol corresponding
+to a major mode, a list of such symbols, or the symbol t,
+acting as default. The values are either integers, symbols
+or lists of these.")
+
 ;; ---------------------------------------------------------------------------
 ;; UI
 ;; ---------------------------------------------------------------------------
@@ -165,6 +211,11 @@ It runs `tabulated-list-revert-hook', then calls `tabulated-list-print'."
               '((truncation . nil) (continuation . nil)))
 ;; Show column number in mode line
 (setq column-number-mode t)
+;; Activate linum-mode in all prog-mode and text-mode buffers if the setting is
+;; enabled.
+(when dotspacemacs-line-numbers
+  (add-hook 'prog-mode-hook 'linum-mode)
+  (add-hook 'text-mode-hook 'linum-mode))
 ;; line number
 (setq linum-format "%4d")
 ;; highlight current line

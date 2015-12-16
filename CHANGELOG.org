@@ -1,4 +1,45 @@
 * Release 0.104.x
+** 0.104.7 (2015/12/15)
+*** Distribution layer changes
+**** Spacemacs
+- Remove fancy battery custom mode-line (moved to spaceline) (thanks to TheBB)
+*** Layers changes
+**** Eyebrowse
+- Eyebrowse doesn't have a lighter anymore (thanks to myrjola)
+**** Haskell
+- Replace obsolete function =haskell-process-load-or-reload= (thanks to
+  joehillen)
+- Fix renamed command =hindent-reformat-decl= (thanks to lunaryorn)
+**** Syntax-checking
+- Add support for =flycheck-pos-tip-mode= (thanks to StreakyCobra, TheBB and
+  lunaryorn)
+** 0.104.6 (2015/11/27)
+*** Hotfix
+- Fix void variable error =smartparens-strict-mode= (thanks to TheBB)
+** 0.104.5 (2015/11/22)
+*** Distribution layer changes
+**** Spacemacs
+- Use version 7.1 of =evil-lisp-state=, the version 8 is supported
+  in version 105 of Spacemacs only.
+** 0.104.4 (2015/11/04)
+*** Layer changes
+**** Scala
+- Fix Ensime test commands to reflect the changes in the recent versions
+  of the package (thanks to lunaryorn)
+**** Vagrant
+- Replace obsolete function =vagrant-tramp-enable= by the function
+  =vagrant-tramp-add-method= (thanks to joehillen)
+*** Core
+- Prevent bootstrap packages from being automatically uninstalled
+  (thanks to TheBB)
+** 0.104.3 (2015/11/01)
+*** Layer changes
+**** Evil-snipe
+- Update =evil-snipe= minor mode name to match latest release of
+  the package (thanks to person808)
+**** Haskell
+- Remove indentation guides to comply with latest =haskell-mode=
+  (thanks to PierreR)
 ** 0.104.2 (2015/09/29)
 *** Hotfixes
 - Fix error =void-variable warning-minimum-level= on Emacs 24.3

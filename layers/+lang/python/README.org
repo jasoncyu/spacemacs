@@ -1,25 +1,26 @@
-#+TITLE: Python contribution layer for Spacemacs
+#+TITLE: Python layer
+#+HTML_HEAD_EXTRA: <link rel="stylesheet" type="text/css" href="../../../css/readtheorg.css" />
 
 [[file:img/python.png]]
 
-* Table of Contents                                                   :TOC@4:
- - [[#description][Description]]
-   - [[#features][Features:]]
- - [[#install][Install]]
-   - [[#layer][Layer]]
-   - [[#test-runner][Test runner]]
-   - [[#anaconda-dependencies][Anaconda dependencies]]
-   - [[#automatic-buffer-formatting-on-save][Automatic buffer formatting on save]]
-   - [[#autoflake][autoflake]]
-   - [[#pylookup][pylookup]]
- - [[#key-bindings][Key Bindings]]
-   - [[#inferior-repl-process][Inferior REPL process]]
-   - [[#running-python-script-in-shell][Running Python Script in shell]]
-   - [[#testing][Testing]]
-   - [[#refactoring][Refactoring]]
-   - [[#other-python-commands][Other Python commands]]
- - [[#configuration][Configuration]]
-   - [[#fill-column][Fill column]]
+* Table of Contents                                         :TOC_4_org:noexport:
+ - [[Description][Description]]
+   - [[Features:][Features:]]
+ - [[Install][Install]]
+   - [[Layer][Layer]]
+   - [[Test runner][Test runner]]
+   - [[Anaconda dependencies][Anaconda dependencies]]
+   - [[Automatic buffer formatting on save][Automatic buffer formatting on save]]
+   - [[autoflake][autoflake]]
+   - [[pylookup][pylookup]]
+ - [[Key Bindings][Key Bindings]]
+   - [[Inferior REPL process][Inferior REPL process]]
+   - [[Running Python Script in shell][Running Python Script in shell]]
+   - [[Testing][Testing]]
+   - [[Refactoring][Refactoring]]
+   - [[Other Python commands][Other Python commands]]
+ - [[Configuration][Configuration]]
+   - [[Fill column][Fill column]]
 
 * Description
 This layer adds support for the Python language.
@@ -34,8 +35,8 @@ This layer adds support for the Python language.
 - PEP8 compliant formatting via [[https://github.com/google/yapf][YAPF]]
 - Suppression of unused import with [[https://github.com/myint/autoflake][autoflake]]
 - Use the ~%~ key to jump between blocks with [[https://github.com/redguardtoo/evil-matchit][evil-matchit]]
-* Install
 
+* Install
 ** Layer
 To use this contribution add it to your =~/.spacemacs=
 
@@ -59,9 +60,10 @@ The root of the project is detected with a =.git= directory or a =setup.cfg= fil
 =anaconda-mode= tries to install the dependencies itself but sometimes
 it does not work and you may encounter the following message when
 opening a python buffer:
-#+begin_src
+
+#+begin_example
     Blocking call to accept-process-output with quit inhibited!!
-#+end_src
+#+end_example
 
 To fix this, install the =anaconda-mode= [[https://github.com/proofit404/anaconda-mode/blob/master/requirements.txt][anaconda-deps]] by hand:
 
@@ -133,7 +135,7 @@ modules.
 compilation command.
 
 ** Testing
-Test commands (start with ~m t~ or ~m T~):
+Test commands start with ~m t~:
 
 | No Debug    | Description                                              |
 |-------------+----------------------------------------------------------|
@@ -169,7 +171,8 @@ Test commands (start with ~m t~ or ~m T~):
 | ~SPC m h d~ | look for documentation using =helm-pydoc=                                    |
 | ~SPC m h h~ | quick documentation using anaconda                                           |
 | ~SPC m h H~ | open documentation in =firefox= using [[https://github.com/tsgates/pylookup][pylookup]]                               |
-| ~SPC m v~   | activate a virtual environment with [[https://github.com/yyuu/pyenv][pyenv]]                                    |
+| ~SPC m v s~ | activate a virtual environment with [[https://github.com/yyuu/pyenv][pyenv]]                                    |
+| ~SPC m v u~ | deactivate a virtual environment with [[https://github.com/yyuu/pyenv][pyenv]]                                  |
 | ~SPC m V~   | activate a virtual environment with  [[https://github.com/jorgenschaefer/pyvenv][pyvenv]]                                  |
 * Configuration
 ** Fill column

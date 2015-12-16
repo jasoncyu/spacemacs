@@ -52,7 +52,7 @@
                   #b00000000
                   #b00000000
                   #b00000000
-                  #b01111111)))
+                  #b00000000)))
 
       (flycheck-define-error-level 'error
         :overlay-category 'flycheck-error-overlay
@@ -78,7 +78,7 @@ If the error list is visible, hide it.  Otherwise, show it."
             (quit-window nil window)
           (flycheck-list-errors)))
 
-      (spacemacs|evilify-map flycheck-error-list-mode-map
+      (evilified-state-evilify-map flycheck-error-list-mode-map
         :mode flycheck-error-list-mode
         :bindings
         "RET" 'flycheck-error-list-goto-error
@@ -86,7 +86,7 @@ If the error list is visible, hide it.  Otherwise, show it."
         "k" 'flycheck-error-list-previous-error)
 
       ;; key bindings
-      (evil-leader/set-key
+      (spacemacs/set-leader-keys
         "ec" 'flycheck-clear
         "eh" 'flycheck-describe-checker
         "el" 'spacemacs/toggle-flycheck-error-list
@@ -99,7 +99,14 @@ If the error list is visible, hide it.  Otherwise, show it."
     :if syntax-checking-enable-tooltips
     :defer t
     :init
-    (setq flycheck-display-errors-function 'flycheck-pos-tip-error-messages)))
+    (with-eval-after-load 'flycheck
+      (flycheck-pos-tip-mode))))
 
 (defun syntax-checking/post-init-popwin ()
-  (push '("^\\*Flycheck.+\\*$" :regexp t :dedicated t :position bottom :stick t :noselect t) popwin:special-display-config))
+  (push '("^\\*Flycheck.+\\*$"
+          :regexp t
+          :dedicated t
+          :position bottom
+          :stick t
+          :noselect t)
+        popwin:special-display-config))

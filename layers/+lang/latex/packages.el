@@ -20,7 +20,9 @@
     flycheck
     flyspell
     smartparens
+    typo
     yasnippet
+    which-key
     ))
 
 (defun latex/init-auctex ()
@@ -46,41 +48,71 @@
     :config
     (progn
       ;; Key bindings for plain TeX
-      (evil-leader/set-key-for-mode 'tex-mode
-        "m\\" 'TeX-insert-macro
-        "mb" 'latex/build
-        "mC" 'TeX-command-master
-        ;; Find a way to rebind tex-fonts
-        "mf" 'TeX-font
-        "mv" 'TeX-view)
+      (spacemacs/set-leader-keys-for-major-mode 'tex-mode
+        "\\" 'TeX-insert-macro
+        "b" 'latex/build
+        "C" 'TeX-command-master
+        "v" 'TeX-view
+
+        "xb" 'latex/font-bold
+        "xc" 'latex/font-code
+        "xe" 'latex/font-emphasis
+        "xi" 'latex/font-italic
+        "xr" 'latex/font-clear
+        "xo" 'latex/font-oblique
+        "xfc" 'latex/font-small-caps
+        "xff" 'latex/font-sans-serif
+        "xfr" 'latex/font-serif)
+      (spacemacs/declare-prefix-for-mode 'tex-mode "mx" "tex/text")
+      (spacemacs/declare-prefix-for-mode 'tex-mode "mx" "tex/fonts")
 
       ;; Key bindings for LaTeX
-      (evil-leader/set-key-for-mode 'latex-mode
-        "m\\" 'TeX-insert-macro
-        "mb" 'latex/build
-        "mc" 'LaTeX-close-environment
-        "mC" 'TeX-command-master
-        "me" 'LaTeX-environment
-        ;; Find a way to rebind tex-fonts
-        "mf" 'TeX-font
-        "mhd" 'TeX-doc
-        "mi" 'LaTeX-insert-item
+      (spacemacs/set-leader-keys-for-major-mode 'latex-mode
+        "\\" 'TeX-insert-macro
+        "-" 'TeX-recenter-output-buffer
+        "b" 'latex/build
+        "c" 'LaTeX-close-environment
+        "C" 'TeX-command-master
+        "e" 'LaTeX-environment
         ;; TeX-doc is a very slow function
-        "mpb" 'preview-buffer
-        "mpc" 'preview-clearout
-        "mpd" 'preview-document
-        "mpe" 'preview-environment
-        "mpf" 'preview-cache-preamble
-        "mpp" 'preview-at-point
-        "mpr" 'preview-region
-        "mps" 'preview-section
-        "mv" 'TeX-view))))
+        "hd" 'TeX-doc
+        "i" 'LaTeX-insert-item
+        "pb" 'preview-buffer
+        "pc" 'preview-clearout
+        "pd" 'preview-document
+        "pe" 'preview-environment
+        "pf" 'preview-cache-preamble
+        "pp" 'preview-at-point
+        "pr" 'preview-region
+        "ps" 'preview-section
+        "v" 'TeX-view
+
+        "xb" 'latex/font-bold
+        "xB" 'latex/font-medium
+        "xc" 'latex/font-code
+        "xe" 'latex/font-emphasis
+        "xi" 'latex/font-italic
+        "xo" 'latex/font-oblique
+        "xr" 'latex/font-clear
+        "xfa" 'latex/font-calligraphic
+        "xfc" 'latex/font-small-caps
+        "xff" 'latex/font-sans-serif
+        "xfn" 'latex/font-normal
+        "xfr" 'latex/font-serif
+        "xfu" 'latex/font-upright)
+      (spacemacs/declare-prefix-for-mode 'latex-mode "mx" "latex/text")
+      (spacemacs/declare-prefix-for-mode 'latex-mode "mx" "latex/fonts"))))
 
 (when (string= latex-build-command "LatexMk")
-(defun latex/init-auctex-latexmk ()
-  (use-package auctex-latexmk
-    :defer t
-    :init (add-hook 'LaTeX-mode-hook 'auctex-latexmk-setup))))
+  (defun latex/init-auctex-latexmk ()
+    (use-package auctex-latexmk
+      :defer t
+      :init
+      (progn
+        (setq auctex-latexmk-inherit-TeX-PDF-mode t)
+        (spacemacs|use-package-add-hook tex
+          :post-config
+          (auctex-latexmk-setup))))))
 
 (when (configuration-layer/layer-usedp 'auto-completion)
   (defun latex/post-init-company ()
@@ -102,13 +134,23 @@
   (add-hook 'LaTeX-mode-hook 'evil-matchit-mode))
 
 (defun latex/post-init-flycheck ()
-  (spacemacs/add-flycheck-hook 'LaTeX-mode))
+  (spacemacs/add-flycheck-hook 'LaTeX-mode-hook))
 
 (defun latex/post-init-flyspell ()
-  (add-hook 'LaTeX-mode-hook 'flyspell-mode))
+  (spell-checking/add-flyspell-hook 'LaTeX-mode-hook))
 
 (defun latex/post-init-smartparens ()
   (add-hook 'LaTeX-mode-hook 'smartparens-mode))
 
+(defun latex/post-init-typo ()
+  ;; Typo mode isn't useful for LaTeX.
+  (defun spacemacs//disable-typo-mode ()
+    (typo-mode -1))
+  (add-hook 'LaTeX-mode-hook 'spacemacs//disable-typo-mode))
+
 (defun latex/post-init-yasnippet ()
   (add-hook 'LaTeX-mode-hook 'spacemacs/load-yasnippet))
+
+(defun latex/post-init-which-key ()
+  (push '("\\`latex/font-\\(.+\\)\\'" . "\\1")
+        which-key-description-replacement-alist))

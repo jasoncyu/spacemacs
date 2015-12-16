@@ -142,12 +142,11 @@
     (zonokai-red  . zonokai-theme)
     (tao-yin . tao-theme)
     (tao-yang . tao-theme)
+    (farmhouse-light . farmhouse-theme)
+    (farmhouse-dark . farmhouse-theme)
     )
   "alist matching a theme name with its package name, required when
 package name does not match theme name + `-theme' suffix.")
-
-(defvar spacemacs-used-theme-packages nil
-  "List of packages of used themes.")
 
 (defun spacemacs//get-theme-package (theme)
   "Returns the package theme for the given THEME name."
@@ -191,18 +190,23 @@ package name does not match theme name + `-theme' suffix.")
 (defun spacemacs/cycle-spacemacs-theme ()
   "Cycle through themes defined in `dotspacemacs-themes.'"
   (interactive)
-  (when  spacemacs--cur-theme
+  (when spacemacs--cur-theme
     (disable-theme spacemacs--cur-theme)
+    ;; if current theme isn't in cycleable themes, start over
     (setq spacemacs--cycle-themes
-          (append spacemacs--cycle-themes (list spacemacs--cur-theme))))
-  (setq  spacemacs--cur-theme (pop spacemacs--cycle-themes))
+          (or (cdr (memq spacemacs--cur-theme dotspacemacs-themes))
+              dotspacemacs-themes)))
+  (setq spacemacs--cur-theme (pop spacemacs--cycle-themes))
   (message "Loading theme %s..." spacemacs--cur-theme)
   (spacemacs/load-theme spacemacs--cur-theme))
 
 (defadvice load-theme (after spacemacs/load-theme-adv activate)
   "Perform post load processing."
   (let ((theme (ad-get-arg 0)))
-    (setq spacemacs--cur-theme theme)
+    ;; Without this a popup is raised every time emacs25 starts up for
+    ;; assignment to a free variable
+    (with-no-warnings
+      (setq spacemacs--cur-theme theme))
     (spacemacs/post-theme-init theme)))
 
 (defun spacemacs/post-theme-init (theme)

@@ -54,6 +54,14 @@ exists. Otherwise, fallback to ~/.spacemacs")
 `+distribution'. For now available distributions are `spacemacs-base'
 or `spacemacs'.")
 
+(defvar dotspacemacs-elpa-https t
+  "If non nil ELPA repositories are contacted via HTTPS whenever it's
+possible. Set it to nil if you have no way to use HTTPS in your
+environment, otherwise it is strongly recommended to let it set to t.")
+
+(defvar dotspacemacs-elpa-timeout 5
+  "Maximum allowed time in seconds to contact an ELPA repository.")
+
 (defvar dotspacemacs-configuration-layer-path '()
   "List of additional paths where to look for configuration layers.
 Paths must have a trailing slash (ie. `~/.mycontribs/')")
@@ -74,6 +82,10 @@ the official spacemacs logo. An integer value is the index of text
 banner, `random' chooses a random text banner in `core/banners'
 directory. A string value must be a path to a .PNG file.
 If the value is nil then no banner is displayed.")
+
+(defvar dotspacemacs-check-for-update t
+  "If non nil then spacemacs will check for updates at startup
+when the current branch is not `develop'")
 
 (defvar dotspacemacs-configuration-layers '(emacs-lisp)
   "List of configuration layers to load. If it is the symbol `all' instead
@@ -104,6 +116,14 @@ pressing `<leader> m`. Set it to `nil` to disable it.")
 (defvar dotspacemacs-major-mode-emacs-leader-key "C-M-m"
   "Major mode leader key accessible in `emacs state' and `insert state'")
 
+(defvar dotspacemacs-distinguish-gui-tab nil
+  "If non nil, distinguish C-i and tab in the GUI version of
+emacs.")
+
+;; (defvar dotspacemacs-distinguish-gui-ret nil
+;;   "If non nil, distinguish C-m and return in the GUI version of
+;; emacs.")
+
 (defvar dotspacemacs-default-font '("Source Code Pro"
                                     :size 13
                                     :weight normal
@@ -119,6 +139,19 @@ with `:' and Emacs commands are executed with `<leader> :'.")
 
 (defvaralias 'dotspacemacs-remap-Y-to-y$ 'evil-want-Y-yank-to-eol
   "If non nil `Y' is remapped to `y$'.")
+
+(defvar dotspacemacs-default-layout-name "Default"
+  " Name of the default layout.")
+
+(defvar dotspacemacs-display-default-layout nil
+  "If non nil the default layout name is displayed in the mode-line.")
+
+(defvar dotspacemacs-auto-resume-layouts nil
+  "If non nil then the last auto saved layouts are resume automatically upon
+start.")
+
+(defvar dotspacemacs-max-rollback-slots 5
+  "Maximum number of rollback slots to keep in the cache.")
 
 (defvar dotspacemacs-use-ido nil
   "If non nil then `ido' replaces `helm' for some commands. For now only
@@ -188,6 +221,10 @@ can be toggled through `toggle-transparency'.")
 overrides the default behavior of Emacs which recenters the point when
 it reaches the top or bottom of the screen.")
 
+(defvar dotspacemacs-line-numbers nil
+  "If non nil line numbers are turned on in all `prog-mode' and `text-mode'
+derivatives. If set to `relative', also turns on relative line numbers.")
+
 (defvar dotspacemacs-persistent-server nil
   "If non nil advises quit functions to keep server open when quitting.")
 
@@ -198,6 +235,13 @@ it reaches the top or bottom of the screen.")
   "Select a scope to highlight delimiters. Possible values are `any',
   `current', `all' or `nil'. Default is `all' (highlight any scope and
   emphasis the current one.")
+
+
+(defvar dotspacemacs-whitespace-cleanup 'changed
+  "Delete whitespace while saving buffer.
+
+Possible values are `all', `trailing', `changed' or `nil'.
+Default is `changed' (cleanup whitespace on changed lines)")
 
 (defvar dotspacemacs-delete-orphan-packages t
   "If non-nil spacemacs will delete any orphan packages, i.e. packages that are
@@ -216,6 +260,10 @@ NOT USED FOR NOW :-)")
 (defvar dotspacemacs-startup-lists '(recents projects)
   "List of items to show in the startup buffer. If nil it is disabled.
 Possible values are: `recents' `bookmarks' `projects'.")
+
+(defvar dotspacemacs-startup-recent-list-size 5
+  "Number of recent files to show in the startup buffer. Ignored if
+`dotspacemacs-startup-lists' doesn't include `recents'.")
 
 (defvar dotspacemacs-excluded-packages '()
   "A list of packages and/or extensions that will not be install and loaded.")
@@ -241,7 +289,7 @@ Called with `C-u C-u' skips `dotspacemacs/user-config' _and_ preleminary tests."
                 (dotspacemacs|call-func dotspacemacs/init
                                         "Calling dotfile init...")
                 (configuration-layer/sync)
-                (if (member arg '(4 16))
+                (if (member arg '((4) (16)))
                     (message (concat "Done (`dotspacemacs/user-config' function has "
                                      "been skipped)."))
                   ;; TODO remove support for dotspacemacs/config in 0.105
@@ -331,7 +379,7 @@ If ARG is non nil then Ask questions to the user before installing the dotfile."
                  "What distribution of spacemacs would you like to start with? "
                  '(("The standard distribution, recommended. (spacemacs)"
                     spacemacs)
-                   ("A mininalist distribution that you can build on. (spacemacs-base)"
+                   ("A minimalist distribution that you can build on. (spacemacs-base)"
                     spacemacs-base)))))))))
     (with-current-buffer (find-file-noselect
                        (concat dotspacemacs-template-directory

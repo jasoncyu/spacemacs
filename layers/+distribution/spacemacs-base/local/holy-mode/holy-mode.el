@@ -47,16 +47,16 @@ The `insert state' is replaced by the `emacs state'."
   :lighter " holy"
   :group 'spacemacs
   (if holy-mode
-      (in-nominus-patris-et-filii-et-sipritus-sancti)
+      (in-nomine-patris-et-filii-et-spiritus-sancti)
     (amen)))
 
-(defun in-nominus-patris-et-filii-et-sipritus-sancti ()
+(defun in-nomine-patris-et-filii-et-spiritus-sancti ()
   "Enter the church of Emacs (wash your hands)."
   ;; transfert all modes defaulting to `evilified state' to
   ;; `emacs state'
   (setq evil-evilified-state-modes nil)
   (mapc (lambda (x) (push x evil-emacs-state-modes))
-        spacemacs-core-evilified-state--modes)
+        evilified-state--modes)
   ;; allow to return to `normal state' with escape
   (define-key evil-emacs-state-map [escape] 'evil-normal-state)
   ;; replace `insert state' by `emacs state'
@@ -78,8 +78,8 @@ The `insert state' is replaced by the `emacs state'."
   "May the force be with you my son (or not)."
   ;; restore default `evilified state'
   (mapc (lambda (x) (delq x evil-emacs-state-modes))
-        spacemacs-core-evilified-state--modes)
-  (setq evil-evilified-state-modes spacemacs-core-evilified-state--modes)
+        evilified-state--modes)
+  (setq evil-evilified-state-modes evilified-state--modes)
   ;; restore `insert state'
   (ad-disable-advice 'evil-insert-state 'around 'benedictus-dominus)
   (ad-activate 'evil-insert-state)

@@ -1,5 +1,5 @@
 <a name="top"></a>
-[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/syl20bnr/spacemacs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Build Status](https://travis-ci.org/syl20bnr/spacemacs.svg)](https://travis-ci.org/syl20bnr/spacemacs) [![Buy A Drink](https://img.shields.io/badge/Paypal-Buy%20a%20Drink-blue.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=ESFVNPKP4Y742) [![Recommend Spacemacs](https://img.shields.io/badge/Slant-Recommend-ff69b4.svg)](http://www.slant.co/topics/12/~what-are-the-best-programming-text-editors)[![Twitter][]](http://www.twitter.com/spacemacs)
+[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/syl20bnr/spacemacs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Build Status](https://travis-ci.org/syl20bnr/spacemacs.svg)](https://travis-ci.org/syl20bnr/spacemacs)   [![Made with Spacemacs](https://cdn.rawgit.com/syl20bnr/spacemacs/442d025779da2f62fc86c2082703697714db6514/assets/spacemacs-badge.svg)](http://github.com/syl20bnr/spacemacs)  [![Buy A Drink](https://img.shields.io/badge/Paypal-Buy%20a%20Drink-blue.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=ESFVNPKP4Y742) [![Recommend Spacemacs](https://img.shields.io/badge/Slant-Recommend-ff69b4.svg)](http://www.slant.co/topics/12/~what-are-the-best-programming-text-editors)[![Twitter][]](http://www.twitter.com/spacemacs)
 ***
 <p align="center"><img src="/doc/img/title2.png" alt="Spacemacs"/></p>
 <p align="center">
@@ -13,7 +13,7 @@
 |
 <b><a href="doc/DOCUMENTATION.org">documentation</a></b>
 |
-<b><a href="doc/CONTRIBUTE.org">contribute</a></b>
+<b><a href="CONTRIBUTING.org">contribute</a></b>
 |
 <b><a href="doc/DOCUMENTATION.org#achievements">achievements</a></b>
 |
@@ -85,7 +85,7 @@ organised in configuration layers following a set of
 # Documentation
 
 A comprehensive documentation is available for each layer by pressing
-<kbd>SPC f e h</kbd>. 
+<kbd>SPC f e h</kbd>.
 
 To go to the general documentation [click here][DOCUMENTATION.org].
 
@@ -104,8 +104,10 @@ If you prefer IRC, connect to the [Gitter Chat IRC server][] and join the
 
 ## Emacs
 
-Spacemacs is operational with Emacs 24.3 but Emacs 24.4 and above are
-recommended to enjoy the full experience.
+Spacemacs is operational with Emacs 24.3, but Emacs 24.4 and above are highly
+recommended to enjoy a full experience. The next Emacs major release, Emacs 25,
+is not *officially* supported but is partially working (i.e. bugs should be
+expected).
 
 Some modes require third-party tools that you'll have to install via your
 favorite package manager.
@@ -125,16 +127,25 @@ We recommend the homebrew [emacs-mac-port][] formula:
 ```sh
 $ brew tap railwaycat/homebrew-emacsmacport
 $ brew install emacs-mac --with-spacemacs-icon  # OR, brew cask install emacs-mac
+$ brew linkapps
 ```
 
-It is also recommended to add the [osx layer][] to your [dotfile][]:
+Please note: these homebrew commands will install Emacs, and link it to your
+`/Applications` directory. You still need to run the `git clone` mentioned at
+the start of this file. That will populate your `~/.emacs.d` directory, which
+is what transforms a regular Emacs into Spacemacs.
+
+*After* you have completed the [install process below](#install), it is also
+ recommended to add the [osx layer][] to your [dotfile][]:
 
 ```elisp
 (setq-default dotspacemacs-configuration-layers '(osx))
 ```
 
-Note that the `emacs-mac-port` server behaves differently than the regular
-Emacs server.
+Note that the `emacs-mac-port` server behaves differently than the regular Emacs
+server which in particular **DOES NOT** allow multi-tty if you start GUI i.e.
+you can't connect to the Emacs GUI server with `emacsclient` but server-client
+works if you start from terminal(TTY-only).
 Details can be found on the emacs-mac-port [README][emacs-mac-port-server].
 
 ### Windows
@@ -168,13 +179,18 @@ For efficient searches we recommend to install `pt` ([the platinum searcher][]).
 
    ```sh
    cd ~
-   mv .emacs.d .emacs.bak
+   mv .emacs.d .emacs.d.bak
+   mv .emacs .emacs.bak
    ```
+
+   Don't forget to backup and *remove* `~/.emacs` file otherwise Spacemacs
+   **WILL NOT** load since that file prevents Emacs from loading the proper
+   initialization file.
 
 2. Clone the repository:
 
    ```sh
-   git clone --recursive https://github.com/syl20bnr/spacemacs ~/.emacs.d
+   git clone https://github.com/syl20bnr/spacemacs ~/.emacs.d
    ```
 
    `master` is the stable branch and it is _immutable_, **DO NOT** make any
@@ -204,7 +220,7 @@ Spacemacs has a built-in notification of a new version when you are on the
 `master` branch. If you are on the `develop` branch then you'll have to
 update Spacemacs manually by updating your repository.
 
-## Automatic update
+## Automatic update (on master branch)
 
 When a new version is available a little arrow appears in the mode-line.
 
@@ -215,6 +231,15 @@ current version is older.
 ![powerline_update](doc/img/powerline-update.png)
 
 Click on the arrow to update Spacemacs to the last version.
+
+## Manual update (on master branch)
+
+(Remove the angle brackets when typing the lines below into your shell.)
+
+```sh
+git fetch
+git reset --hard <tag version which you are updating to> 
+```
 
 ## On develop branch
 
@@ -244,7 +269,13 @@ Spacemacs is a community-driven project, it needs _you_ to keep it up to
 date and propose useful and complete configuration!
 
 Before contributing be sure to consult the
-[contribution guidelines][CONTRIBUTE.org] and [conventions][CONVENTIONS.org].
+[contribution guidelines][CONTRIBUTING.org] and [conventions][CONVENTIONS.org].
+
+# Communities
+
+- [Gitter Chat]
+- [Stack Exchange]
+- [Reddit]
 
 # License
 
@@ -266,10 +297,31 @@ bugs, helping the community on the [Gitter Chat][] or sending pull requests.
 If you want to show your support financially you can buy a drink to the
 maintainer by clicking on the [Paypal badge](#top).
 
-Thank you !
+If you used spacemacs in a project and you want to show that fact, you can use
+the spacemacs badge: [![Built with Spacemacs](https://cdn.rawgit.com/syl20bnr/spacemacs/442d025779da2f62fc86c2082703697714db6514/assets/spacemacs-badge.svg)](http://github.com/syl20bnr/spacemacs)
+
+- For Markdown:
+
+   ```
+   [![Built with Spacemacs](https://cdn.rawgit.com/syl20bnr/spacemacs/442d025779da2f62fc86c2082703697714db6514/assets/spacemacs-badge.svg)](http://github.com/syl20bnr/spacemacs)
+   ```
+
+- For HTML:
+
+   ```
+   <a href="https://github.com/syl20bnr/spacemacs"><img src="https://cdn.rawgit.com/syl20bnr/spacemacs/442d025779da2f62fc86c2082703697714db6514/assets/spacemacs-badge.svg" /></a>
+   ```
+
+- For Org-mode:
+
+   ```
+   [[https://github.com/syl20bnr/spacemacs][file:https://cdn.rawgit.com/syl20bnr/spacemacs/442d025779da2f62fc86c2082703697714db6514/assets/spacemacs-badge.svg]]
+   ```
+
+Thank you!
 
 [Twitter]: http://i.imgur.com/tXSoThF.png
-[CONTRIBUTE.org]: doc/CONTRIBUTE.org
+[CONTRIBUTING.org]: CONTRIBUTING.org
 [CONVENTIONS.org]: doc/CONVENTIONS.org
 [DOCUMENTATION.org]: doc/DOCUMENTATION.org
 [QUICK_START.org]: doc/QUICK_START.org
@@ -291,3 +343,5 @@ Thank you !
 [cpaulik-unity-icon]: http://splendidabacus.com/posts/2015/03/spacemacs-unity-icon/
 [icon-mac-instructions]: http://www.idownloadblog.com/2014/07/16/how-to-change-app-icon-mac/
 [icon-repository]: https://github.com/nashamri/spacemacs-logo
+[Stack Exchange]: http://emacs.stackexchange.com/questions/tagged/spacemacs
+[Reddit]: https://www.reddit.com/r/spacemacs

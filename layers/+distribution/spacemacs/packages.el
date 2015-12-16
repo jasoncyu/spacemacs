@@ -13,11 +13,11 @@
 (setq spacemacs-packages
       '(
         ;; default
+        ace-jump-helm-line
         ace-link
         ace-window
         adaptive-wrap
         aggressive-indent
-        auto-dictionary
         auto-highlight-symbol
         avy
         buffer-move
@@ -31,13 +31,13 @@
         evil-args
         evil-exchange
         evil-iedit-state
-        (evil-indent-textobject :location (recipe :fetcher github :repo "TheBB/evil-indent-textobject"))
+        evil-indent-plus
         evil-jumper
         evil-lisp-state
         ;; for testing purpose, contribute by reporting bugs and sending PRs
         ;; to https://github.com/gabesoft/evil-mc
         ;; To enable it add `(global-evil-mc-mode)' to user-config function
-        (evil-mc :location (recipe :fetcher github :repo "gabesoft/evil-mc"))
+        evil-mc
         evil-nerd-commenter
         evil-matchit
         evil-numbers
@@ -69,6 +69,7 @@
         open-junk-file
         leuven-theme
         linum-relative
+        lorem-ipsum
         move-text
         neotree
         pcre2el
@@ -77,7 +78,6 @@
         smartparens
         smooth-scrolling
         spaceline
-        spray
         vi-tilde-fringe
         volatile-highlights
         window-numbering
@@ -92,12 +92,19 @@
 
 ;; Initialization of packages
 
+(defun spacemacs/init-ace-jump-helm-line ()
+  (use-package ace-jump-helm-line
+    :defer t
+    :init
+    (with-eval-after-load 'helm
+      (define-key helm-map (kbd "C-q") 'ace-jump-helm-line))))
+
 (defun spacemacs/init-ace-link ()
   (use-package ace-link
     :commands spacemacs/ace-buffer-links
     :init
     (progn
-      (define-key spacemacs-mode-map "o" 'spacemacs/ace-buffer-links)
+      (define-key spacemacs-buffer-mode-map "o" 'spacemacs/ace-buffer-links)
       (with-eval-after-load 'info
         (define-key Info-mode-map "o" 'ace-link-info))
       (with-eval-after-load 'help-mode
@@ -133,7 +140,7 @@
     :defer t
     :init
     (progn
-      (evil-leader/set-key
+      (spacemacs/set-leader-keys
         "bM"  'ace-swap-window
         "wC"  'ace-delete-window
         "w <SPC>"  'ace-window)
@@ -167,16 +174,6 @@
     (progn
       (add-hook 'diff-auto-refine-mode-hook 'spacemacs/toggle-aggressive-indent-off)
       (spacemacs|diminish aggressive-indent-mode " Ⓘ" " I"))))
-
-(defun spacemacs/init-auto-dictionary ()
-  (use-package auto-dictionary
-    :disabled t
-    :defer t
-    :init
-    (progn
-      (add-hook 'flyspell-mode-hook '(lambda () (auto-dictionary-mode 1)))
-      (evil-leader/set-key
-        "Sd" 'adict-change-dictionary))))
 
 (defun spacemacs/init-auto-highlight-symbol ()
   (use-package auto-highlight-symbol
@@ -332,7 +329,7 @@
         (interactive)
         (ahs-change-range ahs-default-range))
 
-      (evil-leader/set-key
+      (spacemacs/set-leader-keys
         "sh" 'spacemacs/symbol-highlight
         "sH" 'spacemacs/goto-last-searched-ahs-symbol)
 
@@ -380,7 +377,7 @@
         ("e" nil
          :post (if (configuration-layer/package-usedp 'evil-iedit-state)
                    (evil-iedit-state/iedit-mode)
-                 (ahs-edit-mode))
+                 (ahs-edit-mode t))
          :exit t)
         ("n" spacemacs/quick-ahs-forward)
         ("N" spacemacs/quick-ahs-backward)
@@ -399,9 +396,9 @@
     (progn
       (setq avy-all-windows 'all-frames)
       (setq avy-background t)
-      (evil-leader/set-key
+      (spacemacs/set-leader-keys
         "SPC" 'avy-goto-word-or-subword-1
-        "l" 'avy-goto-line
+        "y" 'avy-goto-line
         "xo" 'spacemacs/avy-open-url))
     :config
     (progn
@@ -415,14 +412,14 @@
         (save-excursion
           (spacemacs/avy-goto-url)
           (browse-url-at-point)))
-      (evil-leader/set-key "`" 'avy-pop-mark))
+      (spacemacs/set-leader-keys "`" 'avy-pop-mark))
       ))
 
 (defun spacemacs/init-buffer-move ()
   (use-package buffer-move
     :defer t
     :init
-    (evil-leader/set-key
+    (spacemacs/set-leader-keys
       "bmh" 'buf-move-left
       "bmj" 'buf-move-down
       "bmk" 'buf-move-up
@@ -476,7 +473,7 @@
   (use-package define-word
     :defer t
     :init
-    (evil-leader/set-key
+    (spacemacs/set-leader-keys
       "xwd" 'define-word-at-point)))
 
 (defun spacemacs/init-dired+ ()
@@ -487,22 +484,22 @@
   (use-package doc-view
     :defer t
     :init
-    (evilify doc-view-mode doc-view-mode-map
-             "/"  'spacemacs/doc-view-search-new-query
-             "?"  'spacemacs/doc-view-search-new-query-backward
-             "gg" 'doc-view-first-page
-             "G"  'doc-view-last-page
-             "gt" 'doc-view-goto-page
-             "h"  'doc-view-previous-page
-             "j"  'doc-view-next-line-or-next-page
-             "k"  'doc-view-previous-line-or-previous-page
-             "K"  'doc-view-kill-proc-and-buffer
-             "l"  'doc-view-next-page
-             "n"  'doc-view-search
-             "N"  'doc-view-search-backward
-             (kbd "C-d") 'doc-view-scroll-up-or-next-page
-             (kbd "C-k") 'doc-view-kill-proc
-             (kbd "C-u") 'doc-view-scroll-down-or-previous-page)
+    (evilified-state-evilify doc-view-mode doc-view-mode-map
+      "/"  'spacemacs/doc-view-search-new-query
+      "?"  'spacemacs/doc-view-search-new-query-backward
+      "gg" 'doc-view-first-page
+      "G"  'doc-view-last-page
+      "gt" 'doc-view-goto-page
+      "h"  'doc-view-previous-page
+      "j"  'doc-view-next-line-or-next-page
+      "k"  'doc-view-previous-line-or-previous-page
+      "K"  'doc-view-kill-proc-and-buffer
+      "l"  'doc-view-next-page
+      "n"  'doc-view-search
+      "N"  'doc-view-search-backward
+      (kbd "C-d") 'doc-view-scroll-up-or-next-page
+      (kbd "C-k") 'doc-view-kill-proc
+      (kbd "C-u") 'doc-view-scroll-down-or-previous-page)
     :config
     (progn
       (defun spacemacs/doc-view-search-new-query ()
@@ -569,29 +566,31 @@
 (defun spacemacs/init-evil-iedit-state ()
   (use-package evil-iedit-state
     :commands (evil-iedit-state evil-iedit-state/iedit-mode)
-    :init (evil-leader/set-key "se" 'evil-iedit-state/iedit-mode)
+    :init (spacemacs/set-leader-keys "se" 'evil-iedit-state/iedit-mode)
     :config
     ;; activate leader in iedit and iedit-insert states
     (define-key evil-iedit-state-map
-      (kbd evil-leader/leader) evil-leader--default-map)))
+      (kbd dotspacemacs-leader-key) spacemacs-default-map)))
 
-(defun spacemacs/init-evil-indent-textobject ()
-  (use-package evil-indent-textobject))
+(defun spacemacs/init-evil-indent-plus ()
+  (use-package evil-indent-plus
+    :init
+    (evil-indent-plus-default-bindings)))
 
 (defun spacemacs/init-evil-jumper ()
   (use-package evil-jumper
     :init
     (progn
-      (setq evil-jumper-file (concat spacemacs-cache-directory "evil-jumps")
-            evil-jumper-auto-save-interval 600)
+      (setq evil-jumper-auto-save-interval 600)
       (evil-jumper-mode t))))
 
 (defun spacemacs/init-evil-lisp-state ()
   (use-package evil-lisp-state
-    :init
-    (progn
-      (setq evil-lisp-state-global t)
-      (setq evil-lisp-state-leader-prefix "k"))))
+    :init (setq evil-lisp-state-global t
+                ;; TODO work-around to be removed when the fix is available in
+                ;; MELPA
+                evil-lisp-state-leader (concat dotspacemacs-leader-key " k"))
+    :config (evil-lisp-state-leader (concat dotspacemacs-leader-key " k"))))
 
 (defun spacemacs/init-evil-mc ()
   (use-package evil-mc
@@ -649,7 +648,7 @@
       (define-key evil-normal-state-map "gc" 'evilnc-comment-operator)
       (define-key evil-normal-state-map "gy" 'spacemacs/copy-and-comment-lines)
 
-      (evil-leader/set-key
+      (spacemacs/set-leader-keys
         ";"  'evilnc-comment-operator
         "cl" 'spacemacs/comment-or-uncomment-lines
         "cL" 'spacemacs/comment-or-uncomment-lines-inverse
@@ -692,9 +691,9 @@
         (interactive "p*")
         (evil-numbers/dec-at-pt amount)
         (spacemacs/evil-numbers-micro-state-overlay-map))
-      (evil-leader/set-key "n+" 'spacemacs/evil-numbers-increase)
-      (evil-leader/set-key "n=" 'spacemacs/evil-numbers-increase)
-      (evil-leader/set-key "n-" 'spacemacs/evil-numbers-decrease))))
+      (spacemacs/set-leader-keys "n+" 'spacemacs/evil-numbers-increase)
+      (spacemacs/set-leader-keys "n=" 'spacemacs/evil-numbers-increase)
+      (spacemacs/set-leader-keys "n-" 'spacemacs/evil-numbers-decrease))))
 
 (defun spacemacs/init-evil-search-highlight-persist ()
   (use-package evil-search-highlight-persist
@@ -702,7 +701,7 @@
     (progn
       (global-evil-search-highlight-persist)
       ;; (set-face-attribute )
-      (evil-leader/set-key "sc" 'evil-search-highlight-persist-remove-all)
+      (spacemacs/set-leader-keys "sc" 'evil-search-highlight-persist-remove-all)
       (define-key evil-search-highlight-persist-map (kbd "C-x SPC") 'rectangle-mark-mode)
       (evil-ex-define-cmd "nohlsearch"
                           'evil-search-highlight-persist-remove-all)
@@ -728,12 +727,12 @@
     (progn
       (setq evil-tutor-working-directory
             (concat spacemacs-cache-directory ".tutor/"))
-      (evil-leader/set-key "hT" 'evil-tutor-start))))
+      (spacemacs/set-leader-keys "hT" 'evil-tutor-start))))
 
 (defun spacemacs/init-expand-region ()
   (use-package expand-region
     :defer t
-    :init (evil-leader/set-key "v" 'er/expand-region)
+    :init (spacemacs/set-leader-keys "v" 'er/expand-region)
     :config
     (progn
       ;; add search capability to expand-region
@@ -776,48 +775,7 @@
         :off (fancy-battery-mode -1)
         :documentation "Display battery info in mode-line."
         :evil-leader "tmb")
-
-      (defun spacemacs/mode-line-battery-percentage ()
-        "Return the load percentage or an empty string."
-        (let ((p (cdr (assq ?p fancy-battery-last-status))))
-          (if (and fancy-battery-show-percentage
-                   p (not (string= "N/A" p))) (concat " " p "%%") "")))
-
-      (defun spacemacs/mode-line-battery-time ()
-        "Return the remaining time complete load or discharge."
-        (let ((time (cdr (assq ?t fancy-battery-last-status))))
-          (cond
-           ((string= "0:00" time) "")
-           ((string= "N/A" time) "")
-           ((string-empty-p time) "")
-           (t (concat " (" time ")")))))
-
-      (setq-default fancy-battery-show-percentage t))
-    :config
-    (progn
-      ;; redefine this function for Spacemacs,
-      ;; basically remove all faces and properties.
-      (defun fancy-battery-default-mode-line ()
-        "Assemble a mode line string for Fancy Battery Mode."
-        (when fancy-battery-last-status
-          (let* ((type (cdr (assq ?L fancy-battery-last-status)))
-                 (percentage (spacemacs/mode-line-battery-percentage))
-                 (time (spacemacs/mode-line-battery-time)))
-            (cond
-             ((string= "on-line" type) " No Battery")
-             ((string-empty-p type) " No Battery")
-             (t (concat (if (string= "AC" type) " AC" "") percentage time))))))
-
-      (defun fancy-battery-powerline-face ()
-        "Return a face appropriate for powerline"
-        (let ((type (cdr (assq ?L fancy-battery-last-status))))
-          (if (and type (string= "AC" type))
-              'fancy-battery-charging
-            (pcase (cdr (assq ?b fancy-battery-last-status))
-              ("!"  'fancy-battery-critical)
-              ("+"  'fancy-battery-charging)
-              ("-"  'fancy-battery-discharging)
-              (_ 'fancy-battery-discharging))))))))
+      (setq-default fancy-battery-show-percentage t))))
 
 (defun spacemacs/init-flx-ido ()
   (use-package flx-ido
@@ -943,7 +901,7 @@ For instance pass En as source for English."
                  source target))
         (setq google-translate-default-source-language (downcase source))
         (setq google-translate-default-target-language (downcase target)))
-      (evil-leader/set-key
+      (spacemacs/set-leader-keys
         "xgQ" 'google-translate-query-translate-reverse
         "xgq" 'google-translate-query-translate
         "xgT" 'google-translate-at-point-reverse
@@ -1212,11 +1170,13 @@ Search for a search tool in the order provided by `dotspacemacs-search-tools'."
             (helm-exit-and-execute-action 'spacemacs/helm-project-smart-do-search-in-dir))))
 
       ;; evilify the helm-grep buffer
-      (evilify helm-grep-mode helm-grep-mode-map
-               (kbd "RET") 'helm-grep-mode-jump-other-window
-               (kbd "q") 'quit-window)
+      (evilified-state-evilify helm-grep-mode helm-grep-mode-map
+        (kbd "RET") 'helm-grep-mode-jump-other-window
+        (kbd "q") 'quit-window)
 
-      (evil-leader/set-key
+      (spacemacs/set-leader-keys
+        ;; helm-ag marks
+        "s`"  'helm-ag-pop-stack
         ;; opened buffers scope
         "sb"  'spacemacs/helm-buffers-smart-do-search
         "sB"  'spacemacs/helm-buffers-smart-do-search-region-or-symbol
@@ -1253,24 +1213,24 @@ Search for a search tool in the order provided by `dotspacemacs-search-tools'."
         "stP" 'spacemacs/helm-project-do-pt-region-or-symbol))
     :config
     (progn
-      (evil-define-key 'normal helm-ag-map "SPC" evil-leader--default-map)
-      (evilify helm-ag-mode helm-ag-mode-map
-               (kbd "RET") 'helm-ag-mode-jump-other-window
-               (kbd "q") 'quit-window))))
+      (evil-define-key 'normal helm-ag-map "SPC" spacemacs-default-map)
+      (evilified-state-evilify helm-ag-mode helm-ag-mode-map
+        (kbd "RET") 'helm-ag-mode-jump-other-window
+        (kbd "q") 'quit-window))))
 
 (defun spacemacs/init-helm-make ()
   (use-package helm-make
     :defer t
     :init
-    (evil-leader/set-key
-      "hk" 'helm-make
-      "cc" 'helm-make-projectile)))
+    (spacemacs/set-leader-keys
+      "cc" 'helm-make-projectile
+      "cm" 'helm-make)))
 
 (defun spacemacs/init-helm-mode-manager ()
   (use-package helm-mode-manager
     :defer t
     :init
-    (evil-leader/set-key
+    (spacemacs/set-leader-keys
       "hM"    'helm-switch-major-mode
       ;; "hm"    'helm-disable-minor-mode
       "h C-m" 'helm-enable-minor-mode)))
@@ -1298,7 +1258,7 @@ Search for a search tool in the order provided by `dotspacemacs-search-tools'."
                      (if thing thing ""))))))
           (call-interactively 'helm-swoop)))
 
-      (evil-leader/set-key
+      (spacemacs/set-leader-keys
         "ss"    'helm-swoop
         "sS"    'spacemacs/helm-swoop-region-or-symbol
         "s C-s" 'helm-multi-swoop-all)
@@ -1310,7 +1270,7 @@ Search for a search tool in the order provided by `dotspacemacs-search-tools'."
   (use-package helm-themes
     :defer t
     :init
-    (evil-leader/set-key
+    (spacemacs/set-leader-keys
       "Th" 'helm-themes)))
 
 (defun spacemacs/init-highlight-indentation ()
@@ -1351,7 +1311,7 @@ Search for a search tool in the order provided by `dotspacemacs-search-tools'."
       (when (member dotspacemacs-highlight-delimiters '(all current))
         (add-hook 'prog-mode-hook #'highlight-parentheses-mode))
       (setq hl-paren-delay 0.2)
-      (evil-leader/set-key "tCp" 'highlight-parentheses-mode)
+      (spacemacs/set-leader-keys "tCp" 'highlight-parentheses-mode)
       (setq hl-paren-colors '("Springgreen3"
                               "IndianRed1"
                               "IndianRed3"
@@ -1367,7 +1327,7 @@ Search for a search tool in the order provided by `dotspacemacs-search-tools'."
       (hl-highlight-mode)
       (setq-default hl-highlight-save-file
                     (concat spacemacs-cache-directory ".hl-save"))
-      (evil-leader/set-key
+      (spacemacs/set-leader-keys
         "hc"  'hl-unhighlight-all-local
         "hC"  'hl-unhighlight-all-global
         "hh"  'hl-highlight-thingatpt-local
@@ -1442,7 +1402,7 @@ It will toggle the overlay under point or create an overlay of one character."
         :off (indent-guide-global-mode -1)
         :documentation
         "Highlight indentation level at point globally. (alternative to highlight-indentation)."
-        :evil-leader "t C-i"))
+        :evil-leader "t TAB"))
     :config
     (spacemacs|diminish indent-guide-mode " ⓘ" " i")))
 
@@ -1451,8 +1411,20 @@ It will toggle the overlay under point or create an overlay of one character."
     :defer t
     :commands (open-junk-file)
     :init
-    (evil-leader/set-key "fJ" 'open-junk-file)
-    (setq open-junk-file-directory (concat spacemacs-cache-directory "junk/"))))
+    (setq open-junk-file-format (concat spacemacs-cache-directory "junk/%Y/%m/%d-%H%M%S."))
+    (defun spacemacs/helm-open-junk-file (&optional arg)
+      "Open junk file
+Open junk file using helm, with `prefix-arg' search in junk files"
+      (interactive "P")
+      (require 'helm)
+      (let* ((fname (format-time-string open-junk-file-format (current-time)))
+             (junk-dir (file-name-directory fname))
+             (helm-ff-newfile-prompt-p nil)
+             (default-directory junk-dir))
+        (if arg
+             (spacemacs/helm-files-smart-do-search)
+          (helm-find-files-1 fname))))
+    (spacemacs/set-leader-keys "fJ" 'spacemacs/helm-open-junk-file)))
 
 (defun spacemacs/init-info+ ()
   (use-package info+
@@ -1470,12 +1442,28 @@ It will toggle the overlay under point or create an overlay of one character."
 
 (defun spacemacs/init-linum-relative ()
   (use-package linum-relative
-    :commands linum-relative-toggle
+    :commands (linum-relative-toggle linum-relative-on)
     :init
-    (evil-leader/set-key "tr" 'linum-relative-toggle)
+    (progn
+      (when (eq dotspacemacs-line-numbers 'relative)
+        (linum-relative-on))
+      (spacemacs/set-leader-keys "tr" 'linum-relative-toggle))
     :config
     (progn
       (setq linum-relative-current-symbol ""))))
+
+(defun spacemacs/init-lorem-ipsum ()
+  (use-package lorem-ipsum
+    :commands (lorem-ipsum-insert-list
+               lorem-ipsum-insert-paragraphs
+               lorem-ipsum-insert-sentences)
+    :init
+    (progn
+      (spacemacs/declare-prefix "il" "lorem ipsum")
+      (spacemacs/set-leader-keys
+        "ill" 'lorem-ipsum-insert-list
+        "ilp" 'lorem-ipsum-insert-paragraphs
+        "ils" 'lorem-ipsum-insert-sentences))))
 
 (defun spacemacs/init-move-text ()
   (use-package move-text
@@ -1496,7 +1484,6 @@ It will toggle the overlay under point or create an overlay of one character."
     :commands neo-global--window-exists-p
     :init
     (progn
-      (add-to-list 'evil-motion-state-modes 'neotree-mode)
       (setq neo-window-width 32
             neo-create-file-auto-open t
             neo-banner-message nil
@@ -1508,7 +1495,7 @@ It will toggle the overlay under point or create an overlay of one character."
             neo-show-hidden-files t
             neo-auto-indent-point t
             neo-modern-sidebar t
-            neo-vc-integration '(face))
+            neo-vc-integration nil)
 
       (defun spacemacs/neotree-expand-or-open ()
         "Collapse a neotree node."
@@ -1556,31 +1543,34 @@ It will toggle the overlay under point or create an overlay of one character."
 
       (defun spacemacs//neotree-key-bindings ()
         "Set the key bindings for a neotree buffer."
-        (define-key evil-motion-state-local-map (kbd "TAB") 'neotree-stretch-toggle)
-        (define-key evil-motion-state-local-map (kbd "RET") 'neotree-enter)
-        (define-key evil-motion-state-local-map (kbd "|")   'neotree-enter-vertical-split)
-        (define-key evil-motion-state-local-map (kbd "-")   'neotree-enter-horizontal-split)
-        (define-key evil-motion-state-local-map (kbd "?")   'evil-search-backward)
-        (define-key evil-motion-state-local-map (kbd "c")   'neotree-create-node)
-        (define-key evil-motion-state-local-map (kbd "d")   'neotree-delete-node)
-        (define-key evil-motion-state-local-map (kbd "g")   'neotree-refresh)
-        (define-key evil-motion-state-local-map (kbd "h")   'spacemacs/neotree-collapse-or-up)
-        (define-key evil-motion-state-local-map (kbd "H")   'neotree-select-previous-sibling-node)
-        (define-key evil-motion-state-local-map (kbd "J")   'neotree-select-down-node)
-        (define-key evil-motion-state-local-map (kbd "K")   'neotree-select-up-node)
-        (define-key evil-motion-state-local-map (kbd "l")   'spacemacs/neotree-expand-or-open)
-        (define-key evil-motion-state-local-map (kbd "L")   'neotree-select-next-sibling-node)
-        (define-key evil-motion-state-local-map (kbd "q")   'neotree-hide)
-        (define-key evil-motion-state-local-map (kbd "r")   'neotree-rename-node)
-        (define-key evil-motion-state-local-map (kbd "R")   'neotree-change-root)
-        (define-key evil-motion-state-local-map (kbd "s")   'neotree-hidden-file-toggle))
+        (evilified-state-evilify-map neotree-mode-map
+          :mode neotree-mode
+          :bindings
+          (kbd "TAB")  'neotree-stretch-toggle
+          (kbd "RET") 'neotree-enter
+          (kbd "|") 'neotree-enter-vertical-split
+          (kbd "-") 'neotree-enter-horizontal-split
+          (kbd "?") 'evil-search-backward
+          (kbd "c") 'neotree-create-node
+          (kbd "d") 'neotree-delete-node
+          (kbd "gr") 'neotree-refresh
+          (kbd "h") 'spacemacs/neotree-collapse-or-up
+          (kbd "H") 'neotree-select-previous-sibling-node
+          (kbd "J") 'neotree-select-down-node
+          (kbd "K") 'neotree-select-up-node
+          (kbd "l") 'spacemacs/neotree-expand-or-open
+          (kbd "L") 'neotree-select-next-sibling-node
+          (kbd "q") 'neotree-hide
+          (kbd "r") 'neotree-rename-node
+          (kbd "R") 'neotree-change-root
+          (kbd "s") 'neotree-hidden-file-toggle))
 
-      (evil-leader/set-key
+      (spacemacs/set-leader-keys
         "ft" 'neotree-toggle
         "pt" 'neotree-find-project-root))
 
     :config
-    (spacemacs/add-to-hook 'neotree-mode-hook '(spacemacs//neotree-key-bindings))))
+    (spacemacs//neotree-key-bindings)))
 
 (defun spacemacs/init-pcre2el ()
   (use-package pcre2el
@@ -1589,7 +1579,7 @@ It will toggle the overlay under point or create an overlay of one character."
     :init
     (progn
       (spacemacs/declare-prefix "R" "pcre2el")
-      (evil-leader/set-key
+      (spacemacs/set-leader-keys
         "R/"  'rxt-explain
         "Rc"  'rxt-convert-syntax
         "Rx"  'rxt-convert-to-rx
@@ -1634,27 +1624,28 @@ It will toggle the overlay under point or create an overlay of one character."
                                            paradox-token)))))
         (paradox-list-packages nil))
 
-      (evilify paradox-menu-mode paradox-menu-mode-map
-               "H" 'paradox-menu-quick-help
-               "J" 'paradox-next-describe
-               "K" 'paradox-previous-describe
-               "L" 'paradox-menu-view-commit-list
-               "o" 'paradox-menu-visit-homepage)
-      (evil-leader/set-key
-        "aP" 'spacemacs/paradox-list-packages))))
+      (evilified-state-evilify paradox-menu-mode paradox-menu-mode-map
+        "H" 'paradox-menu-quick-help
+        "J" 'paradox-next-describe
+        "K" 'paradox-previous-describe
+        "L" 'paradox-menu-view-commit-list
+        "o" 'paradox-menu-visit-homepage)
+      (spacemacs/set-leader-keys
+        "ak" 'spacemacs/paradox-list-packages))))
 
 (defun spacemacs/init-rainbow-delimiters ()
   (use-package rainbow-delimiters
     :defer t
     :init
     (progn
-      (evil-leader/set-key "tCd" 'rainbow-delimiters-mode)
+      (spacemacs/set-leader-keys "tCd" 'rainbow-delimiters-mode)
       (when (member dotspacemacs-highlight-delimiters '(any all))
         (spacemacs/add-to-hooks 'rainbow-delimiters-mode '(prog-mode-hook))))))
 
 (defun spacemacs/init-smartparens ()
   (use-package smartparens
     :defer t
+    :commands (sp-split-sexp sp-newline)
     :init
     (progn
       (spacemacs/add-to-hooks (if dotspacemacs-smartparens-strict-mode
@@ -1687,7 +1678,11 @@ It will toggle the overlay under point or create an overlay of one character."
       (setq sp-show-pair-delay 0.2
             ;; fix paren highlighting in normal mode
             sp-show-pair-from-inside t
-            sp-cancel-autoskip-on-backward-movement nil))
+            sp-cancel-autoskip-on-backward-movement nil)
+
+      (spacemacs/set-leader-keys
+        "J"  'sp-split-sexp
+        "jj" 'sp-newline))
     :config
     (progn
       (require 'smartparens-config)
@@ -1713,17 +1708,27 @@ It will toggle the overlay under point or create an overlay of one character."
                '(:add (spacemacs/smartparens-pair-newline-and-indent "RET"))))))
 
 (defun spacemacs/init-smooth-scrolling ()
-  (if dotspacemacs-smooth-scrolling
-      (use-package smooth-scrolling
-        :init
-        (setq smooth-scroll-margin 5
-              scroll-conservatively 101
-              scroll-preserve-screen-position t
-              auto-window-vscroll nil)
-        :config
-        (setq scroll-margin 5))
+  (defun spacemacs//unset-scroll-margin ()
+    "Set scroll-margin to zero."
+    (setq-local scroll-margin 0))
 
-    ;; deactivate the defadvice's
+  (use-package smooth-scrolling
+    :if dotspacemacs-smooth-scrolling
+    :init (setq smooth-scroll-margin 5
+                scroll-conservatively 101
+                scroll-preserve-screen-position t
+                auto-window-vscroll nil)
+    :config
+    (progn
+      (setq scroll-margin 5)
+      ;; add hooks here only for emacs built-in packages
+      (spacemacs/add-to-hooks 'spacemacs//unset-scroll-margin
+                              '(messages-buffer-mode-hook
+                                comint-mode-hook
+                                term-mode-hook))))
+
+  (unless dotspacemacs-smooth-scrolling
+    ;; deactivate smooth-scrolling advices
     (ad-disable-advice 'previous-line 'after 'smooth-scroll-down)
     (ad-activate 'previous-line)
     (ad-disable-advice 'next-line 'after 'smooth-scroll-up)
@@ -1812,6 +1817,8 @@ It will toggle the overlay under point or create an overlay of one character."
 
       (spaceline-spacemacs-theme '(new-version :when active))
       (spaceline-helm-mode t)
+      (when (configuration-layer/package-usedp 'info+)
+        (spaceline-info-mode t))
 
       (defun spacemacs//restore-powerline (buffer)
         "Restore the powerline in buffer"
@@ -1824,7 +1831,8 @@ It will toggle the overlay under point or create an overlay of one character."
         (when spaceline-minor-modes-p
           (let ((unicodep (dotspacemacs|symbol-value
                            dotspacemacs-mode-line-unicode-symbols)))
-            (setq spaceline-minor-modes-separator (if unicodep "" "|"))
+            (setq spaceline-minor-modes-separator
+                  (if unicodep (if (display-graphic-p) "" " ") "|"))
             (dolist (mm spacemacs--diminished-minor-modes)
               (let ((mode (car mm)))
                 (when (and (boundp mode) (symbol-value mode))
@@ -1835,29 +1843,6 @@ It will toggle the overlay under point or create an overlay of one character."
                                 (if ascii ascii unicode))))
                     (diminish mode dim))))))))
       (add-hook 'spaceline-pre-hook 'spacemacs//prepare-diminish))))
-
-(defun spacemacs/init-spray ()
-  (use-package spray
-    :commands spray-mode
-    :init
-    (progn
-      (defun spacemacs/start-spray ()
-        "Start spray speed reading on current buffer at current point."
-        (interactive)
-        (evil-insert-state)
-        (spray-mode t)
-        (internal-show-cursor (selected-window) nil))
-      (evil-leader/set-key "asr" 'spacemacs/start-spray)
-
-      (defadvice spray-quit (after spacemacs//quit-spray activate)
-        "Correctly quit spray."
-        (internal-show-cursor (selected-window) t)
-        (evil-normal-state)))
-    :config
-    (progn
-      (define-key spray-mode-map (kbd "h") 'spray-backward-word)
-      (define-key spray-mode-map (kbd "l") 'spray-forward-word)
-      (define-key spray-mode-map (kbd "q") 'spray-quit))))
 
 (defun spacemacs/init-vi-tilde-fringe ()
   (use-package vi-tilde-fringe
@@ -1871,7 +1856,7 @@ It will toggle the overlay under point or create an overlay of one character."
         :off (global-vi-tilde-fringe-mode -1)
         :documentation
         "Globally display a ~ on empty lines in the fringe."
-        :evil-leader "t~")
+        :evil-leader "T~")
       ;; don't enable it on spacemacs home buffer
       (with-current-buffer  "*spacemacs*"
         (vi-tilde-fringe-mode -1))
@@ -1891,7 +1876,7 @@ It will toggle the overlay under point or create an overlay of one character."
         (defun window-numbering-install-mode-line (&optional position)
           "Do nothing, the display is handled by the powerline."))
       (setq window-numbering-auto-assign-0-to-minibuffer nil)
-      (evil-leader/set-key
+      (spacemacs/set-leader-keys
         "0" 'select-window-0
         "1" 'select-window-1
         "2" 'select-window-2
@@ -1929,13 +1914,15 @@ It will toggle the overlay under point or create an overlay of one character."
     :init
     (progn
       (spacemacs|define-micro-state zoom-frm
-        :doc "[+] zoom frame in [-] zoom frame out [=] reset zoom"
+        :doc "[+/=] zoom frame in [-] zoom frame out [0] reset zoom [q]uit"
         :evil-leader "zf"
         :use-minibuffer t
         :bindings
         ("+" spacemacs/zoom-frm-in :post (spacemacs//zoom-frm-powerline-reset))
+        ("=" spacemacs/zoom-frm-in :post (spacemacs//zoom-frm-powerline-reset))
         ("-" spacemacs/zoom-frm-out :post (spacemacs//zoom-frm-powerline-reset))
-        ("=" spacemacs/zoom-frm-unzoom :post (spacemacs//zoom-frm-powerline-reset)))
+        ("0" spacemacs/zoom-frm-unzoom :post (spacemacs//zoom-frm-powerline-reset))
+        ("q" nil :exit t))
 
       (defun spacemacs//zoom-frm-powerline-reset ()
         (when (fboundp 'powerline-reset)

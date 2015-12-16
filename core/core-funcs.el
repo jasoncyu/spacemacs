@@ -10,11 +10,17 @@
 ;;
 ;;; License: GPLv3
 
+(defun spacemacs/load-or-install-protected-package (pkg &optional log file-to-load)
+  "Load PKG package, and protect it against being deleted as an orphan.
+See `spacemacs/load-or-install-package' for more information."
+  (push pkg configuration-layer--protected-packages)
+  (spacemacs/load-or-install-package pkg log file-to-load))
+
 (defun spacemacs/load-or-install-package (pkg &optional log file-to-load)
   "Load PKG package. PKG will be installed if it is not already installed.
 Whenever the initial require fails the absolute path to the package
 directory is returned.
-If LOG is non-nil a message is displayed in spacemacs-mode buffer.
+If LOG is non-nil a message is displayed in spacemacs-buffer-mode buffer.
 FILE-TO-LOAD is an explicit file to load after the installation."
   (let ((warning-minimum-level :error))
     (condition-case nil
@@ -31,7 +37,7 @@ FILE-TO-LOAD is an explicit file to load after the installation."
              (spacemacs-buffer/append
               (format "(Bootstrap) Installing %s...\n" pkg))
              (spacemacs//redisplay))
-           (package-refresh-contents)
+           (configuration-layer/retrieve-package-archives 'quiet)
            (package-install pkg)
            (setq pkg-elpa-dir (spacemacs//get-package-directory pkg)))
          (require pkg nil 'noerror)
@@ -122,12 +128,12 @@ and its values are removed."
 Supported properties:
 
 `:evil-leader STRING'
-    One or several key sequence strings to be set with `evil-leader/set-key'.
+    One or several key sequence strings to be set with `spacemacs/set-leader-keys .
 
 `:evil-leader-for-mode CONS CELL'
     One or several cons cells (MODE . KEY) where MODE is a major-mode symbol
     and KEY is a key sequence string to be set with
-    `evil-leader/set-key-for-mode'.
+    `spacemacs/set-leader-keys-for-major-mode'.
 
 `:global-key STRING'
     One or several key sequence strings to be set with `global-set-key'.
@@ -141,10 +147,10 @@ Supported properties:
         (def-key (spacemacs/mplist-get props :define-key)))
     `((unless (null ',evil-leader)
         (dolist (key ',evil-leader)
-          (evil-leader/set-key key ',func)))
+          (spacemacs/set-leader-keys key ',func)))
       (unless (null ',evil-leader-for-mode)
         (dolist (val ',evil-leader-for-mode)
-          (evil-leader/set-key-for-mode
+          (spacemacs/set-leader-keys-for-major-mode
             (car val) (cdr val) ',func)))
       (unless (null ',global-key)
         (dolist (key ',global-key)
@@ -221,6 +227,31 @@ result, incrementing passed-tests and total-tests."
             (when (boundp 'passed-tests) (setq passed-tests (1+ passed-tests)))
             (insert (format "*** PASS: %s\n" var)))
         (insert (propertize (format "*** FAIL: %s\n" var) 'font-lock-face 'font-lock-warning-face))))))
+
+;; hide mode line
+;; from http://bzg.fr/emacs-hide-mode-line.html
+(defvar-local hidden-mode-line-mode nil)
+(define-minor-mode hidden-mode-line-mode
+  "Minor mode to hide the mode-line in the current buffer."
+  :init-value nil
+  :global t
+  :variable hidden-mode-line-mode
+  :group 'editing-basics
+  (if hidden-mode-line-mode
+      (setq hide-mode-line mode-line-format
+            mode-line-format nil)
+    (setq mode-line-format hide-mode-line
+          hide-mode-line nil))
+  (force-mode-line-update)
+  ;; Apparently force-mode-line-update is not always enough to
+  ;; redisplay the mode-line
+  (redraw-display)
+  (when (and (called-interactively-p 'interactive)
+             hidden-mode-line-mode)
+    (run-with-idle-timer
+     0 nil 'message
+     (concat "Hidden Mode Line Mode enabled.  "
+             "Use M-x hidden-mode-line-mode to make the mode-line appear."))))
 
 (provide 'core-funcs)
 
