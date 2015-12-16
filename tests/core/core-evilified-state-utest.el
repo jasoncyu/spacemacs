@@ -1,4 +1,4 @@
-;;; core-evilify-keymap-utest.el --- Spacemacs Unit Test File
+;;; core-evilified-state-utest.el --- Spacemacs Unit Test File
 ;;
 ;; Copyright (c) 2012-2014 Sylvain Benner
 ;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
@@ -9,7 +9,12 @@
 ;; This file is not part of GNU Emacs.
 ;;
 ;;; License: GPLv3
-(require 'core-evilify-keymap)
+(require 'core-funcs)
+(require 'core-configuration-layer)
+(spacemacs/load-or-install-package 'evil)
+(spacemacs/load-or-install-package 'evil-leader)
+
+(require 'core-evilified-state)
 
 ;; ---------------------------------------------------------------------------
 ;; spacemacs//evilify-find-new-event
@@ -32,17 +37,17 @@
   (let ((input (+ (expt 2 25) ?\C-s)))
     (should (equal nil (spacemacs//evilify-find-new-event input)))))
 
-(ert-deftest test-evilify-find-new-event--Space-error-return-nil ()
+(ert-deftest test-evilify-find-new-event--Space-remap ()
   (let ((input 32))
-    (should (equal nil (spacemacs//evilify-find-new-event input)))))
+    (should (equal ?' (spacemacs//evilify-find-new-event input)))))
 
-(ert-deftest test-evilify-find-new-event--/-error-not-covered-for-now ()
+(ert-deftest test-evilify-find-new-event--/-remap ()
   (let ((input ?/))
-    (should (equal nil (spacemacs//evilify-find-new-event input)))))
+    (should (equal ?\\ (spacemacs//evilify-find-new-event input)))))
 
-(ert-deftest test-evilify-find-new-event--/-error-return-nil ()
+(ert-deftest test-evilify-find-new-event--:-remap ()
   (let ((input ?:))
-    (should (equal nil (spacemacs//evilify-find-new-event input)))))
+    (should (equal ?| (spacemacs//evilify-find-new-event input)))))
 
 ;; ---------------------------------------------------------------------------
 ;; spacemacs//evilify-sort-keymap

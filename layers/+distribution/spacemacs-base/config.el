@@ -16,52 +16,52 @@
 
 ;; We define prefix commands only for the sake of which-key
 (setq spacemacs/key-binding-prefixes '(("a"   "applications")
-                                       ("ai"  "applications-irc")
-                                       ("as"  "applications-shells")
+                                       ("ai"  "irc")
+                                       ("as"  "shells")
                                        ("b"   "buffers")
-                                       ("bm"  "buffers-move")
+                                       ("bm"  "move")
                                        ("c"   "compile/comments")
                                        ("C"   "capture/colors")
                                        ("e"   "errors")
-                                       ("E"   "editing-modes")
                                        ("f"   "files")
                                        ("fC"  "files/convert")
-                                       ("fe"  "files-emacs/spacemacs")
+                                       ("fe"  "emacs(spacemacs)")
                                        ("g"   "git/versions-control")
                                        ("h"   "helm/help/highlight")
                                        ("hd"  "help-describe")
                                        ("i"   "insertion")
                                        ("j"   "join/split")
                                        ("k"   "lisp")
-                                       ("kd"  "lisp-delete")
-                                       ("kD"  "lisp-delete-backward")
-                                       ("k`"  "lisp-hybrid")
+                                       ("kd"  "delete")
+                                       ("kD"  "delete-backward")
+                                       ("k`"  "hybrid")
                                        ("n"   "narrow/numbers")
                                        ("p"   "projects")
                                        ("p$"  "projects/shell")
                                        ("q"   "quit")
                                        ("r"   "registers/rings")
                                        ("s"   "search/symbol")
-                                       ("sa"  "search-ag")
-                                       ("sg"  "search-grep")
-                                       ("sk"  "search-ack")
-                                       ("st"  "search-pt")
-                                       ("sw"  "search-web")
+                                       ("sa"  "ag")
+                                       ("sg"  "grep")
+                                       ("sk"  "ack")
+                                       ("st"  "pt")
+                                       ("sw"  "web")
                                        ("t"   "toggles")
-                                       ("tC"  "toggles-colors")
-                                       ("th"  "toggles-highlight")
-                                       ("tm"  "toggles-modeline")
+                                       ("tC"  "colors")
+                                       ("tE"  "editing-styles")
+                                       ("th"  "highlight")
+                                       ("tm"  "modeline")
                                        ("T"   "toggles/themes")
                                        ("w"   "windows")
-                                       ("wp"  "windows-popup")
+                                       ("wp"  "popup")
                                        ("x"   "text")
-                                       ("xa"  "text-align")
-                                       ("xd"  "text-delete")
-                                       ("xg"  "text-google-translate")
-                                       ("xl"  "text-lines")
-                                       ("xm"  "text-move")
-                                       ("xt"  "text-transpose")
-                                       ("xw"  "text-words")
+                                       ("xa"  "align")
+                                       ("xd"  "delete")
+                                       ("xg"  "google-translate")
+                                       ("xl"  "lines")
+                                       ("xm"  "move")
+                                       ("xt"  "transpose")
+                                       ("xw"  "words")
                                        ("z"   "zoom")))
 (mapc (lambda (x) (apply #'spacemacs/declare-prefix x))
       spacemacs/key-binding-prefixes)
@@ -106,6 +106,14 @@ It runs `tabulated-list-revert-hook', then calls `tabulated-list-print'."
 ;; Highlight and allow to open http link at point in programming buffers
 ;; goto-address-prog-mode only highlights links in strings and comments
 (add-hook 'prog-mode-hook 'goto-address-prog-mode)
+;; Highlight and follow bug references in comments and strings
+(add-hook 'prog-mode-hook 'bug-reference-prog-mode)
+
+;; Keep focus while navigating help buffers
+(setq help-window-select 't)
+
+;; Scroll compilation to first error or end
+(setq compilation-scroll-output 'first-error)
 
 ;; ---------------------------------------------------------------------------
 ;; Edit
@@ -117,7 +125,7 @@ It runs `tabulated-list-revert-hook', then calls `tabulated-list-print'."
 
 ;; use only spaces and no tabs
 (setq-default indent-tabs-mode nil
-              default-tab-width 2)
+              tab-width 2)
 
 ;; Text
 (setq longlines-show-hard-newlines t)
@@ -143,8 +151,8 @@ It runs `tabulated-list-revert-hook', then calls `tabulated-list-print'."
 ;; The C-d rebinding that most shell-like buffers inherit from
 ;; comint-mode assumes non-evil configuration with its
 ;; `comint-delchar-or-maybe-eof' function, so we disable it
-(eval-after-load 'comint
-  '(define-key comint-mode-map (kbd "C-d") nil))
+(with-eval-after-load 'comint
+  (define-key comint-mode-map (kbd "C-d") nil))
 
 ;; ---------------------------------------------------------------------------
 ;; UI
@@ -177,16 +185,14 @@ It runs `tabulated-list-revert-hook', then calls `tabulated-list-print'."
       (spacemacs/toggle-frame-fullscreen)
     (if dotspacemacs-maximized-at-startup
         (add-hook 'window-setup-hook 'toggle-frame-maximized))))
-(defvar spacemacs--global-mode-line-excludes nil
-  "List of elements to exclude from the global modeline string.
-These should have their own segments in the modeline.")
 
 ;; ---------------------------------------------------------------------------
 ;; Session
 ;; ---------------------------------------------------------------------------
 
 ;; save custom variables in ~/.spacemacs
-(setq custom-file (dotspacemacs/location))
+(unless (bound-and-true-p custom-file)
+  (setq custom-file (dotspacemacs/location)))
 ;; scratch buffer empty
 (setq initial-scratch-message nil)
 ;; don't create backup~ files
@@ -206,7 +212,7 @@ These should have their own segments in the modeline.")
               (null dotspacemacs-auto-save-file-location))
     (make-directory autosave-dir t)))
 ;; Choose auto-save location
-(case dotspacemacs-auto-save-file-location
+(cl-case dotspacemacs-auto-save-file-location
   (cache (let ((autosave-dir (concat spacemacs-auto-save-directory "site/")))
            (add-to-list 'auto-save-file-name-transforms
                         `(".*" ,autosave-dir t) 'append)

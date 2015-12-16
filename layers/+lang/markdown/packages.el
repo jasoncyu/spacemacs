@@ -13,6 +13,7 @@
 (setq markdown-packages
   '(
     emoji-cheat-sheet-plus
+    gh-md
     markdown-mode
     markdown-toc
     mmm-mode
@@ -23,6 +24,13 @@
 
 (defun markdown/post-init-emoji-cheat-sheet-plus ()
   (add-hook 'markdown-mode-hook 'emoji-cheat-sheet-plus-display-mode))
+
+(defun markdown/init-gh-md ()
+  (use-package gh-md
+    :defer t
+    :init
+    (evil-leader/set-key-for-mode 'markdown-mode
+      "mcr"  'gh-md-render-buffer)))
 
 (defun markdown/post-init-smartparens ()
   (add-hook 'markdown-mode-hook 'smartparens-mode))
@@ -45,6 +53,15 @@ Will work on both org-mode and any mode that accepts plain html."
                (format tag (help-key-description key nil)))
             (insert (format tag ""))
             (forward-char -6))))
+
+      ;; Declare prefixes and bind keys
+      (dolist (prefix '(("mc" . "markdown/command")
+                        ("mh" . "markdown/header")
+                        ("mi" . "markdown/insert")
+                        ("ml" . "markdown/lists")
+                        ("mx" . "markdown/text")))
+        (spacemacs/declare-prefix-for-mode
+         'markdown-mode (car prefix) (cdr prefix)))
       (evil-leader/set-key-for-mode 'markdown-mode
         ;; Movement
         "m{"   'markdown-backward-paragraph
@@ -56,15 +73,14 @@ Will work on both org-mode and any mode that accepts plain html."
         "m<"   'markdown-exdent-region
         ;; Buffer-wide commands
         "mc]"  'markdown-complete-buffer
-        "mcm"  'markdown-other-window
-        "mcp"  'markdown-preview
-        "mce"  'markdown-export
-        "mcv"  'markdown-export-and-preview
-        "mco"  'markdown-open
-        "mcw"  'markdown-kill-ring-save
         "mcc"  'markdown-check-refs
+        "mce"  'markdown-export
+        "mcm"  'markdown-other-window
         "mcn"  'markdown-cleanup-list-numbers
-        "mcr"  'gh-md-render-buffer
+        "mco"  'markdown-open
+        "mcp"  'markdown-preview
+        "mcv"  'markdown-export-and-preview
+        "mcw"  'markdown-kill-ring-save
         ;; headings
         "mhi"  'markdown-insert-header-dwim
         "mhI"  'markdown-insert-header-setext-dwim
@@ -94,6 +110,7 @@ Will work on both org-mode and any mode that accepts plain html."
         "mxb"  'markdown-insert-bold
         "mxi"  'markdown-insert-italic
         "mxc"  'markdown-insert-code
+        "mxC"  'markdown-insert-gfm-code-block
         "mxq"  'markdown-insert-blockquote
         "mxQ"  'markdown-blockquote-region
         "mxp"  'markdown-insert-pre

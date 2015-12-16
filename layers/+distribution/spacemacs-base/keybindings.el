@@ -20,10 +20,9 @@
 
 ;; replace `dired-goto-file' with `helm-find-files', since `helm-find-files'
 ;; can do the same thing and with fuzzy matching and other features.
-(eval-after-load 'dired
-  '(progn
-     (evil-define-key 'normal dired-mode-map "J" 'spacemacs/helm-find-files)
-     (define-key dired-mode-map "j" 'spacemacs/helm-find-files)))
+(with-eval-after-load 'dired
+  (evil-define-key 'normal dired-mode-map "J" 'spacemacs/helm-find-files)
+  (define-key dired-mode-map "j" 'spacemacs/helm-find-files))
 
 ;; alternate binding to search next occurrence with isearch without
 ;; exiting isearch
@@ -45,6 +44,10 @@
 (global-set-key (kbd "<left-margin> <mouse-1>") 'spacemacs/mu-select-linum)
 (global-set-key (kbd "<left-margin> <double-mouse-1>") 'spacemacs/select-current-block)
 (global-set-key (kbd "<left-margin> <drag-mouse-1>") 'spacemacs/mu-select-linum)
+
+;; let TAB jump between links in help buffers
+(evil-define-key 'motion help-mode-map (kbd "TAB") 'forward-button)
+(evil-define-key 'motion help-mode-map (kbd "S-TAB") 'backward-button)
 
 ;; ---------------------------------------------------------------------------
 ;; evil-leader key bindings
@@ -77,6 +80,7 @@
   "bn"  'spacemacs/next-useful-buffer
   "bp"  'spacemacs/previous-useful-buffer
   "bR"  'spacemacs/safe-revert-buffer
+  "bs"  'spacemacs/switch-to-scratch-buffer
   "bY"  'spacemacs/copy-whole-buffer-to-clipboard
   "bw"  'read-only-mode)
 ;; Cycling settings -----------------------------------------------------------
@@ -130,6 +134,9 @@ Ensure that helm is required before calling FUNC."
   "fR" 'spacemacs/rename-current-buffer-file
   "fS" 'evil-write-all
   "fs" 'spacemacs/write-file
+  "fvd" 'add-dir-local-variable
+  "fvf" 'add-file-local-variable
+  "fvp" 'add-file-local-variable-prop-line
   "fy" 'spacemacs/show-and-copy-buffer-filename)
 ;; insert stuff ---------------------------------------------------------------
 (evil-leader/set-key
@@ -210,8 +217,9 @@ Ensure that helm is required before calling FUNC."
   :documentation "Break line beyond `current-fill-column` while editing."
   :evil-leader "tF")
 (spacemacs|add-toggle debug-on-error
-  :status nil
-  :on (toggle-debug-on-error)
+  :status debug-on-error
+  :on (setq debug-on-error t)
+  :off (setq debug-on-error nil)
   :documentation "Toggle display of backtrace when an error happens."
   :evil-leader "tD")
 (spacemacs|add-toggle fringe
@@ -330,6 +338,8 @@ Ensure that helm is required before calling FUNC."
   "w/"  'split-window-right
   "w="  'balance-windows)
 ;; text -----------------------------------------------------------------------
+(defalias 'count-region 'count-words-region)
+
 (evil-leader/set-key
   "xaa" 'align
   "xar" 'spacemacs/align-repeat
@@ -343,6 +353,7 @@ Ensure that helm is required before calling FUNC."
   "xa|" 'spacemacs/align-repeat-bar
   "xa(" 'spacemacs/align-repeat-left-paren
   "xa)" 'spacemacs/align-repeat-right-paren
+  "xc"  'count-region
   "xdw" 'delete-trailing-whitespace
   "xls" 'spacemacs/sort-lines
   "xlu" 'spacemacs/uniquify-lines
@@ -351,16 +362,14 @@ Ensure that helm is required before calling FUNC."
   "xtw" 'transpose-words
   "xU"  'upcase-region
   "xu"  'downcase-region
-  "xwC" 'spacemacs/count-words-analysis
-  "xwc" 'count-words-region)
+  "xwc" 'spacemacs/count-words-analysis)
 ;; google translate -----------------------------------------------------------
 (evil-leader/set-key
   "xgl" 'spacemacs/set-google-translate-languages)
 ;; shell ----------------------------------------------------------------------
-(eval-after-load "shell"
-  '(progn
-    (evil-define-key 'insert comint-mode-map [up] 'comint-previous-input)
-    (evil-define-key 'insert comint-mode-map [down] 'comint-next-input)))
+(with-eval-after-load 'shell
+  (evil-define-key 'insert comint-mode-map [up] 'comint-previous-input)
+  (evil-define-key 'insert comint-mode-map [down] 'comint-next-input))
 
 ;; ---------------------------------------------------------------------------
 ;; Micro-states

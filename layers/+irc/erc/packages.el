@@ -88,7 +88,7 @@
         (notifications-notify
          :title nick
          :body message
-         :app-icon "/home/io/.emacs.d/assets/spacemacs.svg"
+         :app-icon (concat spacemacs-assets-directory "spacemacs.svg")
          :urgency 'low))
 
       ;; osx doesn't have dbus support
@@ -128,13 +128,13 @@
 
 (defun erc/init-erc-yt ()
   (use-package erc-yt
-    :init (eval-after-load 'erc '(add-to-list 'erc-modules 'youtube))))
+    :init (with-eval-after-load 'erc (add-to-list 'erc-modules 'youtube))))
 
 (defun erc/init-erc-view-log ()
   (use-package erc-view-log
     :init
     (progn
-      (eval-after-load 'erc '(add-to-list 'erc-modules 'log))
+      (with-eval-after-load 'erc (add-to-list 'erc-modules 'log))
       (setq erc-log-channels-directory
             (expand-file-name
              (concat spacemacs-cache-directory
@@ -172,6 +172,6 @@
 
 (defun erc/init-erc-image ()
   (use-package erc-image
-    :init (eval-after-load 'erc '(add-to-list 'erc-modules 'image))))
+    :init (with-eval-after-load 'erc (add-to-list 'erc-modules 'image))))
 
 (defun erc/init-erc-terminal-notifier ())

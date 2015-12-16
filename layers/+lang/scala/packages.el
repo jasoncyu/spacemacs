@@ -82,6 +82,19 @@
         (ensime-inf-eval-region start end)
         (evil-insert-state))
 
+      (dolist (prefix '(("mb" . "scala/build")
+                        ("mc" . "scala/check")
+                        ("md" . "scala/debug")
+                        ("me" . "scala/errors")
+                        ("mg" . "scala/goto")
+                        ("mh" . "scala/docs")
+                        ("mi" . "scala/inspect")
+                        ("mn" . "scala/ensime")
+                        ("mr" . "scala/refactor")
+                        ("mt" . "scala/test")
+                        ("ms" . "scala/repl")))
+        (spacemacs/declare-prefix-for-mode 'scala-mode (car prefix) (cdr prefix)))
+
       (evil-leader/set-key-for-mode 'scala-mode
         "m/"     'ensime-search
 
@@ -155,14 +168,20 @@
 
       ;; Don't use scala checker if ensime mode is active, since it provides
       ;; better error checking.
-      (eval-after-load 'flycheck
-        '(progn
-           (defun scala/disable-flycheck () (flycheck-mode -1))
-           (add-hook 'ensime-mode-hook 'scala/disable-flycheck))))))
+      (with-eval-after-load 'flycheck
+        (defun scala/disable-flycheck-scala ()
+          (push 'scala flycheck-disabled-checkers))
+
+        (add-hook 'ensime-mode-hook 'scala/disable-flycheck-scala)))))
 
 (defun scala/init-noflet ())
 
-(defun scala/init-sbt-mode ())
+(defun scala/init-sbt-mode ()
+  (use-package sbt-mode
+    :config
+    (progn
+      (evil-leader/set-key-for-mode 'scala-mode
+        "mbb" 'sbt-command))))
 
 (defun scala/init-scala-mode2 ()
   (use-package scala-mode2

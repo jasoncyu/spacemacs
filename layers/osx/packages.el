@@ -1,36 +1,34 @@
 (setq osx-packages
-  '(
-    pbcopy
-    launchctl
-    reveal-in-osx-finder
-    ))
+      '(
+        exec-path-from-shell
+        osx-trash
+        pbcopy
+        launchctl
+        reveal-in-osx-finder
+        ))
 
 (when (spacemacs/system-is-mac)
-  ;; Note: `delete-by-moving-to-trash' is set to true globaly in
-  ;; `spacemacs/config.el'
-  (setq trash-directory "~/.Trash")
+  ;; Enable built-in trash support via finder API if available (only on Emacs
+  ;; Mac Port)
+  (when (boundp 'mac-system-move-file-to-trash-use-finder)
+    (setq mac-system-move-file-to-trash-use-finder t)))
 
-  ;; Use `trash' cli tool, if installed.
-  ;; See brew info trash (or osx-tools)
-  ;; otherwise, enable built-in support for trashing using Finder API
+(defun osx/post-init-exec-path-from-shell ()
+  ;; Use GNU ls as `gls' from `coreutils' if available.  Add `(setq
+  ;; dired-use-ls-dired nil)' to your config to suppress the Dired warning when
+  ;; not using GNU ls.  We must look for `gls' after `exec-path-from-shell' was
+  ;; initialized to make sure that `gls' is in `exec-path'
+  (when (spacemacs/system-is-mac)
+    (let ((gls (executable-find "gls")))
+      (when gls
+        (setq insert-directory-program gls
+              dired-listing-switches "-aBhl --group-directories-first")))))
 
-  (if (executable-find "trash")
-      (defun system-move-file-to-trash (file)
-        "Use `trash' to move FILE to the system/volume trash can.
-Can be installed with `brew install trash'."
-        (call-process (executable-find "trash") nil 0 nil file))
-    (setq mac-system-move-file-to-trash-use-finder t))
-
-  ;; Use `gls' if `coreutils' was installed prefixed ('g') otherwise, leave
-  ;; alone. Manually add to config `(setq dired-use-ls-dired nil)' to surpesss
-  ;; warnings, when not using `coreutils' version of 'ls' on OS X.
-  ;; See brew info coreutils
-  (when (executable-find "gls")
-    ;; maybe absolute or relative name of the `ls' program used by
-    ;; `insert-directory'.
-    (setq insert-directory-program "gls"
-          dired-listing-switches "-aBhl --group-directories-first")
-    ))
+(defun osx/init-osx-trash ()
+  (use-package osx-trash
+    :if (and (spacemacs/system-is-mac)
+             (not (boundp 'mac-system-move-file-to-trash-use-finder)))
+    :init (osx-trash-setup)))
 
 (defun osx/init-pbcopy ()
   (use-package pbcopy

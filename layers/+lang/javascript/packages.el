@@ -15,6 +15,7 @@
     coffee-mode
     company
     company-tern
+    evil-matchit
     flycheck
     js-doc
     js2-mode
@@ -55,9 +56,8 @@
       (push 'company-tern company-backends-js2-mode))))
 
 (defun javascript/post-init-flycheck ()
-  (add-hook 'coffee-mode-hook 'flycheck-mode)
-  (add-hook 'js2-mode-hook    'flycheck-mode)
-  (add-hook 'json-mode-hook   'flycheck-mode))
+  (dolist (mode '(coffee-mode js2-mode json-mode))
+    (spacemacs/add-flycheck-hook mode)))
 
 (defun javascript/init-js-doc ()
   (use-package js-doc
@@ -98,6 +98,9 @@
       (evil-leader/set-key-for-mode 'js2-mode "mzC" 'js2-mode-toggle-hide-comments)
       (spacemacs/helm-gtags-define-keys-for-mode 'js2-mode)
       )))
+
+(defun javascript/post-init-evil-matchit ()
+  (add-hook `js2-mode `turn-on-evil-matchit-mode))
 
 (defun javascript/init-js2-refactor ()
   (use-package js2-refactor
