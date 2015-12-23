@@ -12,8 +12,10 @@
    - [[Magit status fullscreen][Magit status fullscreen]]
    - [[Magit auto-complete][Magit auto-complete]]
    - [[Magit SVN plugin][Magit SVN plugin]]
+   - [[Global git commit mode][Global git commit mode]]
    - [[Git][Git]]
    - [[Git-Flow][Git-Flow]]
+   - [[Org integration][Org integration]]
  - [[Working with Git][Working with Git]]
    - [[Magit][Magit]]
    - [[Staging lines][Staging lines]]
@@ -33,6 +35,7 @@ This layers adds extensive support for [[http://git-scm.com/][git]].
 - quick in buffer last commit message per line with [[https://github.com/syohex/emacs-git-messenger][git-messenger]]
 - colorize buffer line by age of commit with [[https://github.com/syohex/emacs-smeargle][smeargle]]
 - gitignore generator with [[https://github.com/jupl/helm-gitignore][helm-gitignore]]
+- org integration with magit via [[https://github.com/magit/orgit][orgit]]
 
 New to Magit? Checkout the [[http://magit.vc/about.html][official intro]].
 
@@ -76,6 +79,15 @@ layer by setting the variable =git-enable-magit-svn-plugin= to =t=.
   )
 #+END_SRC
 
+** Global git commit mode
+Spacemacs can be used as the =$EDITOR= (or =$GIT_EDITOR=) for editing git
+commits messages. To enable this you have to add the following line to your
+=dotspacemacs/user-config=:
+
+#+begin_src emacs-lisp
+(global-git-commit-mode t)
+#+end_src
+
 ** Git
 Of course if your OS does not ship with git (!) you'll have to install it
 on your machine. You can download it from the [[http://git-scm.com/downloads][download page]].
@@ -87,6 +99,10 @@ this easier, these do nothing you couldn't do manually.
 
 Support requires installation of the git-flow extensions. Please reference their
 [[https://github.com/petervanderdoes/gitflow/wiki][installation page]] for assistance.
+
+** Org integration
+
+See the commentary section of the package [[https://github.com/magit/orgit/blob/master/orgit.el#L28][here]].
 
 * Working with Git
 Git commands (start with ~g~):
