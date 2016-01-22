@@ -1,7 +1,6 @@
-;;; funcs.el --- bepo Layer extensions File for Spacemacs
+;;; funcs.el --- bepo Layer functions File for Spacemacs
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Fabien Dubosson & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
 ;; Author: Fabien Dubosson <fabien.dubosson@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -102,19 +101,15 @@ evil states, except insert."
   (declare (indent 0))
   (bepo//define-key bepo--all-evil-states-but-insert key def bindings))
 
-(defun bepo/evil-leader-alias-of (key1 key2)
-  "Define a evil-leader key as an alias of another one."
-  (evil-leader/set-key key1 (lookup-key spacemacs-default-map key2)))
+(defun bepo/leader-alias-of (key1 key2)
+  "Define a leader key as an alias of another one."
+  (spacemacs/set-leader-keys key1 (lookup-key spacemacs-default-map key2)))
 
-(defun bepo/evil-leader-alias-of (key1 key2)
-  "Define a evil-leader key as an alias of another one."
-  (evil-leader/set-key key1 (lookup-key spacemacs-default-map key2)))
-
-(defun bepo/evil-leader-swap-keys (key1 key2)
-  "Invert the behaviour of two evil-leader keys."
+(defun bepo/leader-swap-keys (key1 key2)
+  "Invert the behaviour of two leader keys."
   (let ((map1 (lookup-key spacemacs-default-map key1))
         (map2 (lookup-key spacemacs-default-map key2)))
-    (evil-leader/set-key key1 map2 key2 map1)))
+    (spacemacs/set-leader-keys key1 map2 key2 map1)))
 
 ;;------------------------------------------------------------------------------
 ;; CORRECTION FUNCTIONS
@@ -129,7 +124,7 @@ evil states, except insert."
   (declare (indent 2))
   (apply #'bepo/correct-keys (evil-get-auxiliary-keymap map state) keys))
 
-(defun bepo/evil-leader-correct-keys (&rest keys)
+(defun bepo/leader-correct-keys (&rest keys)
   (declare (indent 0))
   (apply #'bepo/correct-keys spacemacs-default-map keys))
 

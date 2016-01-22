@@ -3,8 +3,10 @@
         company
         company-go
         flycheck
-        go-mode
         go-eldoc
+        go-mode
+        (go-oracle :location local)
+        (go-rename :location local)
         ))
 
 (defun go/post-init-flycheck ()
@@ -12,8 +14,11 @@
 
 (defun go/init-go-mode()
   (when (memq window-system '(mac ns x))
-    (exec-path-from-shell-copy-env "GOPATH")
-    (exec-path-from-shell-copy-env "GO15VENDOREXPERIMENT"))
+    (dolist (var '("GOPATH" "GO15VENDOREXPERIMENT"))
+      (unless (getenv var)
+        (exec-path-from-shell-copy-env var))))
+
+  (add-hook 'go-mode-hook (lambda () (setq-local tab-width 8)))
 
   (use-package go-mode
     :defer t
@@ -96,3 +101,30 @@
       :defer t
       :init
       (push 'company-go company-backends-go-mode))))
+
+(defun go/init-go-oracle()
+  (let ((go-path (getenv "GOPATH")))
+    (if (not go-path)
+        (spacemacs-buffer/warning
+         "GOPATH variable not found, go-oracle configuration skipped.")
+      (when (load-gopath-file
+             go-path "/src/golang.org/x/tools/cmd/oracle/oracle.el")
+        (spacemacs/declare-prefix-for-mode 'go-mode "mr" "rename")
+        (spacemacs/set-leader-keys-for-major-mode 'go-mode
+          "ro" 'go-oracle-set-scope
+          "r<" 'go-oracle-callers
+          "r>" 'go-oracle-callees
+          "rc" 'go-oracle-peers
+          "rd" 'go-oracle-definition
+          "rf" 'go-oracle-freevars
+          "rg" 'go-oracle-callgraph
+          "ri" 'go-oracle-implements
+          "rp" 'go-oracle-pointsto
+          "rr" 'go-oracle-referrers
+          "rs" 'go-oracle-callstack
+          "rt" 'go-oracle-describe)))))
+
+(defun go/init-go-rename()
+  (use-package go-rename
+    :init
+    (spacemacs/set-leader-keys-for-major-mode 'go-mode "rn" 'go-rename)))

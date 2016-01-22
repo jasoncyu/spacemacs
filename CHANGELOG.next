@@ -1,0 +1,157 @@
+-*- mode: org -*-
+
+This file containes the change log for the next major version of Spacemacs.
+
+* Release 0.106.x
+** 0.106.0 (no date)
+*** IMPORTANT: Breaking changes
+- =extensions= are deprecated as announced in previous releases, if you still
+  have =extensions= directories you must rename them to =local= and move
+  the contents of the =extensions.el= files to the =packages.el= files adding
+  the keyword =:location local= to them in the package list. Refer to other
+  layers for examples (for instance the =python= layer)
+- =<package>-excluded-packages= variables are now deprecated as announced is
+  previous releases, you must now  use the keyword =:excluded t= of the package
+  list, see the =vim-empty-lines= layer for example.
+- Key binding ~SPC :~ acting as M-x as been replaced by ~SPC SPC~.
+  If you want to revert to the old ~SPC :~ key binding set the new
+  variable =dotspacemacs-emacs-command-key= to ":".
+- ~SPC j~ prefix has been modified to include =jump= commands:
+  - =avy= commands are now behind the prefix ~SPC j~ for =jump=:
+    - ~SPC j j~ to jump to a character in the buffer (works as an evil motion)
+    - ~SPC j l~ to jump to a line with avy (works as an evil motion)
+    - ~SPC j w~ to jump to a word in the current buffer (works as an evil motion)
+  - the following key bindings have been moved:
+    - ~SPC j j~ to split a line has been moved to ~SPC j n~
+    - ~SPC j h~ and ~SPC j l~ have been moved to ~SPC j 0~ and ~SPC j $~
+      respectively.
+    - ~SPC J~ to split a string or sexp has been moved to ~SPC j s~
+- All helm related key bindings under ~SPC h~ that are not about help have
+  moved to different key bindings:
+  - ~SPC h b~ for =helm-filetered-bookmarks~is now ~SPC f b~
+  - ~SPC h l~ for =helm-resume= is now ~SPC r l~
+  - ~SPC h L~ for =helm-locate-library= is now ~SPC f e l~
+*** Hot new features
+- Support for Ivy, add the =spacemacs-ivy= layer to your dotfile and
+  restart to replace =Helm= by =Ivy=.
+*** New Layers
+- asm in =+lang= (thanks to thudo)
+- csv in =+lang= (thanks to jb55)
+- spacemacs-ivy in =completion= (thanks to justbur)
+- spacemacs-helm in =completion= (moved from spacemacs-base) (thanks to justbur)
+*** Dotfile changes
+- The variable =dotspacemacs-command-key= has been renamed to
+  =dotspacemacs-emacs-command-key= (the old name is still valid though).
+- New variable =dotspacemacs-emacs-command-key= which is the key to
+  press after the leader key to execute =M-x=.
+- New variable =dotspacemacs-ex-substitute-global=, if non-nil then
+  the behavior of the =g= flag in =:subsitute= ex-command is inverted.
+  Default value is nil (thanks to fbergroth)
+*** Distribution layer changes
+- New =evil-ediff= package (thanks to justbur)
+- Move =unimpaired= layer to =spacemacs= layer
+- New key binding ~SPC b N~ and evil ex-command =:enew= to open a new empty
+  buffer (thanks to balajisivaraman)
+- Command prefix ~SPC j~ is now also for =jumping=, introduced key bindings are:
+  - ~SPC j 0~ to go to the beginning of line (and set a mark at the previous
+    location in the line)
+  - ~SPC j $~ to go to the end of line (and set a mark at the previous location
+    in the line)
+  - ~SPC j b~ to jump to a bookmark
+  - ~SPC j d~ to jump to a listing of the current directory
+  - ~SPC j D~ to jump to a listing of the current directory (other window)
+  - ~SPC j f~ to jump to the definition of the function under the point
+  - ~SPC j i~ to jump to a definition in buffer (imenu)
+  - ~SPC j j~ to jump to a character in the buffer (works as an evil motion)
+  - ~SPC j J~ to jump to a suite of two characters in the buffer (works as an evil motion)
+  - ~SPC j I~ to jump to a definition in any buffer (imenu)
+  - ~SPC j k~ to jump to next line and indent it using auto-indent rules
+  - ~SPC j l~ to jump to a line with avy (works as an evil motion)
+  - ~SPC j n~ to split the current line at point, insert a new line and auto-indent
+  - ~SPC j s~ to split a quoted string or s-expression in place
+  - ~SPC j S~ to split a quoted string or s-expression, insert a new line and auto-indent
+  - ~SPC j u~ to undo a jump (go back to previous location)
+  - ~SPC j U~ to jump to a URL in the current buffer
+  - ~SPC j v~ to jump to the definition/declaration of the variable under the
+    point
+  - ~SPC j w~ to jump to a word in the current buffer (works as an evil motion)
+  (thanks to justbur)
+- New key bindings under ~SPC h~:
+  - ~SPC h .~ to search for dotfile variables
+  - ~SPC h f~ to search for FAQ
+  - ~SPC h l~ to search for layers
+  - ~SPC h p~ to search for packages
+  - ~SPC h r~ to search for documentation files
+  - ~SPC h t~ to search for toggles
+  (thanks to justbur)
+- New text justification key bindings:
+  - ~SPC x j c~ to set the justification to center
+  - ~SPC x j f~ to set the justification to full
+  - ~SPC x j l~ to set the justification to left
+  - ~SPC x j n~ to set the justification to none
+  - ~SPC x j r~ to set the justification to right
+  (thanks to StreakyCobra)
+- New key binding ~SPC h d d~ for =helm-apropos= (thanks to StreakyCobra)
+- New key bindings ~[ f~ and ~] f~ to go to the next or previous file in current
+  directory (thanks to fbergroth)
+*** Layer changes
+**** Ansible
+- Change key binding ~SPC m a ?~ to ~SPC m h a~
+**** Auto-completion
+- New layer variable =auto-completion-complete-with-key-sequence-delay= to
+  set the delay in second between the keys of sequence used to select
+  the auto-completion candidate (thanks to MadAnd)
+**** Clojure
+- Remove indentation rules (thanks to ernestas)
+**** CSharp
+- New key bindings
+  - ~SPC m g c~ to go to member in current file
+  - ~SPC m g I~ to find implementations using ido
+  - ~SPC m g U~ to find usages of symbol under cursor using ido
+  - ~SPC m r M~ to rename symbol under cursor interactively
+  (thanks to retran)
+**** Haskell
+- New =helm-hoogle= package under ~SPC m h f~ (thanks to jb55)
+**** Helm
+- Rename action =Add layer= to =Install layer= in =helm-spacemacs-help=
+  (thanks to CestDiego)
+- Fix =helm-source-header= face not updating when changing themes
+  (thanks to ghoot)
+**** Javascript
+- New layer variable =javascript-disable-tern-port-files=, when non nil
+  tern port files are not created. Default value is nil. (thanks to mijoharas)
+**** mu4e
+- Add =mu4e-maildirs-extension= package (thanks to choppsv1)
+- Enable =org-mu4e= (thanks to choppsv1)
+**** Org
+- Set =org-imenu-depth= to 8 (thanks to justbur)
+**** Python
+- New key bindings to manage virtual environments:
+  - ~SPC m V a~ to activate a virtual environment in any directory
+  - ~SPC m V d~ to deactivate the active virtual environment
+  - ~SPC m V w~ to work on virtual environment in ~WORKON_HOME~
+  (thanks to cpaulik)
+**** Rust layer
+- Remove layer variable =rust-enable-racer=, now =racer= is always used
+  (thanks to fbergroth)
+- Remove package =company-racer= since =racer= works with default
+  =company= backends (thanks to fbergroth)
+- New layer variable =rust-enable-rustfmt-on-save= (thanks to isphinx)
+- New package =rustfmt= with new key binding ~SPC m =~ to format the buffer
+  (thanks to isphinx)
+**** Shell
+- New =eshell-z= package (thanks to CestDiego)
+*** Core Changes 
+- New functions =configuration-layer/remove-layer= and
+  =configuration-layer/remove-layers=.
+- New keyword =:skip-install= for packages, if non-nil then Spacemacs does not
+  handle the installation for the package (i.e. it has to be installed by
+  something else).
+*** Other fixes and improvements
+- Typos and documentation improvements (thanks to balajisivaraman, cpaulik,
+  TheBB)
+*** Core team members
+- Sylvain Benner (syl20bnr)
+- Eivind Fonn (TheBB)
+- Fabien Dubosson (StreakyCobra)
+- Justin Burkett (justbur)

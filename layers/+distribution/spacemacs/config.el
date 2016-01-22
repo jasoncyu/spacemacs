@@ -1,7 +1,6 @@
 ;;; config.el --- Spacemacs Layer configuration File
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -13,3 +12,8 @@
 ;; Prerequisites
 
 (configuration-layer/declare-layers '(spacemacs-base spacemacs-layouts))
+;; If the user has not explicitly declared spacemacs-helm or spacemacs-ivy and
+;; they are using the standard distribution, assume they want helm completion.
+(unless (or (configuration-layer/layer-usedp 'spacemacs-ivy)
+            (configuration-layer/layer-usedp 'spacemacs-helm))
+  (configuration-layer/declare-layers '(spacemacs-helm)))

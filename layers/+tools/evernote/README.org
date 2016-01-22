@@ -23,11 +23,9 @@ layer provides key bindings for all of geeknote.el's exposed features.
 
 * Install
 ** Layer
-To use this contribution add it to your =~/.spacemacs=
-
-#+BEGIN_SRC emacs-lisp
-(setq-default dotspacemacs-configuration-layers '(evernote))
-#+END_SRC
+To use this configuration layer, add it to your =~/.spacemacs=. You will need to
+add =evernote= to the existing =dotspacemacs-configuration-layers= list in this
+file.
 
 ** geeknote
 The command =geeknote= is expected to be present in your =$PATH=. To
@@ -46,7 +44,7 @@ installing =geeknote=:
 If you would prefer to customize the geeknote command to be used such as
 specifying the path to the geeknote python script, please refer to the
 =geeknote.el= [[https://github.com/avendael/emacs-geeknote][documentation]]. For more information about setting up =$PATH=,
-check out the corresponding section in the FAQ (~SPC f e h $PATH RET~).
+check out the corresponding section in the FAQ (~SPC h SPC $PATH RET~).
 
 * Key Bindings
 

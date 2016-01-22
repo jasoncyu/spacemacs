@@ -1,7 +1,6 @@
 ;;; core-dotspacemacs.el --- Spacemacs Core File
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -83,6 +82,9 @@ banner, `random' chooses a random text banner in `core/banners'
 directory. A string value must be a path to a .PNG file.
 If the value is nil then no banner is displayed.")
 
+(defvar dotspacemacs-scratch-mode 'text-mode
+  "Default major mode of the scratch buffer.")
+
 (defvar dotspacemacs-check-for-update t
   "If non nil then spacemacs will check for updates at startup
 when the current branch is not `develop'")
@@ -116,6 +118,11 @@ pressing `<leader> m`. Set it to `nil` to disable it.")
 (defvar dotspacemacs-major-mode-emacs-leader-key "C-M-m"
   "Major mode leader key accessible in `emacs state' and `insert state'")
 
+(defvar dotspacemacs-command-key "SPC"
+  "The key used for Emacs commands (M-x) (after pressing on the leader key).")
+(defvaralias 'dotspacemacs-emacs-command-key 'dotspacemacs-command-key
+  "New official name for `dotspacemacs-command-key'")
+
 (defvar dotspacemacs-distinguish-gui-tab nil
   "If non nil, distinguish C-i and tab in the GUI version of
 emacs.")
@@ -132,13 +139,11 @@ emacs.")
   "Default font. `powerline-scale' allows to quickly tweak the mode-line
 size to make separators look not too crappy.")
 
-(defvar dotspacemacs-command-key ":"
-  "The key used for Evil commands (ex-commands) and Emacs commands (M-x).
-By default the command key is `:' so ex-commands are executed like in Vim
-with `:' and Emacs commands are executed with `<leader> :'.")
+(defvar dotspacemacs-remap-Y-to-y$ nil
+  "If non nil `Y' is remapped to `y$' in Evil states.")
 
-(defvaralias 'dotspacemacs-remap-Y-to-y$ 'evil-want-Y-yank-to-eol
-  "If non nil `Y' is remapped to `y$'.")
+(defvar dotspacemacs-ex-substitute-global nil
+  "If non nil, inverse the meaning of `g' in `:substitute' Evil ex-command.")
 
 (defvar dotspacemacs-default-layout-name "Default"
   " Name of the default layout.")
@@ -233,20 +238,19 @@ derivatives. If set to `relative', also turns on relative line numbers.")
 
 (defvar dotspacemacs-highlight-delimiters 'all
   "Select a scope to highlight delimiters. Possible values are `any',
-  `current', `all' or `nil'. Default is `all' (highlight any scope and
-  emphasis the current one.")
+`current', `all' or `nil'. Default is `all' (highlight any scope and
+ emphasis the current one.")
 
-
-(defvar dotspacemacs-whitespace-cleanup 'changed
-  "Delete whitespace while saving buffer.
-
-Possible values are `all', `trailing', `changed' or `nil'.
-Default is `changed' (cleanup whitespace on changed lines)")
+(defvar dotspacemacs-whitespace-cleanup nil
+  "delete whitespace while saving buffer. possible values are `all'
+to aggressively delete empty lines and long sequences of whitespace, `trailing'
+to delete only the whitespace at end of lines, `changed' to delete only
+whitespace for changed lines or `nil' to disable cleanup.")
 
 (defvar dotspacemacs-delete-orphan-packages t
   "If non-nil spacemacs will delete any orphan packages, i.e. packages that are
 declared in a layer which is not a member of
- `dotspacemacs-configuration-layers'")
+`dotspacemacs-configuration-layers'")
 
 (defvar dotspacemacs-search-tools '("ag" "pt" "ack" "grep")
   "List of search tool executable names. Spacemacs uses the first installed
@@ -266,7 +270,7 @@ Possible values are: `recents' `bookmarks' `projects'.")
 `dotspacemacs-startup-lists' doesn't include `recents'.")
 
 (defvar dotspacemacs-excluded-packages '()
-  "A list of packages and/or extensions that will not be install and loaded.")
+  "A list of packages that will not be install and loaded.")
 
 ;; only for backward compatibility
 (defalias 'dotspacemacs-mode 'emacs-lisp-mode)
@@ -281,7 +285,7 @@ are caught and signalled to user in spacemacs buffer."
        (condition-case-unless-debug err
            (,func)
          (error
-          (configuration-layer//set-error)
+          (configuration-layer//increment-error-count)
           (spacemacs-buffer/append (format "Error in %s: %s\n"
                                            ',(symbol-name func)
                                            (error-message-string err))
@@ -306,17 +310,10 @@ Called with `C-u C-u' skips `dotspacemacs/user-config' _and_ preleminary tests."
                                         "Calling dotfile init...")
                 (configuration-layer/sync)
                 (if (member arg '((4) (16)))
-                    (message (concat "Done (`dotspacemacs/user-config' function has "
-                                     "been skipped)."))
-                  ;; TODO remove support for dotspacemacs/config in 0.105
-                  (if (fboundp 'dotspacemacs/user-config)
-                      (dotspacemacs|call-func dotspacemacs/user-config
-                                              "Calling dotfile user config...")
-                    (spacemacs-buffer/warning (concat "`dotspacemacs/config' is deprecated, "
-                                                      "please rename your function to "
-                                                      "`dotspacemacs/user-config'"))
-                    (dotspacemacs|call-func dotspacemacs/config
-                                            "Calling dotfile user config..."))
+                    (message (concat "Done (`dotspacemacs/user-config' "
+                                     "function has been skipped)."))
+                  (dotspacemacs|call-func dotspacemacs/user-config
+                                          "Calling dotfile user config...")
                   (message "Done."))
                 (when (configuration-layer/package-usedp 'spaceline)
                   (spacemacs//restore-powerline (current-buffer))))
@@ -383,7 +380,7 @@ If ARG is non nil then Ask questions to the user before installing the dotfile."
               ,(format
                 "dotspacemacs-editing-style '%S"
                 (dotspacemacs//ido-completing-read
-                 "What is your preferred style? "
+                 "What is your preferred editing style? "
                  '(("Among the stars aboard the Evil flagship (vim)"
                     vim)
                    ("On the planet Emacs in the Holy control tower (emacs)"
@@ -393,13 +390,24 @@ If ARG is non nil then Ask questions to the user before installing the dotfile."
                 "dotspacemacs-distribution '%S"
                 (dotspacemacs//ido-completing-read
                  "What distribution of spacemacs would you like to start with? "
-                 '(("The standard distribution, recommended. (spacemacs)"
+                 `(("The standard distribution, recommended (spacemacs)"
                     spacemacs)
-                   ("A minimalist distribution that you can build on. (spacemacs-base)"
-                    spacemacs-base)))))))))
+                   (,(concat "A minimalist distribution that you can build on "
+                             "(spacemacs-base)")
+                    spacemacs-base)))))
+             ("spacemacs-helm"
+              ,(dotspacemacs//ido-completing-read
+                "What type of completion framework do you want? "
+                '(("An heavy one but full-featured (helm)"
+                   "spacemacs-helm")
+                  ("A lighter one but still very powerful (ivy)"
+                   "spacemacs-ivy")
+                  ;; For now, None works only if the user selected
+                  ;; the spacemacs-base distribution
+                  ("None (not recommended)" ""))))))))
     (with-current-buffer (find-file-noselect
-                       (concat dotspacemacs-template-directory
-                               ".spacemacs.template"))
+                          (concat dotspacemacs-template-directory
+                                  ".spacemacs.template"))
       (dolist (p preferences)
         (goto-char (point-min))
         (re-search-forward (car p))
@@ -534,7 +542,7 @@ error recovery."
    (spacemacs//test-var
     (lambda (x) (or (null x) (stringp x)))
     'dotspacemacs-major-mode-emacs-leader-key "is a string or nil")
-   (spacemacs//test-var 'stringp 'dotspacemacs-command-key "is a string")
+   (spacemacs//test-var 'stringp 'dotspacemacs-emacs-command-key "is a string")
    (insert (format
             (concat "** RESULTS: "
                     "[[file:%s::dotspacemacs/init][dotspacemacs/init]] "

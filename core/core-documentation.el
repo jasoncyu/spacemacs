@@ -1,7 +1,6 @@
 ;;; core-spacemacs.el --- Spacemacs Core File
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -122,7 +121,7 @@
              :publishing-directory ,(concat publish-target "layers/")
              :publishing-function org-html-publish-to-html
              :preparation-function spacemacs//generate-layers-file
-             :exclude "extensions"
+             :exclude "local"
              :html-head ,header)
             ("spacemacs-doc-static"
              :base-directory ,spacemacs-docs-directory

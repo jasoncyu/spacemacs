@@ -1,7 +1,6 @@
-;;; extensions.el --- Agda2 Layer extensions File for Spacemacs
+;;; packages.el --- Agda2 Layer packages File for Spacemacs
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2015 Oliver Charles & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
 ;; Author: Oliver Charles <ollie@ocharles.org.uk>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -10,7 +9,8 @@
 ;;
 ;;; License: GPLv3
 
-(defvar agda-post-extensions '(agda))
+(setq agda-post-packages
+      '((agda :location local)))
 
 (defun agda/init-agda ()
   (unless (executable-find "agda-mode")

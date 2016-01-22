@@ -1,7 +1,6 @@
 ;;; config.el --- Spacemacs Base Layer configuration File
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -28,10 +27,10 @@
                                        ("fe"  "emacs(spacemacs)")
                                        ("fv"  "variables")
                                        ("g"   "git/versions-control")
-                                       ("h"   "helm/help/highlight")
+                                       ("h"   "help")
                                        ("hd"  "help-describe")
                                        ("i"   "insertion")
-                                       ("j"   "join/split")
+                                       ("j"   "jump/join/split")
                                        ("k"   "lisp")
                                        ("kd"  "delete")
                                        ("kD"  "delete-backward")
@@ -40,7 +39,7 @@
                                        ("p"   "projects")
                                        ("p$"  "projects/shell")
                                        ("q"   "quit")
-                                       ("r"   "registers/rings")
+                                       ("r"   "registers/rings/resume")
                                        ("Re"  "elisp")
                                        ("Rp"  "pcre")
                                        ("s"   "search/symbol")
@@ -256,9 +255,7 @@ nil."
 ;; scratch buffer empty
 (setq initial-scratch-message nil)
 ;; don't create backup~ files
-(setq backup-by-copying t
-      make-backup-files nil
-      create-lockfiles nil)
+(setq make-backup-files nil)
 
 ;; Auto-save file
 (setq auto-save-default (not (null dotspacemacs-auto-save-file-location)))

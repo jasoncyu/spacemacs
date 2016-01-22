@@ -22,11 +22,9 @@ This layer configures the various shells available in Emacs.
 
 * Install
 ** Layer
-To use this contribution add it to your =~/.spacemacs=
-
-#+BEGIN_SRC emacs-lisp
-  (setq-default dotspacemacs-configuration-layers '(shell))
-#+END_SRC
+To use this configuration layer, add it to your =~/.spacemacs=. You will need to
+add =shell= to the existing =dotspacemacs-configuration-layers= list in this
+file.
 
 ** Default shell
 Emacs supports three types of shell:
@@ -122,6 +120,7 @@ Some advanced configuration is setup for =eshell= in this layer:
     installed)
   - =d= for =dired=
   - =e= to find a file via a new buffer
+  - =z= for quickly jumping to a previously visited directory
 - optional configuration for =em-smart= (see =Install= section for more info)
 - support for visual commands via =em-term=
 - working directory sensitive prompt via [[https://github.com/hiddenlotus/eshell-prompt-extras][eshell-prompt-extras]]
@@ -129,7 +128,6 @@ Some advanced configuration is setup for =eshell= in this layer:
 - add support for auto-completion via =company= (when the =auto-completion=
   layer is installed)
 - pressing ~i~ in normal state will automatically jump to the prompt
-
 
 * Key bindings
 
@@ -146,7 +144,7 @@ Some advanced configuration is setup for =eshell= in this layer:
 | ~C-k~       | previous item in history                                   |
 
 *Note:* You can open multiple shells using a numerical prefix argument,
-for instance pressing ~2 SPC ;~ will a second default shell, the
+for instance pressing ~2 SPC '~ will a second default shell, the
 number of shell is indicated on the mode-line.
 
 ** Multi-term

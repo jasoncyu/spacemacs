@@ -1,7 +1,6 @@
 ;;; packages.el --- command-log Layer packages File for Spacemacs
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -18,8 +17,6 @@
       '((command-log-mode :location (recipe :fetcher github
                                             :repo "bmag/command-log-mode"
                                             :branch "color"))))
-
-(setq command-log-excluded-packages '())
 
 (defun command-log/init-command-log-mode ()
   (use-package command-log-mode

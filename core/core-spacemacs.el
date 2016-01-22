@@ -1,7 +1,6 @@
 ;;; core-spacemacs.el --- Spacemacs Core File
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -13,10 +12,13 @@
 (defconst emacs-start-time (current-time))
 
 (require 'subr-x nil 'noerror)
+(require 'core-debug)
+(require 'core-command-line)
 (require 'core-dotspacemacs)
 (require 'core-emacs-backports)
 (require 'core-release-management)
 (require 'core-auto-completion)
+(require 'core-display-init)
 (require 'core-themes-support)
 (require 'core-fonts-support)
 (require 'core-spacemacs-buffer)
@@ -48,6 +50,7 @@
 
 (defun spacemacs/init ()
   "Perform startup initialization."
+  (when spacemacs-debugp (spacemacs/init-debug))
   ;; silence ad-handle-definition about advised functions getting redefined
   (setq ad-redefinition-action 'accept)
   ;; this is for a smoother UX at startup (i.e. less graphical glitches)
@@ -56,9 +59,13 @@
   ;; explicitly set the prefered coding systems to avoid annoying prompt
   ;; from emacs (especially on Microsoft Windows)
   (prefer-coding-system 'utf-8)
-  ;; TODO move evil-want-C-u-scroll when evil is removed from the bootstrapped
+  ;; TODO move these variables when evil is removed from the bootstrapped
   ;; packages.
-  (setq-default evil-want-C-u-scroll t)
+  (setq-default evil-want-C-u-scroll t
+                ;; `evil-want-C-i-jump' is set to nil to avoid `TAB' being
+                ;; overlapped in terminal mode. The GUI specific `<C-i>' is used
+                ;; instead (defined in the init of `evil-jumper' package).
+                evil-want-C-i-jump nil)
   (dotspacemacs/load-file)
   (require 'core-configuration-layer)
   (dotspacemacs|call-func dotspacemacs/init "Calling dotfile init...")
@@ -76,19 +83,28 @@
     (setq-default spacemacs--cur-theme default-theme)
     (setq-default spacemacs--cycle-themes (cdr dotspacemacs-themes)))
   ;; font
-  (if (find-font (font-spec :name (car dotspacemacs-default-font)))
-      (spacemacs/set-default-font dotspacemacs-default-font)
-    (spacemacs-buffer/warning "Cannot find font \"%s\"!"
-                              (car dotspacemacs-default-font)))
+  (spacemacs|do-after-display-system-init
+   (if (find-font (font-spec :name (car dotspacemacs-default-font)))
+       (spacemacs/set-default-font dotspacemacs-default-font)
+     (spacemacs-buffer/warning "Cannot find font \"%s\"!"
+                               (car dotspacemacs-default-font))))
   ;; spacemacs init
+  (setq inhibit-startup-screen t)
   (spacemacs-buffer/goto-buffer)
-  (setq initial-buffer-choice (lambda () (get-buffer spacemacs-buffer-name)))
-  ;; mandatory dependencies
-  ;; dash is required to prevent a package.el bug with f on 24.3.1
-  ;; (spacemacs/load-or-install-protected-package 'dash t)
-  ;; (spacemacs/load-or-install-protected-package 's t)
-
-  ;; evil is required by bind-map
+  (unless (display-graphic-p)
+    ;; explicitly recreate the home buffer for the first GUI client
+    ;; in order to correctly display the logo
+    (spacemacs|do-after-display-system-init
+     (kill-buffer (get-buffer spacemacs-buffer-name))
+     (spacemacs-buffer/goto-buffer)))
+  (setq initial-buffer-choice nil)
+  (setq inhibit-startup-screen t)
+  ;; bootstrap packages
+  (spacemacs/load-or-install-protected-package 'dash t)
+  (spacemacs/load-or-install-protected-package 's t)
+  (spacemacs/load-or-install-protected-package 'f t)
+  (setq evil-want-Y-yank-to-eol dotspacemacs-remap-Y-to-y$
+        evil-ex-substitute-global dotspacemacs-ex-substitute-global)
   (spacemacs/load-or-install-protected-package 'evil t)
   (spacemacs/load-or-install-protected-package 'bind-map t)
   ;; bind-key is required by use-package
@@ -158,15 +174,11 @@
    (lambda ()
      ;; Ultimate configuration decisions are given to the user who can defined
      ;; them in his/her ~/.spacemacs file
-     ;; TODO remove support for dotspacemacs/config in 0.105
-     (if (fboundp 'dotspacemacs/user-config)
-         (dotspacemacs|call-func dotspacemacs/user-config
-                                 "Calling dotfile user config...")
-       (spacemacs-buffer/warning (concat "`dotspacemacs/config' is deprecated, "
-                                         "please rename your function to "
-                                         "`dotspacemacs/user-config'"))
-       (dotspacemacs|call-func dotspacemacs/config
-                               "Calling dotfile user config..."))
+     (dotspacemacs|call-func dotspacemacs/user-config
+                             "Calling dotfile user config...")
+     (when (fboundp dotspacemacs-scratch-mode)
+       (with-current-buffer "*scratch*"
+         (funcall dotspacemacs-scratch-mode)))
      ;; from jwiegley
      ;; https://github.com/jwiegley/dot-emacs/blob/master/init.el
      (let ((elapsed (float-time
@@ -187,6 +199,8 @@
                           "- Spacemacs: %s\n"
                           "- Spacemacs branch: %s (rev. %s)\n"
                           "- Distribution: %s\n"
+                          "- Editing style: %s\n"
+                          "- Completion: %s\n"
                           "- Layers:\n```elisp\n%s```\n")
                   system-type
                   emacs-version
@@ -194,6 +208,12 @@
                   (spacemacs/git-get-current-branch)
                   (spacemacs/git-get-current-branch-rev)
                   dotspacemacs-distribution
+                  dotspacemacs-editing-style
+                  (cond ((configuration-layer/layer-usedp 'spacemacs-helm)
+                         'helm)
+                        ((configuration-layer/layer-usedp 'spacemacs-ivy)
+                         'ivy)
+                        (t 'helm))
                   (pp dotspacemacs-configuration-layers))))
     (kill-new sysinfo)
     (message sysinfo)
@@ -201,4 +221,21 @@
                      "You can paste it in the gitter chat.\n"
                      "Check the *Messages* buffer if you need to review it"))))
 
+(defun spacemacs/describe-last-keys ()
+  "Gathers info about your Emacs last keys and copies to clipboard."
+  (interactive)
+  (view-lossage)
+  (let* ((lossage-buffer "*Help*")
+         (lossage (format "#### Emacs last keys\n```text\n%s```\n"
+                          (with-current-buffer lossage-buffer
+                            (buffer-string)))))
+    (kill-buffer lossage-buffer)
+    (kill-new lossage)
+    (message lossage)
+    (message (concat "Information has been copied to clipboard.\n"
+                     (propertize
+                      "PLEASE REVIEW THE DATA BEFORE GOING FURTHER AS IT CAN CONTAIN SENSITIVE DATA (PASSWORD, ...)\n"
+                      'face 'font-lock-warning-face)
+                     "You can paste it in the gitter chat.\n"
+                     "Check the *Messages* buffer if you need to review it"))))
 (provide 'core-spacemacs)

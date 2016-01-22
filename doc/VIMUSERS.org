@@ -184,7 +184,7 @@ explore:
 
 | Keybinding  | Function                                                      |
 |-------------+---------------------------------------------------------------|
-| ~SPC f e h~ | Lists all layers and allows you to view files from the layer. |
+| ~SPC h SPC~ | Lists all layers and allows you to view files from the layer. |
 | ~SPC ?~     | Lists all keybindings.                                        |
 
 * Customization
@@ -310,7 +310,7 @@ this:
 You can uncomment these suggested layers by deleting the semi-colons for a nice
 out-of-the-box experience. To add a layer, add its name to the list and restart
 Emacs or press ~SPC f e R~ . To view all layers and their documentation use ~SPC
-f e h~.
+h SPC~.
 
 ** Creating a Layer
 To group configuration or when configuration doesn't fit well in your
@@ -463,12 +463,8 @@ you can [[Uninstalling a package][uninstall]] the =evil-search-highlight-persist
 
 *** Sessions
 Spacemacs does not automatically restore your windows and buffers when you
-reopen it. If you use vim sessions regularly you may want to add
-=(desktop-save-mode t)= to your =dotspacemacs/user-config= in your =.spacemacs=
-to get this functionality. You will then be able to load the saved session
-using ~SPC : desktop-read~. The location of the desktop file can be set with
-the variable =desktop-dirname=. To automatically load a session,
-add =(desktop-read)= to your =.spacemacs=.
+reopen it. If you use vim sessions regularly you may want to set
+=dotspacemacs-auto-resume-layouts= to =t= in your =.spacemacs=.
 
 *** Navigating using visual lines
 Spacemacs uses the vim default of navigating by actual lines, even if they are

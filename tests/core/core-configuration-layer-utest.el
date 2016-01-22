@@ -1,7 +1,6 @@
 ;;; core-configuration-layer-utest.el --- Spacemacs Unit Test File
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -213,8 +212,7 @@
     (defun layer1/init-pkg2 nil)
     (defun layer1/init-pkg3 nil)
     (mocker-let
-     ((file-exists-p (f) ((:output t :occur 1)
-                          (:output nil :occur 1)))
+     ((file-exists-p (f) ((:output t :occur 1)))
       (configuration-layer/layer-usedp (l) ((:output t :occur 1))))
      (should (equal (list (cfgl-package "pkg3" :name 'pkg3 :owner 'layer1)
                           (cfgl-package "pkg2" :name 'pkg2 :owner 'layer1)
@@ -232,8 +230,7 @@
     (defun layer1/init-pkg2 nil)
     (defun layer1/init-pkg3 nil)
     (mocker-let
-     ((file-exists-p (f) ((:output t :occur 1)
-                          (:output nil :occur 1)))
+     ((file-exists-p (f) ((:output t :occur 1)))
       (configuration-layer/layer-usedp (l) ((:output t :occur 1))))
      (should (equal (list (cfgl-package "pkg3" :name 'pkg3 :owner 'layer1 :location 'local :step 'pre)
                           (cfgl-package "pkg2" :name 'pkg2 :owner 'layer1 :location '(recipe blahblah))
@@ -253,8 +250,7 @@
     (defun layer1/init-pkg3 nil)
     (defun layer1/init-pkg4 nil)
     (mocker-let
-     ((file-exists-p (f) ((:output t :occur 1)
-                          (:output nil :occur 1)))
+     ((file-exists-p (f) ((:output t :occur 1)))
       (configuration-layer/layer-usedp (l) ((:output t :occur 1))))
      (should (equal (list (cfgl-package "pkg4" :name 'pkg4 :owner 'layer1)
                           (cfgl-package "pkg3" :name 'pkg3 :owner 'layer1 :location 'local :step 'pre)
@@ -270,8 +266,7 @@
     (defun layer2/init-pkg1 nil)
     (defun layer2/init-pkg3 nil)
     (mocker-let
-     ((file-exists-p (f) ((:output t :occur 1)
-                          (:output nil :occur 1)))
+     ((file-exists-p (f) ((:output t :occur 1)))
       (configuration-layer/layer-usedp (l) ((:output t :occur 1))))
      (should (equal (list (cfgl-package "pkg3" :name 'pkg3 :owner 'layer2)
                           (cfgl-package "pkg2" :name 'pkg2)
@@ -289,9 +284,7 @@
     (defun layer4/pre-init-pkg1 nil)
     (mocker-let
      ((file-exists-p (f) ((:output t :occur 1)
-                          (:output nil :occur 1)
-                          (:output t :occur 1)
-                          (:output nil :occur 1)))
+                          (:output t :occur 1)))
       (configuration-layer/layer-usedp (l) ((:output t :occur 2))))
      (should (equal (list (cfgl-package "pkg1" :name 'pkg1 :owner 'layer3 :pre-layers '(layer4)))
                     (configuration-layer/get-packages layers))))))
@@ -307,9 +300,7 @@
     (defun layer5/post-init-pkg1 nil)
     (mocker-let
      ((file-exists-p (f) ((:output t :occur 1)
-                          (:output nil :occur 1)
-                          (:output t :occur 1)
-                          (:output nil :occur 1)))
+                          (:output t :occur 1)))
       (configuration-layer/layer-usedp (l) ((:output t :occur 2))))
      (should (equal (list (cfgl-package "pkg1" :name 'pkg1 :owner 'layer3 :post-layers '(layer5)))
                     (configuration-layer/get-packages layers))))))
@@ -326,9 +317,7 @@
     (defun layer6/post-init-pkg1 nil)
     (mocker-let
      ((file-exists-p (f) ((:output t :occur 1)
-                          (:output nil :occur 1)
-                          (:output t :occur 1)
-                          (:output nil :occur 1)))
+                          (:output t :occur 1)))
       (configuration-layer/layer-usedp (l) ((:output t :occur 2))))
      (should (equal (list (cfgl-package "pkg1" :name 'pkg1 :owner 'layer3 :pre-layers '(layer6) :post-layers '(layer6)))
                     (configuration-layer/get-packages layers))))))
@@ -344,9 +333,7 @@
     (defun layer8/init-pkg1 nil)
     (mocker-let
      ((file-exists-p (f) ((:output t :occur 1)
-                          (:output nil :occur 1)
-                          (:output t :occur 1)
-                          (:output nil :occur 1)))
+                          (:output t :occur 1)))
       (spacemacs-buffer/warning (msg &rest args) ((:output nil :occur 1)))
       (configuration-layer/layer-usedp (l) ((:output t :occur 2))))
      (should (equal (list (cfgl-package "pkg1" :name 'pkg1 :owner 'layer8))
@@ -357,17 +344,14 @@
          (layer10 (cfgl-layer "layer10" :name 'layer10 :dir "/path"))
          (layers (list layer9 layer10))
          (layer9-packages '(pkg1 pkg2))
-         (layer10-packages '(pkg3))
-         (layer10-excluded-packages '(pkg2))
+         (layer10-packages '(pkg3 (pkg2 :excluded t)))
          (mocker-mock-default-record-cls 'mocker-stub-record))
     (defun layer9/init-pkg1 nil)
     (defun layer9/init-pkg2 nil)
     (defun layer10/init-pkg3 nil)
     (mocker-let
      ((file-exists-p (f) ((:output t :occur 1)
-                          (:output nil :occur 1)
-                          (:output t :occur 1)
-                          (:output nil :occur 1)))
+                          (:output t :occur 1)))
       (configuration-layer/layer-usedp (l) ((:output t :occur 2))))
      (should (equal (list (cfgl-package "pkg3" :name 'pkg3 :owner 'layer10)
                           (cfgl-package "pkg2" :name 'pkg2 :owner 'layer9 :excluded t)
@@ -384,8 +368,7 @@
     (defun layer11/init-pkg2 nil)
     (defun layer11/init-pkg3 nil)
     (mocker-let
-     ((file-exists-p (f) ((:output t :occur 1)
-                          (:output nil :occur 1)))
+     ((file-exists-p (f) ((:output t :occur 1)))
       (configuration-layer/layer-usedp (l) ((:output t :occur 1))))
      (should (equal (list (cfgl-package "pkg3" :name 'pkg3 :owner 'layer11)
                           (cfgl-package "pkg2" :name 'pkg2 :owner 'layer11 :excluded t)
@@ -401,8 +384,7 @@
     (defun layer12/init-pkg1 nil)
     (defun layer12/init-pkg2 nil)
     (mocker-let
-     ((file-exists-p (f) ((:output t :occur 1)
-                          (:output nil :occur 1)))
+     ((file-exists-p (f) ((:output t :occur 1)))
       (configuration-layer/layer-usedp (l) ((:output t :occur 1))))
      (should (equal (list (cfgl-package "pkg3" :name 'pkg3 :owner 'dotfile)
                           (cfgl-package "pkg2" :name 'pkg2 :owner 'layer12)
@@ -420,9 +402,7 @@
     (defun layer14/init-pkg1 nil)
     (mocker-let
      ((file-exists-p (f) ((:output t :occur 1)
-                          (:output nil :occur 1)
-                          (:output t :occur 1)
-                          (:output nil :occur 1)))
+                          (:output t :occur 1)))
       (spacemacs-buffer/warning (msg &rest args) ((:output nil :occur 1)))
       (configuration-layer/layer-usedp (l) ((:output t :occur 2))))
      (should (equal (list (cfgl-package "pkg1" :name 'pkg1 :owner 'layer14 :location 'local))
@@ -439,9 +419,7 @@
     (defun layer16/init-pkg1 nil)
     (mocker-let
      ((file-exists-p (f) ((:output t :occur 1)
-                          (:output nil :occur 1)
-                          (:output t :occur 1)
-                          (:output nil :occur 1)))
+                          (:output t :occur 1)))
       (spacemacs-buffer/warning (msg &rest args) ((:output nil :occur 1)))
       (configuration-layer/layer-usedp (l) ((:output t :occur 2))))
      (should (equal (list (cfgl-package "pkg1" :name 'pkg1 :owner 'layer16 :step 'pre))
@@ -458,9 +436,7 @@
     (defun layer16/init-pkg1 nil)
     (mocker-let
      ((file-exists-p (f) ((:output t :occur 1)
-                          (:output nil :occur 1)
-                          (:output t :occur 1)
-                          (:output nil :occur 1)))
+                          (:output t :occur 1)))
       (spacemacs-buffer/warning (msg &rest args) ((:output nil :occur 1)))
       (configuration-layer/layer-usedp (l) ((:output t :occur 2))))
      (should (equal (list (cfgl-package "pkg1" :name 'pkg1 :owner 'layer16 :step 'pre))
@@ -477,78 +453,10 @@
     (defun layer18/init-pkg1 nil)
     (mocker-let
      ((file-exists-p (f) ((:output t :occur 1)
-                          (:output nil :occur 1)
-                          (:output t :occur 1)
-                          (:output nil :occur 1)))
+                          (:output t :occur 1)))
       (spacemacs-buffer/warning (msg &rest args) ((:output nil :occur 1)))
       (configuration-layer/layer-usedp (l) ((:output t :occur 2))))
      (should (equal (list (cfgl-package "pkg1" :name 'pkg1 :owner 'layer18 :excluded t))
-                    (configuration-layer/get-packages layers))))))
-
-;; TODO remove extensions tests in 0.105.0
-
-(ert-deftest test-get-packages--pre-extensions-backward-compatibility ()
-  (let* ((layer1 (cfgl-layer "layer1" :name 'layer1 :dir "/path"))
-         (layers (list layer1))
-         (layer1-packages '(pkg1))
-         (layer1-pre-extensions '(ext1 ext2 ext3))
-         (mocker-mock-default-record-cls 'mocker-stub-record))
-    (defun layer1/init-pkg1 nil)
-    (defun layer1/init-ext1 nil)
-    (defun layer1/init-ext2 nil)
-    (defun layer1/init-ext3 nil)
-    (mocker-let
-     ((file-exists-p (f) ((:output t :occur 2)))
-      (configuration-layer/layer-usedp (l) ((:output t :occur 2))))
-     (should (equal (list (cfgl-package "ext3" :name 'ext3 :owner 'layer1 :location 'local :step 'pre)
-                          (cfgl-package "ext2" :name 'ext2 :owner 'layer1 :location 'local :step 'pre)
-                          (cfgl-package "ext1" :name 'ext1 :owner 'layer1 :location 'local :step 'pre)
-                          (cfgl-package "pkg1" :name 'pkg1 :owner 'layer1))
-                    (configuration-layer/get-packages layers))))))
-
-(ert-deftest test-get-packages--post-extensions-backward-compatibility ()
-  (let* ((layer1 (cfgl-layer "layer1" :name 'layer1 :dir "/path"))
-         (layers (list layer1))
-         (layer1-packages '(pkg1))
-         (layer1-post-extensions '(ext1 ext2 ext3))
-         (mocker-mock-default-record-cls 'mocker-stub-record))
-    (defun layer1/init-pkg1 nil)
-    (defun layer1/init-ext1 nil)
-    (defun layer1/init-ext2 nil)
-    (defun layer1/init-ext3 nil)
-    (mocker-let
-     ((file-exists-p (f) ((:output t :occur 2)))
-      (configuration-layer/layer-usedp (l) ((:output t :occur 2))))
-     (should (equal (list (cfgl-package "ext3" :name 'ext3 :owner 'layer1 :location 'local)
-                          (cfgl-package "ext2" :name 'ext2 :owner 'layer1 :location 'local)
-                          (cfgl-package "ext1" :name 'ext1 :owner 'layer1 :location 'local)
-                          (cfgl-package "pkg1" :name 'pkg1 :owner 'layer1))
-                    (configuration-layer/get-packages layers))))))
-
-(ert-deftest test-get-packages--extensions-backward-compatibility ()
-  (let* ((layer1 (cfgl-layer "layer1" :name 'layer1 :dir "/path"))
-         (layers (list layer1))
-         (layer1-packages '(pkg1))
-         (layer1-pre-extensions '(ext1 ext2 ext3))
-         (layer1-post-extensions '(ext4 ext5 ext6))
-         (mocker-mock-default-record-cls 'mocker-stub-record))
-    (defun layer1/init-pkg1 nil)
-    (defun layer1/init-ext1 nil)
-    (defun layer1/init-ext2 nil)
-    (defun layer1/init-ext3 nil)
-    (defun layer1/init-ext4 nil)
-    (defun layer1/init-ext5 nil)
-    (defun layer1/init-ext6 nil)
-    (mocker-let
-     ((file-exists-p (f) ((:output t :occur 2)))
-      (configuration-layer/layer-usedp (l) ((:output t :occur 2))))
-     (should (equal (list (cfgl-package "ext6" :name 'ext6 :owner 'layer1 :location 'local)
-                          (cfgl-package "ext5" :name 'ext5 :owner 'layer1 :location 'local)
-                          (cfgl-package "ext4" :name 'ext4 :owner 'layer1 :location 'local)
-                          (cfgl-package "ext3" :name 'ext3 :owner 'layer1 :location 'local :step 'pre)
-                          (cfgl-package "ext2" :name 'ext2 :owner 'layer1 :location 'local :step 'pre)
-                          (cfgl-package "ext1" :name 'ext1 :owner 'layer1 :location 'local :step 'pre)
-                          (cfgl-package "pkg1" :name 'pkg1 :owner 'layer1))
                     (configuration-layer/get-packages layers))))))
 
 ;; ---------------------------------------------------------------------------
@@ -665,6 +573,14 @@
       (spacemacs-buffer/loading-animation nil ((:output nil))))
      (configuration-layer//configure-packages-2 `(,pkg)))))
 
+(ert-deftest test-configure-packages-2--skip-install-package-is-configured()
+  (let ((pkg (cfgl-package "pkg" :name 'pkg :owner 'layer1 :skip-install t))
+        (mocker-mock-default-record-cls 'mocker-stub-record))
+    (mocker-let
+     ((configuration-layer//configure-package (p) ((:occur 1)))
+      (spacemacs-buffer/loading-animation nil ((:output nil))))
+     (configuration-layer//configure-packages-2 `(,pkg)))))
+
 (ert-deftest test-configure-packages-2--excluded-package-is-not-configured()
   (let ((pkg (cfgl-package "pkg" :name 'pkg :owner 'layer1 :excluded t))
         (mocker-mock-default-record-cls 'mocker-stub-record))
@@ -706,7 +622,6 @@
       (configuration-layer//configure-package (p) ((:occur 1))))
      (configuration-layer//configure-packages-2 `(,pkg))
      (push "/a/path/local/pkg/" expected-load-path)
-     (push "/a/path/extensions/pkg/" expected-load-path)
      (should (equal expected-load-path load-path)))))
 
 (ert-deftest
@@ -990,16 +905,6 @@
       (directory-files
        (directory &optional full match nosort)
        ((:record-cls 'mocker-stub-record :output '("packages.el") :occur 1))))
-     (should (eq 'layer (configuration-layer//directory-type input))))))
-
-(ert-deftest test-directory-type--layer-with-extensions.el ()
-  (let ((input "/a/path/to/a/layer/"))
-    (mocker-let
-     ((file-directory-p (f)
-                        ((:record-cls 'mocker-stub-record :output t :occur 1)))
-      (directory-files
-       (directory &optional full match nosort)
-       ((:record-cls 'mocker-stub-record :output '("extensions.el") :occur 1))))
      (should (eq 'layer (configuration-layer//directory-type input))))))
 
 (ert-deftest test-directory-type--layer-with-config.el ()

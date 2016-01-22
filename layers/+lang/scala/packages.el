@@ -1,7 +1,6 @@
 ;;; packages.el --- Scala Layer packages File for Spacemacs
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -180,7 +179,8 @@
       (when (configuration-layer/package-usedp 'expand-region)
         (require 'ensime-expand-region nil 'noerror)))))
 
-(defun scala/init-noflet ())
+(defun scala/init-noflet ()
+  (use-package noflet))
 
 (defun scala/init-sbt-mode ()
   (use-package sbt-mode
@@ -197,16 +197,19 @@
       (add-to-list 'completion-ignored-extensions ext))
     :config
     (progn
+      ;; Automatically insert asterisk in a comment when enabled
+      (defun scala/newline-and-indent-with-asterisk ()
+        (interactive)
+        (newline-and-indent)
+        (when scala-auto-insert-asterisk-in-comments
+          (scala-indent:insert-asterisk-on-multiline-comment)))
+
+      (evil-define-key 'insert scala-mode-map
+        (kbd "RET") 'scala/newline-and-indent-with-asterisk)
+
       (evil-define-key 'normal scala-mode-map "J" 'spacemacs/scala-join-line)
 
       ;; Compatibility with `aggressive-indent'
       (setq scala-indent:align-forms t
             scala-indent:align-parameters t
-            scala-indent:default-run-on-strategy scala-indent:operator-strategy)
-
-      (require 'noflet)
-
-      (defadvice scala-indent:indent-code-line (around retain-trailing-ws activate)
-        "Keep trailing-whitespace when indenting."
-        (noflet ((scala-lib:delete-trailing-whitespace ()))
-                ad-do-it)))))
+            scala-indent:default-run-on-strategy scala-indent:operator-strategy))))

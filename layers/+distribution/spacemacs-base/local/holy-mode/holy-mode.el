@@ -1,6 +1,6 @@
 ;;; holy-mode.el --- Enter the church of Emacs
 
-;; Copyright (C) 2014-2015 syl20bnr
+;; Copyright (C) 2012-2016 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; Keywords: convenience editing
@@ -31,7 +31,7 @@
 (defvar holy-mode-modes-to-disable-alist
   `((evil-mode . 1)
     (hybrid-mode . -1)
-    (evil-escape-mode . ,(when (boundp 'evil-escape-mode) 1 -1)))
+    (evil-escape-mode . ,(if (boundp 'evil-escape-mode) evil-escape-mode -1)))
   "Alist of modes that should be disabled when activating
 `holy-mode'. The cdr in each cell stores the state of the mode
 before it was disabled.")
@@ -51,10 +51,10 @@ before it was disabled.")
           (when (boundp (car mode)) (funcall (car mode) -1)))
         (setq cursor-type 'box)
         (set-cursor-color "SkyBlue2")
-        (when (fboundp 'spacemacs//helm-hjkl-navigation)
-          (spacemacs//helm-hjkl-navigation nil)))
-    (when (fboundp 'spacemacs//helm-hjkl-navigation)
-      (spacemacs//helm-hjkl-navigation t))
+        (when (fboundp 'spacemacs//hjkl-completion-navigation)
+          (spacemacs//hjkl-completion-navigation nil)))
+    (when (fboundp 'spacemacs//hjkl-completion-navigation)
+      (spacemacs//hjkl-completion-navigation t))
     (dolist (mode holy-mode-modes-to-disable-alist)
       (when (boundp (car mode))
         (funcall (car mode) (cdr mode))))))

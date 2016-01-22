@@ -1,7 +1,6 @@
 ;;; funcs.el --- Spacemacs Layouts Layer functions File
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -117,6 +116,22 @@ perspectives does."
                     (let ((projectile-completion-system 'helm))
                       (projectile-switch-project-by-name project)))))))
    :buffer "*Projectile Layouts*"))
+
+(defun spacemacs/ivy-persp-switch-project (arg)
+  (interactive "P")
+  (ivy-read "Switch to Project Perspective:"
+            (if (projectile-project-p)
+                (cons (abbreviate-file-name (projectile-project-root))
+                      (projectile-relevant-known-projects))
+              projectile-known-projects)
+            :action (lambda (project)
+                      (let ((persp-reset-windows-on-nil-window-conf t))
+                        (persp-switch project)
+                        (let ((projectile-completion-system 'ivy))
+                          (projectile-switch-project-by-name project))))
+            )
+
+  )
 
 ;; Autosave ----------------------------------------------------------------
 

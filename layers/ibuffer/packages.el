@@ -1,20 +1,19 @@
 ;;; packages.el --- ibuffer Layer packages File for Spacemacs
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Aleksandr Guljajev & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
-;; Author: Sylvain Benner <aleksandr.guljajev@gmail.com>
+;; Author: Aleksandr Guljajev <aleksandr.guljajev@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
 ;;; License: GPLv3
 
-(defvar ibuffer-packages
-  '(
-    ibuffer
-    ibuffer-projectile
-    ))
+(setq ibuffer-packages
+      '(
+        ibuffer
+        ibuffer-projectile
+        ))
 
 (defun ibuffer/init-ibuffer()
   (use-package ibuffer

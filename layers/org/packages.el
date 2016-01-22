@@ -1,7 +1,6 @@
 ;;; packages.el --- Org Layer packages File for Spacemacs
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -20,6 +19,7 @@
     flyspell
     gnuplot
     htmlize
+    mu4e
     ;; org and org-agenda are installed by `org-plus-contrib'
     (org :location built-in)
     (org-agenda :location built-in)
@@ -30,6 +30,7 @@
     org-pomodoro
     org-present
     org-repo-todo
+    (ox-gfm :location local)
     persp-mode
     toc-org
     ))
@@ -63,7 +64,7 @@
   (add-hook 'org-mode-hook 'spacemacs/add-org-surrounds)
   (defun spacemacs//surround-drawer ()
     (let ((dname (read-from-minibuffer "" "")))
-      (cons (format ":%s:" (or dname "")) ":END:"))))
+      (cons (format ":%s:\n" (or dname "")) "\n:END:"))))
 
 (defun org/post-init-flyspell ()
   (spell-checking/add-flyspell-hook 'org-mode-hook))
@@ -73,6 +74,11 @@
     :defer t
     :init (spacemacs/set-leader-keys-for-major-mode 'org-mode
             "tp" 'org-plot/gnuplot)))
+
+(defun org/pre-init-mu4e ()
+  ;; Load org-mu4e when mu4e is actually loaded
+  (spacemacs|use-package-add-hook mu4e
+    :post-config (require 'org-mu4e nil 'noerror)))
 
 ;; dummy init function to force installation of `org-plus-contrib'
 (defun org/init-org-plus-contrib ())
@@ -99,7 +105,10 @@
             (concat spacemacs-cache-directory ".org-id-locations")
             org-log-done t
             org-startup-with-inline-images t
-            org-src-fontify-natively t)
+            org-src-fontify-natively t
+            ;; this is consistent with the value of
+            ;; `helm-org-headings-max-depth'.
+            org-imenu-depth 8)
 
       (with-eval-after-load 'org-indent
         (spacemacs|hide-lighter org-indent-mode))
@@ -127,6 +136,7 @@ Will work on both org-mode and any mode that accepts plain html."
         "'" 'org-edit-special
         "c" 'org-capture
         "d" 'org-deadline
+        "D" 'org-insert-drawer
         "e" 'org-export-dispatch
         "f" 'org-set-effort
         "P" 'org-set-property
@@ -251,9 +261,7 @@ Will work on both org-mode and any mode that accepts plain html."
         "aol" 'org-store-link))
     :config
     (progn
-      ;; setup org directory
-      (unless (file-exists-p org-directory)
-        (make-directory org-directory))
+      (setq org-default-notes-file "notes.org")
       (font-lock-add-keywords
        'org-mode '(("\\(@@html:<kbd>@@\\) \\(.*\\) \\(@@html:</kbd>@@\\)"
                     (1 font-lock-comment-face prepend)
@@ -263,6 +271,7 @@ Will work on both org-mode and any mode that accepts plain html."
       (require 'org-indent)
       (define-key global-map "\C-cl" 'org-store-link)
       (define-key global-map "\C-ca" 'org-agenda)
+      (define-key global-map "\C-cc" 'org-capture)
 
       ;; Open links and files with RET in normal state
       (evil-define-key 'normal org-mode-map (kbd "RET") 'org-open-at-point)
@@ -375,6 +384,50 @@ Will work on both org-mode and any mode that accepts plain html."
         "CT"  'ort/capture-checkitem)
       (spacemacs/set-leader-keys-for-major-mode 'org-mode
         "gt" 'ort/goto-todos))))
+
+(defun org/init-ox-gfm ()
+  ;; installing this package from melpa is buggy,
+  ;; so we install it as an extension for now.
+  (use-package ox-gfm
+    :if org-enable-github-support
+    :defer t
+    :init
+    (progn
+      ;; seems to be required otherwise the extension is not
+      ;; loaded properly by org
+      (with-eval-after-load 'org (require 'ox-gfm))
+      (autoload 'org-gfm-export-as-markdown "ox-gfm" "\
+ Export current buffer to a Github Flavored Markdown buffer.
+
+If narrowing is active in the current buffer, only export its
+narrowed part.
+
+If a region is active, export that region.
+
+A non-nil optional argument ASYNC means the process should happen
+asynchronously.  The resulting buffer should be accessible
+through the `org-export-stack' interface.
+
+When optional argument SUBTREEP is non-nil, export the sub-tree
+at point, extracting information from the headline properties
+first.
+
+When optional argument VISIBLE-ONLY is non-nil, don't export
+contents of hidden elements.
+
+Export is done in a buffer named \"*Org GFM Export*\", which will
+be displayed when `org-export-show-temporary-export-buffer' is
+non-nil.
+
+\(fn &optional ASYNC SUBTREEP VISIBLE-ONLY)" t nil)
+
+      (autoload 'org-gfm-convert-region-to-md "ox-gfm" "\
+Assume the current region has org-mode syntax, and convert it
+to Github Flavored Markdown.  This can be used in any buffer.
+For example, you can write an itemized list in org-mode syntax in
+a Markdown buffer and use this command to convert it.
+
+\(fn)" t nil))))
 
 (defun org/post-init-persp-mode ()
   (spacemacs|define-custom-layout "@Org"

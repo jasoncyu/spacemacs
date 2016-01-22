@@ -1,7 +1,6 @@
-;;; packages.el --- elfeed Layer extensions File for Spacemacs
+;;; packages.el --- elfeed Layer packages File for Spacemacs
 ;;
-;; Copyright (c) 2012-2015 Sylvain Benner
-;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -52,6 +51,7 @@
 (defun elfeed/init-elfeed-org ()
   (use-package elfeed-org
     :defer t
+    :if (boundp 'rmh-elfeed-org-files)
     :init (spacemacs|use-package-add-hook elfeed
             :pre-config (elfeed-org))))
 

@@ -1,7 +1,6 @@
 ;;; packages.el --- Spell Checking Layer packages File for Spacemacs
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -64,7 +63,8 @@
     :config
     (spacemacs|diminish flyspell-mode " Ⓢ" " S")))
 
-(defun spell-checking/init-helm-flyspell ()
-  (use-package helm-flyspell
-    :commands helm-flyspell-correct
-    :init (spacemacs/set-leader-keys "Sc" 'helm-flyspell-correct)))
+(when (configuration-layer/layer-usedp 'spacemacs-helm)
+  (defun spell-checking/init-helm-flyspell ()
+    (use-package helm-flyspell
+      :commands helm-flyspell-correct
+      :init (spacemacs/set-leader-keys "Sc" 'helm-flyspell-correct))))

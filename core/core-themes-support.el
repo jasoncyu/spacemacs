@@ -1,7 +1,6 @@
 ;;; core-themes-support.el --- Spacemacs Core File
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -185,7 +184,10 @@ package name does not match theme name + `-theme' suffix.")
       ;; if not we will handle the special themes as we get issues in the tracker.
       (let ((pkg (spacemacs//get-theme-package theme)))
         (spacemacs/load-or-install-package pkg)))))
-  (load-theme theme t))
+  (load-theme theme t)
+  ;; explicitly reload the theme for the first GUI client
+  (eval `(spacemacs|do-after-display-system-init
+          (load-theme ',theme t))))
 
 (defun spacemacs/cycle-spacemacs-theme ()
   "Cycle through themes defined in `dotspacemacs-themes.'"

@@ -1,7 +1,6 @@
-;;; keybindings.el --- bepo Layer extensions File for Spacemacs
+;;; keybindings.el --- bepo Layer key bindings File for Spacemacs
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Fabien Dubosson & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
 ;; Author: Fabien Dubosson <fabien.dubosson@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -20,11 +19,11 @@
   (progn
     ;; HACK: Manual binding, otherwise conflicts with evil-window auto
     ;; remapping.
-    (evil-leader/set-key
+    (spacemacs/set-leader-keys
       "wC" 'evil-window-move-far-left
       "wL" 'ace-delete-window
       "wQ" 'ace-delete-window)
-    (setq aw-keys '(?t ?e ?s ?i ?r ?u ?n ?a ?c ?,))))
+    (setq aw-keys '(?t ?e ?s ?i ?r ?u ?n ?a))))
 
 (bepo|config avy
   :description
@@ -40,7 +39,7 @@
   :loader
   (with-eval-after-load 'buffer-move BODY)
   :config
-  (bepo/evil-leader-correct-keys
+  (bepo/leader-correct-keys
     "bmh"
     "bmj"
     "bmk"
@@ -69,6 +68,16 @@
     "C-j"
     "C-k"
     "C-l"))
+
+(bepo|config elfeed
+  :description
+  "Remap `elfeed' bindings."
+  :loader
+  (spacemacs|use-package-add-hook elfeed :post-config BODY)
+  :config
+  (bepo/evil-correct-keys 'evilified elfeed-show-mode-map
+    "C-j"
+    "C-k"))
 
 (bepo|config evil
   :description
@@ -143,7 +152,7 @@
    `q' for closing."
   :config
   (progn
-    (bepo/evil-leader-correct-keys
+    (bepo/leader-correct-keys
      "wh"
      "wj"
      "wk"
@@ -156,7 +165,7 @@
     (spacemacs/set-leader-keys
       "wé" 'other-window
       "wq" 'delete-window)
-    (bepo/evil-leader-alias-of "é" "w")))
+    (bepo/leader-alias-of "é" "w")))
 
 (bepo|config eyebrowse
   :description
@@ -224,6 +233,20 @@
     (bepo/set-in-state helm-generic-files-map "C-s" 'helm-previous-line)
     (bepo/set-in-state helm-generic-files-map "C-k" 'helm-ff-run-grep)))
 
+(bepo|config ivy
+  :description
+  "Remap `ivy' bindings."
+  :loader
+  (spacemacs|use-package-add-hook ivy :post-config BODY)
+  :config
+  (progn
+    (bepo/correct-keys ivy-minibuffer-map
+      "C-h"
+      "C-j"
+      "C-k"
+      "C-l"
+      )))
+
 (bepo|config magit
   :description
   "Remap `magit' bindings."
@@ -231,7 +254,7 @@
   (spacemacs|use-package-add-hook magit :post-config BODY)
   :config
   (progn
-    (bepo/evil-correct-keys 'motion magit-mode-map
+    (bepo/evil-correct-keys evil-magit-state magit-mode-map
       "j"
       "k"
       "C-j"
@@ -350,7 +373,7 @@
   :description
   "Customize some `spacemacs' bindings."
   :config
-  (bepo/evil-leader-correct-keys
+  (bepo/leader-correct-keys
     "jh"
     "jj"
     "jk"

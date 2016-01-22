@@ -1,18 +1,15 @@
 ;;; packages.el --- sql Layer packages File for Spacemacs
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Brian Hicks & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
-;; Author: Sylvain Benner <sylvain.benner@gmail.com>
+;; Author: Brian Hicks <brian@brianthicks.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
 ;;; License: GPLv3
 
-(defvar sql-packages '(sql sql-indent))
-
-(defvar sql-excluded-packages '())
+(setq sql-packages '(sql sql-indent))
 
 (defun sql/init-sql ()
   (use-package sql

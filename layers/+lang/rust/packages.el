@@ -1,7 +1,6 @@
 ;;; packages.el --- Rust Layer packages File for Spacemacs
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2015 Chris Hoeppner & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
 ;; Author: Chris Hoeppner <me@mkaito.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -13,18 +12,18 @@
 (setq rust-packages
   '(
     company
-    company-racer
     racer
     flycheck
     flycheck-rust
     rust-mode
     toml-mode
+    rustfmt
     ))
 
-(defun rust/post-init-flycheck ()
-  (spacemacs/add-flycheck-hook 'rust-mode-hook))
-
 (when (configuration-layer/layer-usedp 'syntax-checking)
+  (defun rust/post-init-flycheck ()
+    (spacemacs/add-flycheck-hook 'rust-mode-hook))
+
   (defun rust/init-flycheck-rust ()
     (use-package flycheck-rust
       :if (configuration-layer/package-usedp 'flycheck)
@@ -36,10 +35,7 @@
     :defer t
     :config
     (progn
-      (when (fboundp 'sp-local-pair)
-        ;; Don't pair lifetime specifiers
-        (sp-local-pair 'rust-mode "'" nil :actions nil))
-
+      (spacemacs/declare-prefix-for-mode 'rust-mode "mc" "cargo")
       (spacemacs/set-leader-keys-for-major-mode 'rust-mode
         "cc" 'spacemacs/rust-cargo-build
         "ct" 'spacemacs/rust-cargo-test
@@ -53,19 +49,38 @@
 
 (when (configuration-layer/layer-usedp 'auto-completion)
   (defun rust/post-init-company ()
-    (spacemacs|add-company-hook rust-mode))
+    (push 'company-capf company-backends-rust-mode)
+    (spacemacs|add-company-hook rust-mode)
+    (add-hook 'rust-mode-hook
+              (lambda ()
+                (setq-local company-tooltip-align-annotations t)))))
 
-  (defun rust/init-company-racer ()
-    (use-package company-racer
-      :if (configuration-layer/package-usedp 'company)
-      :defer t
-      :init (push 'company-racer company-backends-rust-mode))))
+(defun rust/post-init-smartparens ()
+  (with-eval-after-load 'smartparens
+    ;; Don't pair lifetime specifiers
+    (sp-local-pair 'rust-mode "'" nil :actions nil)))
 
 (defun rust/init-racer ()
   (when (memq window-system '(mac ns x))
     (exec-path-from-shell-copy-env "RUST_SRC_PATH"))
 
   (use-package racer
-    :if rust-enable-racer
     :defer t
-    :init (spacemacs/add-to-hook 'rust-mode-hook '(racer-mode eldoc-mode))))
+    :init
+    (progn
+      (spacemacs/add-to-hook 'rust-mode-hook '(racer-mode eldoc-mode))
+      (spacemacs/declare-prefix-for-mode 'rust-mode "mg" "goto")
+      (spacemacs/set-leader-keys-for-major-mode 'rust-mode
+        "gg" 'racer-find-definition))))
+
+(defun rust/init-rustfmt ()
+  (use-package rustfmt
+    :defer t
+    :init
+    (progn
+      (when rust-enable-rustfmt-on-save
+          (spacemacs/add-to-hook 'rust-mode-hook
+                                 '(rustfmt-enable-on-save)))
+
+      (spacemacs/set-leader-keys-for-major-mode 'rust-mode
+        "=" 'rustfmt-format-buffer))))

@@ -1,7 +1,6 @@
 ;;; packages.el --- react Layer packages File for Spacemacs
 ;;
-;; Copyright (c) 2012-2015 Sylvain Benner
-;; Copyright (c) 2014-2015 Andrea Moretti & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
 ;; Author: Andrea Moretti <axyzxp@gmail.com>
 ;; URL: https://github.com/axyz
@@ -66,6 +65,8 @@
   (define-derived-mode react-mode web-mode "react")
   (add-to-list 'auto-mode-alist '("\\.jsx\\'" . react-mode))
   (add-to-list 'auto-mode-alist '("\\.react.js\\'" . react-mode))
+  (add-to-list 'auto-mode-alist '("\\index.android.js\\'" . react-mode))
+  (add-to-list 'auto-mode-alist '("\\index.ios.js\\'" . react-mode))
   (add-to-list 'magic-mode-alist '("/** @jsx React.DOM */" . react-mode))
   (defun spacemacs//setup-react-mode ()
     "Adjust web-mode to accommodate react-mode"

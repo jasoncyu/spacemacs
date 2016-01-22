@@ -5,6 +5,7 @@
  - [[Code guidelines][Code guidelines]]
    - [[Spacemacs core and layer][Spacemacs core and layer]]
    - [[All layers][All layers]]
+   - [[Use-package][Use-package]]
  - [[Key bindings conventions][Key bindings conventions]]
    - [[Reserved prefix][Reserved prefix]]
      - [[User prefix][User prefix]]
@@ -15,7 +16,7 @@
      - [[n and N][n and N]]
      - [[Code Navigation][Code Navigation]]
      - [[=insert state= buffers][=insert state= buffers]]
-   - [[Messages editing][Messages editing]]
+   - [[Confirm and Abort][Confirm and Abort]]
    - [[Evaluation][Evaluation]]
    - [[REPLs][REPLs]]
      - [[Send code][Send code]]
@@ -53,6 +54,14 @@ Variables follow these conventions:
 A package is initialized in a function with name =<layer>/init-xxx= where:
   - =<layer>= is the layer name
   - =xxx= is the package name
+  
+** Use-package
+- Always use =progn= when a code block requires multiple lines for =:init= or
+  =:config= keywords.
+- If there is only one line of code then try to keep =:init= or =:config=
+  keywords on the same line.
+- Don't nest multiple =use-package= calls unless you have a very good reason
+  to do it.
 
 * Key bindings conventions
 ** Reserved prefix
@@ -132,10 +141,9 @@ should be performed with ~C-j~ and ~C-k~ bindings for vertical movements.
 | ~C-j~ | go down     |
 | ~C-k~ | go up       |
 
-** Messages editing
-Modes that are used to edit messages (texts, notes, mails, …) and are subjects
-to user validation (traditionally bound to ~C-c C-c~ and ~C-c C-k~ in emacs)
-should use the following bindings:
+** Confirm and Abort
+Confirming and aborting actions which are bound to ~C-c C-c~ and ~C-c C-k~
+in raw Emacs are mirrored in Spacemacs to:
 
 | Key                     | Description               |
 |-------------------------+---------------------------|
@@ -345,11 +353,14 @@ Spacemacs provides an example layer =README.org= file in
 =~/.emacs.d/core/templates/README.org.template=.
 
 ** Spacing in documentation
-Spacemacs tries to keep the documentation consistent between all layers by
-providing some rules for spacing:
+- Spacemacs tries to keep the documentation consistent between all layers by
+  providing some rules for spacing:
   - After each header, you should not add an empty line
     - *Exception*: If the first item under the header is a table, add an empty
       line after it
   - At the end of each header node, there should be an empty line
   - Note: Many layer =READMEs= do not follow this convention yet. Please fix
     them if you can.
+  
+- To keep things readable only mention the prefix ~SPC~ when documenting
+  key bindings, you don't need to mention ~M-m~. 

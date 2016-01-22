@@ -1,7 +1,6 @@
 ;;; packages.el --- Octave Layer packages File for Spacemacs
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -19,13 +18,13 @@
   (use-package octave
     :mode ("\\.m\\'" . octave-mode)
     :commands (run-octave)
-    :config (evil-leader/set-key-for-mode 'octave-mode
+    :config (spacemacs/set-leader-keys-for-major-mode 'octave-mode
               ;; helpers
-              "mhh" 'octave-help
-              "mhi" 'octave-lookfor
+              "hh" 'octave-help
+              "hi" 'octave-lookfor
               ;; REPL
-              "msb" 'octave-send-buffer
-              "msf" 'octave-send-defun
-              "msi" 'run-octave
-              "msl" 'octave-send-line
-              "msr" 'octave-send-region)))
+              "sb" 'octave-send-buffer
+              "sf" 'octave-send-defun
+              "si" 'run-octave
+              "sl" 'octave-send-line
+              "sr" 'octave-send-region)))

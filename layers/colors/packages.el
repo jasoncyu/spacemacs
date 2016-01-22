@@ -1,7 +1,6 @@
 ;;; packages.el --- Colors Layer packages File for Spacemacs
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -14,6 +13,7 @@
   '(
     ;; not working well for now
     ;; rainbow-blocks
+    (nyan-mode :location local)
     rainbow-identifiers
     rainbow-mode
     ))
@@ -22,6 +22,26 @@
 ;;   (use-package rainbow-blocks
 ;;     :disabled t
 ;;     :init (add-hook 'emacs-lisp-mode-hook 'rainbow-blocks-mode)))
+
+(defun colors/init-nyan-mode ()
+  (use-package nyan-mode
+    :if colors-enable-nyan-cat-progress-bar
+    :config
+    (progn
+      (setq nyan-wavy-trail t)
+      (setq nyan-animate-nyancat t)
+      (nyan-mode)
+      ;; explicitly re-enable the cat for the first GUI client
+      (spacemacs|do-after-display-system-init
+       (nyan-mode -1)
+       (nyan-mode))
+
+      (spacemacs|add-toggle nyan-cat-progress-bar
+        :status nyan-mode
+        :on (nyan-mode)
+        :off (nyan-mode -1)
+        :documentation "Show a nyan cat progress bar in the mode-line."
+        :evil-leader "tmn"))))
 
 (defun colors/init-rainbow-identifiers ()
   (use-package rainbow-identifiers

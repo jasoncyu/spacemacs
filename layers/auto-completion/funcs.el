@@ -1,7 +1,6 @@
 ;;; funcs.el --- Auto-completion functions File
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -114,7 +113,9 @@
       second-key
       'spacemacs//auto-completion-key-sequence-end))
   ;; set a timer to restore the old bindings
-  (run-at-time 0.1 nil 'spacemacs//auto-completion-key-sequence-restore)
+  (run-at-time auto-completion-complete-with-key-sequence-delay
+               nil
+               'spacemacs//auto-completion-key-sequence-restore)
   (when spacemacs--auto-completion-complete-last-candidate
     (setq spacemacs--auto-completion-time (current-time))))
 
@@ -122,7 +123,8 @@
   "Check if the auto-completion key sequence has been entered."
   (interactive)
   (if (or (null spacemacs--auto-completion-time)
-          (< 0.1 (float-time (time-since spacemacs--auto-completion-time))))
+          (< auto-completion-complete-with-key-sequence-delay
+             (float-time (time-since spacemacs--auto-completion-time))))
       (self-insert-command 1)
     (cond
      ((bound-and-true-p company-mode)

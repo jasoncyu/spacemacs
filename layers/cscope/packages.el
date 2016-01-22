@@ -1,7 +1,6 @@
 ;;; packages.el --- cscope Layer packages File for Spacemacs
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -13,8 +12,6 @@
 (setq cscope-packages '(evil-jumper
                         helm-cscope
                         xcscope))
-
-(setq cscope-excluded-packages '())
 
 (defun cscope/post-init-evil-jump ()
   (defadvice helm-cscope-find-this-symbol (before cscope/goto activate)
@@ -45,18 +42,19 @@
            (format "pycscope -R -f '%s'"
                    (expand-file-name "cscope.out" directory))))))))
 
-(defun cscope/init-helm-cscope ()
-  (use-package helm-cscope
-    :defer t
-    :init
-    (defun spacemacs/setup-helm-cscope (mode)
-      "Setup `helm-cscope' for MODE"
-      (spacemacs/set-leader-keys-for-major-mode mode
-        "gc" 'helm-cscope-find-called-function
-        "gC" 'helm-cscope-find-calling-this-funtcion
-        "gd" 'helm-cscope-find-global-definition
-        "ge" 'helm-cscope-find-egrep-pattern
-        "gf" 'helm-cscope-find-this-file
-        "gF" 'helm-cscope-find-files-including-file
-        "gr" 'helm-cscope-find-this-symbol
-        "gx" 'helm-cscope-find-this-text-string))))
+(when (configuration-layer/layer-usedp 'spacemacs-helm)
+  (defun cscope/init-helm-cscope ()
+    (use-package helm-cscope
+      :defer t
+      :init
+      (defun spacemacs/setup-helm-cscope (mode)
+        "Setup `helm-cscope' for MODE"
+        (spacemacs/set-leader-keys-for-major-mode mode
+          "gc" 'helm-cscope-find-called-function
+          "gC" 'helm-cscope-find-calling-this-funtcion
+          "gd" 'helm-cscope-find-global-definition
+          "ge" 'helm-cscope-find-egrep-pattern
+          "gf" 'helm-cscope-find-this-file
+          "gF" 'helm-cscope-find-files-including-file
+          "gr" 'helm-cscope-find-this-symbol
+          "gx" 'helm-cscope-find-this-text-string)))))

@@ -1,7 +1,6 @@
 ;;; config.el --- Javascript Layer configuration File for Spacemacs
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -21,3 +20,6 @@
 (mapc (lambda (x) (spacemacs/declare-prefix-for-mode
                    'js2-mode (car x) (cdr x)))
       javascript/key-binding-prefixes)
+
+(defvar javascript-disable-tern-port-files t
+  "Stops tern from creating tern port files.")

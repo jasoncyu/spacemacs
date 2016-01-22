@@ -1,7 +1,6 @@
 ;;; packages.el --- Haskell Layer packages File for Spacemacs
 ;;
-;; Copyright (c) 2012-2014 Sylvain Benner
-;; Copyright (c) 2014-2015 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -14,13 +13,14 @@
   '(
     cmm-mode
     company
-    company-ghc
     company-cabal
+    company-ghc
     flycheck
     flycheck-haskell
     ghc
     haskell-mode
     haskell-snippets
+    helm-hoogle
     hindent
     shm
     ))
@@ -28,6 +28,13 @@
 (defun haskell/init-cmm-mode ()
   (use-package cmm-mode
     :defer t))
+
+(when (configuration-layer/layer-usedp 'spacemacs-helm)
+  (defun haskell/init-helm-hoogle ()
+    (use-package helm-hoogle
+      :defer t
+      :init
+      (spacemacs/set-leader-keys-for-major-mode 'haskell-mode "hf" 'helm-hoogle))))
 
 (defun haskell/post-init-flycheck ()
   (spacemacs/add-flycheck-hook 'haskell-mode-hook))
@@ -108,7 +115,6 @@
 
       ;; hooks
       (add-hook 'haskell-mode-hook 'spacemacs/init-haskell-mode)
-      (add-hook 'haskell-cabal-mode-hook 'haskell-cabal-hook)
       (unless haskell-enable-ghc-mod-support
         (add-hook 'haskell-mode-hook 'interactive-haskell-mode))
 
@@ -146,8 +152,8 @@
         "hd"  'inferior-haskell-find-haddock
         "hh"  'hoogle
         "hH"  'hoogle-lookup-from-local
-        "mhi"  (lookup-key haskell-mode-map (kbd "C-c TAB"))
-        "mht"  (lookup-key haskell-mode-map (kbd "C-c C-t"))
+        "hi"  (lookup-key haskell-mode-map (kbd "C-c TAB"))
+        "ht"  (lookup-key haskell-mode-map (kbd "C-c C-t"))
         "hT"  'spacemacs/haskell-process-do-type-on-prev-line
         "hy"  'hayoo
 
@@ -202,6 +208,10 @@
         (setq haskell-process-args-cabal-repl '("--ghc-option=-ferror-spans" "--with-ghc=ghci-ng"))
         ;; if haskell-process-type == GHCi
         (setq haskell-process-path-ghci "ghci-ng")
+        ;; fixes ghci-ng for stack projects
+        (setq haskell-process-wrapper-function
+              (lambda (args)
+                (append args (list "--with-ghc" "ghci-ng"))))
 
         (spacemacs/set-leader-keys-for-major-mode 'haskell-mode
           ;; function suggested in
