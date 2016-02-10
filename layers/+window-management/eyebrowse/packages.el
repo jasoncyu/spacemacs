@@ -15,7 +15,7 @@
   (use-package eyebrowse
     :init
     (progn
-      (setq eyebrowse-new-workspace #'spacemacs/home
+      (setq eyebrowse-new-workspace #'spacemacs/home-delete-other-windows
             eyebrowse-wrap-around t)
       (eyebrowse-mode)
 
@@ -24,7 +24,7 @@
       (define-key evil-motion-state-map "gT" 'eyebrowse-prev-window-config)
 
       (defun spacemacs/workspaces-ms-rename ()
-        "Rename a workspace and get back to micro-state."
+        "Rename a workspace and get back to transient-state."
         (interactive)
         (eyebrowse-rename-window-config (eyebrowse--get 'current-slot) nil)
         (spacemacs/workspaces-micro-state))
@@ -44,24 +44,10 @@
                   (< (car it) (car other)))
                 (eyebrowse--get 'window-configs)))
 
-      (defun spacemacs//workspaces-ms-documentation ()
-        "Return the docstring for the workspaces micro-state."
-        (let* ((current-slot (eyebrowse--get 'current-slot))
-               (window-configs (spacemacs//workspaces-ms-get-window-configs)))
-          (concat
-           "<" (if window-configs
-                   (concat
-                    (mapconcat 'spacemacs//workspaces-ms-get-slot-name
-                               window-configs "> <") ">")
-                 (when eyebrowse-display-help
-                   (concat
-                    "\n[0-9] to create/switch to a workspace, "
-                    "[n] next, [p/N] previous, [TAB] back and forth, [c] close, "
-                    "[r] rename"))))))
-
-      (spacemacs|define-micro-state workspaces
-        :doc (spacemacs//workspaces-ms-documentation)
-        :use-minibuffer t
+      (spacemacs|define-transient-state workspaces
+        :title "Workspaces Transient State"
+        :doc "
+[_0_.._9_] switch to workspace  [_n_/_p_] next/prev  [_<tab>_] last  [_c_] close  [_r_] rename"
         :bindings
         ("0" eyebrowse-switch-to-window-config-0)
         ("1" eyebrowse-switch-to-window-config-1)
@@ -84,7 +70,7 @@
         ("r" spacemacs/workspaces-ms-rename :exit t)
         ("w" eyebrowse-switch-to-window-config :exit t))
 
-      ;; The layouts layer defines this keybinding inside a microstate
+      ;; The layouts layer defines this keybinding inside a transient-state
       ;; thus this is only needed if that layer is not used
       (unless (configuration-layer/layer-usedp 'spacemacs-layouts)
-        (spacemacs/set-leader-keys "lw" 'spacemacs/workspaces-micro-state)))))
+        (spacemacs/set-leader-keys "lw" 'spacemacs/workspaces-transient-state/body)))))

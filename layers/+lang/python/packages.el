@@ -24,6 +24,7 @@
     helm-pydoc
     hy-mode
     (nose :location local)
+    live-py-mode
     pip-requirements
     pyenv-mode
     (pylookup :location local)
@@ -51,6 +52,7 @@
         "hh" 'anaconda-mode-show-doc
         "gg" 'anaconda-mode-find-definitions
         "ga" 'anaconda-mode-find-assignments
+        "gb" 'anaconda-mode-go-back
         "gu" 'anaconda-mode-find-references)
       (evilified-state-evilify anaconda-mode-view-mode anaconda-mode-view-mode-map
         (kbd "q") 'quit-window)
@@ -94,7 +96,7 @@
   (add-hook `python-mode-hook `turn-on-evil-matchit-mode))
 
 (defun python/post-init-flycheck ()
-  (spacemacs/add-flycheck-hook 'python-mode-hook))
+  (spacemacs/add-flycheck-hook 'python-mode))
 
 (when (configuration-layer/layer-usedp 'spacemacs-helm)
   (defun python/pre-init-helm-cscope ()
@@ -112,6 +114,14 @@
 (defun python/init-hy-mode ()
   (use-package hy-mode
     :defer t))
+
+(defun python/init-live-py-mode ()
+  (use-package live-py-mode
+    :defer t
+    :commands live-py-mode
+    :init
+    (spacemacs/set-leader-keys-for-major-mode 'python-mode
+      "l" 'live-py-mode)))
 
 (defun python/init-nose ()
   (use-package nose
@@ -152,6 +162,7 @@
 
 (defun python/init-pyenv-mode ()
   (use-package pyenv-mode
+    :if (executable-find "pyenv")
     :commands (pyenv-mode-versions)
     :init
     (progn
@@ -215,6 +226,8 @@
     :defer t
     :init
     (progn
+      (spacemacs/register-repl 'python 'python-start-or-switch-repl "python")
+
       (defun python-default ()
         (setq mode-name "Python"
               tab-width 4
@@ -315,6 +328,7 @@
       (spacemacs/declare-prefix-for-mode 'python-mode "mv" "pyenv")
       (spacemacs/declare-prefix-for-mode 'python-mode "mV" "pyvenv")
       (spacemacs/set-leader-keys-for-major-mode 'python-mode
+        "'"  'python-start-or-switch-repl
         "cc" 'spacemacs/python-execute-file
         "cC" 'spacemacs/python-execute-file-focus
         "db" 'python-toggle-breakpoint
@@ -360,6 +374,14 @@
           (after spacemacs/python-set-imenu-create-index-function activate)
         (setq imenu-create-index-function
               #'spacemacs/python-imenu-create-index-python-or-semantic)))))
+
+(defun python/init-py-yapf ()
+  (use-package py-yapf
+    :init
+    (spacemacs/set-leader-keys-for-major-mode 'python-mode "=" 'py-yapf-buffer)
+    :config
+    (when python-enable-yapf-format-on-save
+      (add-hook 'python-mode-hook 'py-yapf-enable-on-save))))
 
 (defun python/post-init-semantic ()
   (semantic/enable-semantic-mode 'python-mode)

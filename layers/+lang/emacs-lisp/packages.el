@@ -34,6 +34,7 @@
       (dolist (mode '(emacs-lisp-mode lisp-interaction-mode))
         (spacemacs/declare-prefix-for-mode mode "ms" "ielm")
         (spacemacs/set-leader-keys-for-major-mode mode
+          "'" 'ielm
           "si" 'ielm)))
     :config
     (defun ielm-indent-line ()
@@ -107,17 +108,18 @@
     :init
     (progn
       (evil-define-key 'normal macrostep-keymap "q" 'macrostep-collapse-all)
-      (spacemacs|define-micro-state macrostep
-        :doc "[e] expand [c] collapse [n/N] next/previous [q] quit"
-        :disable-evil-leader t
-        :persistent t
-        :evil-leader-for-mode (emacs-lisp-mode . "dm")
+      (spacemacs|define-transient-state macrostep
+        :title "MacroStep Transient State"
+        :doc "\n[_e_] expand [_c_] collapse [_n_/_N_] next/previous [_q_] quit"
+        :foreign-keys run
         :bindings
         ("e" macrostep-expand)
         ("c" macrostep-collapse)
         ("n" macrostep-next-macro)
         ("N" macrostep-prev-macro)
-        ("q" macrostep-collapse-all :exit t)))))
+        ("q" macrostep-collapse-all :exit t))
+      (spacemacs/set-leader-keys-for-major-mode 'emacs-lisp-mode
+        "dm" 'spacemacs/macrostep-transient-state/body))))
 
 (defun emacs-lisp/post-init-evil ()
   (add-hook 'emacs-lisp-mode-hook
@@ -127,7 +129,7 @@
 (defun emacs-lisp/post-init-flycheck ()
   ;; Don't activate flycheck by default in elisp
   ;; because of too much false warnings
-  ;; (spacemacs/add-flycheck-hook 'emacs-lisp-mode-hook)
+  ;; (spacemacs/add-flycheck-hook 'emacs-lisp-mode)
 
   ;; Make flycheck recognize packages in loadpath
   ;; i.e (require 'company) will not give an error now
@@ -177,8 +179,8 @@ Requires smartparens because all movement is done using
       (call-interactively 'eval-last-sexp)))
 
   (defun spacemacs/eval-current-symbol-sp ()
-    "Call `eval-last-sexp' on the symbol underneath the
-point. Requires smartparens because all movement is done using
+    "Call `eval-last-sexp' on the symbol around point. Requires
+smartparens because all movement is done using
 `sp-forward-symbol'."
     (interactive)
     (require 'smartparens)

@@ -297,6 +297,9 @@ argument takes the kindows rotate backwards."
                (rename-buffer new-name)
                (set-visited-file-name new-name)
                (set-buffer-modified-p nil)
+               (when (fboundp 'recentf-add-file)
+                   (recentf-add-file new-name)
+                   (recentf-remove-if-non-kept filename))
                (message "File '%s' successfully renamed to '%s'" name (file-name-nondirectory new-name))))))))
 
 ;; from magnars
@@ -352,7 +355,7 @@ argument takes the kindows rotate backwards."
 
 ;; http://camdez.com/blog/2013/11/14/emacs-show-buffer-file-name/
 (defun spacemacs/show-and-copy-buffer-filename ()
-  "Show the full path to the current file in the minibuffer."
+  "Show and copy the full path to the current file in the minibuffer."
   (interactive)
   (let ((file-name (buffer-file-name)))
     (if file-name
@@ -412,6 +415,13 @@ argument takes the kindows rotate backwards."
 
 (defalias 'spacemacs/home 'spacemacs-buffer/goto-buffer
   "Go to home Spacemacs buffer")
+
+(defun spacemacs/home-delete-other-windows ()
+  "Open home Spacemacs buffer and delete other windows.
+Useful for making the home buffer the only visible buffer in the frame."
+  (interactive)
+  (spacemacs/home)
+  (delete-other-windows))
 
 (defun spacemacs/insert-line-above-no-indent (count)
   (interactive "p")
@@ -869,10 +879,12 @@ is nonempty."
 (defun spacemacs/switch-to-scratch-buffer ()
   "Switch to the `*scratch*' buffer. Create it first if needed."
   (interactive)
-  (switch-to-buffer (get-buffer-create "*scratch*"))
-  (when (and (not (eq major-mode dotspacemacs-scratch-mode))
-             (fboundp dotspacemacs-scratch-mode))
-    (funcall dotspacemacs-scratch-mode)))
+  (let ((exists (get-buffer "*scratch*")))
+    (switch-to-buffer (get-buffer-create "*scratch*"))
+    (when (and (not exists)
+               (not (eq major-mode dotspacemacs-scratch-mode))
+               (fboundp dotspacemacs-scratch-mode))
+      (funcall dotspacemacs-scratch-mode))))
 
 ;; http://stackoverflow.com/questions/11847547/emacs-regexp-count-occurrences
 (defun how-many-str (regexp str)

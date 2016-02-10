@@ -11,21 +11,25 @@
 
 (setq shell-packages
       '(
-        company
-        helm
-        multi-term
         (comint :location built-in)
-        xterm-color
-        shell
+        company
+        esh-help
+        (eshell :location built-in)
+        eshell-prompt-extras
+        eshell-z
+        helm
+        magit
+        multi-term
+        projectile
+        (shell :location built-in)
         shell-pop
         smooth-scrolling
-        term
-        eshell
-        eshell-z
-        eshell-prompt-extras
-        esh-help
-        magit
+        (term :location built-in)
+        xterm-color
         ))
+
+(defun shell/init-comint ()
+  (setq comint-prompt-read-only t))
 
 (defun shell/pre-init-company ()
   ;; support in eshell
@@ -53,6 +57,12 @@ the user activate the completion manually."
         (setq-local company-frontends '(company-preview-frontend)))
       (add-hook 'eshell-mode-hook
                 'spacemacs//eshell-switch-company-frontend))))
+
+(defun shell/init-esh-help ()
+  (use-package esh-help
+    :defer t
+    :init (add-hook 'eshell-mode-hook 'eldoc-mode)
+    :config (setup-esh-help-eldoc)))
 
 (defun shell/init-eshell ()
   (use-package eshell
@@ -104,7 +114,7 @@ is achieved by adding the relevant text properties."
         (if (bound-and-true-p linum-mode) (linum-mode -1))
         (unless shell-enable-smart-eshell
           ;; we don't want auto-jump to prompt when smart eshell is enabled.
-          ;; Idea: maybe we could make auto-jump smarter and jump only if the
+          ;; Idea: maybe we could make auto-jump smarter and jump only if
           ;; point is not on a prompt line
           (add-hook 'evil-insert-state-entry-hook
                     'spacemacs//eshell-auto-end nil t))
@@ -116,7 +126,8 @@ is achieved by adding the relevant text properties."
 
       (autoload 'eshell-delchar-or-maybe-eof "em-rebind")
 
-      ;; Defining a function like this makes it possible to type 'clear' in eshell and have it work
+      ;; Defining a function like this makes it possible to type 'clear'
+      ;; in eshell and have it work
       (defun eshell/clear ()
         (interactive)
         (let ((inhibit-read-only t))
@@ -156,25 +167,19 @@ is achieved by adding the relevant text properties."
         (kbd "C-k") 'eshell-previous-matching-input-from-input
         (kbd "C-j") 'eshell-next-matching-input-from-input))))
 
-(defun shell/init-eshell-z ()
-  (use-package eshell-z
-    :defer t
-    :init
-    (with-eval-after-load 'eshell
-      (require 'eshell-z))))
-
-(defun shell/init-esh-help ()
-  (use-package esh-help
-    :defer t
-    :init (add-hook 'eshell-mode-hook 'eldoc-mode)
-    :config (setup-esh-help-eldoc)))
-
 (defun shell/init-eshell-prompt-extras ()
   (use-package eshell-prompt-extras
     :commands epe-theme-lambda
     :init
     (setq eshell-highlight-prompt nil
           eshell-prompt-function 'epe-theme-lambda)))
+
+(defun shell/init-eshell-z ()
+  (use-package eshell-z
+    :defer t
+    :init
+    (with-eval-after-load 'eshell
+      (require 'eshell-z))))
 
 (when (configuration-layer/layer-usedp 'spacemacs-helm)
   (defun shell/pre-init-helm ()
@@ -204,6 +209,11 @@ is achieved by adding the relevant text properties."
         ;;shell
         (spacemacs/set-leader-keys-for-major-mode 'shell-mode
           "H" 'spacemacs/helm-shell-history)))))
+
+(defun shell/pre-init-magit ()
+  (spacemacs|use-package-add-hook magit
+    :post-init
+    (defalias 's 'magit-status)))
 
 (defun shell/init-multi-term ()
   (use-package multi-term
@@ -235,21 +245,8 @@ is achieved by adding the relevant text properties."
           (projectile-with-default-dir (projectile-project-root) (multi-term)))
         (spacemacs/set-leader-keys "p$t" 'projectile-multi-term-in-root)))))
 
-(defun shell/init-comint ()
-  (setq comint-prompt-read-only t))
-
-(defun shell/init-xterm-color ()
-  (use-package xterm-color
-    :init
-    (progn
-      ;; Comint and Shell
-      (add-hook 'comint-preoutput-filter-functions 'xterm-color-filter)
-      (setq comint-output-filter-functions (remove 'ansi-color-process-output comint-output-filter-functions))
-      (setq font-lock-unfontify-region-function 'xterm-color-unfontify-region)
-      (with-eval-after-load 'esh-mode
-        (add-hook 'eshell-mode-hook (lambda () (setq xterm-color-preserve-properties t)))
-        (add-hook 'eshell-preoutput-filter-functions 'xterm-color-filter)
-        (setq eshell-output-filter-functions (remove 'eshell-handle-ansi-color eshell-output-filter-functions))))))
+(defun shell/post-init-projectile ()
+  (spacemacs/set-leader-keys "p'" 'spacemacs/projectile-shell-pop))
 
 (defun shell/init-shell ()
   (spacemacs/register-repl 'shell 'shell)
@@ -266,8 +263,10 @@ is achieved by adding the relevant text properties."
              ;; Check for man command and execute it.
              ((string-match "^[ \t]*man[ \t]*" command)
               (comint-send-string proc "\n")
-              (setq command (replace-regexp-in-string "^[ \t]*man[ \t]*" "" command))
-              (setq command (replace-regexp-in-string "[ \t]+$" "" command))
+              (setq command (replace-regexp-in-string
+                             "^[ \t]*man[ \t]*" "" command))
+              (setq command (replace-regexp-in-string
+                             "[ \t]+$" "" command))
               (funcall 'man command))
              ;; Send other commands to the default handler.
              (t (comint-simple-send proc command))))))
@@ -279,7 +278,7 @@ is achieved by adding the relevant text properties."
     :init
     (progn
       (setq shell-pop-window-position shell-default-position
-            shell-pop-window-height   shell-default-height
+            shell-pop-window-size     shell-default-height
             shell-pop-term-shell      shell-default-term-shell
             shell-pop-full-span t)
       (defmacro make-shell-pop-command (type &optional shell)
@@ -304,7 +303,8 @@ is achieved by adding the relevant text properties."
         (when (ignore-errors (get-buffer-process (current-buffer)))
           (set-process-sentinel (get-buffer-process (current-buffer))
                                 (lambda (proc change)
-                                  (when (string-match "\\(finished\\|exited\\)" change)
+                                  (when (string-match "\\(finished\\|exited\\)"
+                                                      change)
                                     (kill-buffer (process-buffer proc))
                                     (delete-window))))))
       (add-hook 'term-mode-hook 'ansi-term-handle-close)
@@ -338,7 +338,7 @@ is achieved by adding the relevant text properties."
     "Send tab in term mode."
     (interactive)
     (term-send-raw-string "\t"))
-  ;; hack to fix pasting issue, the paste micro-state won't
+  ;; hack to fix pasting issue, the paste transient-state won't
   ;; work in term
   (evil-define-key 'normal term-raw-map "p" 'term-paste)
   (evil-define-key 'insert term-raw-map (kbd "C-c C-d") 'term-send-eof)
@@ -352,7 +352,19 @@ is achieved by adding the relevant text properties."
     (kbd "C-k") 'term-send-up
     (kbd "C-j") 'term-send-down))
 
-(defun shell/pre-init-magit ()
-  (spacemacs|use-package-add-hook magit
-    :post-init
-    (defalias 's 'magit-status)))
+(defun shell/init-xterm-color ()
+  (use-package xterm-color
+    :init
+    (progn
+      ;; Comint and Shell
+      (add-hook 'comint-preoutput-filter-functions 'xterm-color-filter)
+      (setq comint-output-filter-functions
+            (remove 'ansi-color-process-output comint-output-filter-functions))
+      (setq font-lock-unfontify-region-function 'xterm-color-unfontify-region)
+      (with-eval-after-load 'esh-mode
+        (add-hook 'eshell-mode-hook
+                  (lambda () (setq xterm-color-preserve-properties t)))
+        (add-hook 'eshell-preoutput-filter-functions 'xterm-color-filter)
+        (setq eshell-output-filter-functions
+              (remove 'eshell-handle-ansi-color
+                      eshell-output-filter-functions))))))

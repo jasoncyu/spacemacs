@@ -287,14 +287,14 @@
 
       (defun spacemacs//helm-cleanup ()
         "Cleanup some helm related states when quitting."
-        ;; deactivate any running transient map (micro-state)
+        ;; deactivate any running transient map (transient-state)
         (setq overriding-terminal-local-map nil))
       (add-hook 'helm-cleanup-hook 'spacemacs//helm-cleanup)
 
       (defface spacemacs-helm-navigation-ms-face
         `((t :background ,(face-attribute 'error :foreground)
              :foreground "black"))
-        "Face for helm heder when helm micro-state is activated."
+        "Face for helm heder when helm transient-state is activated."
         :group 'spacemacs))
 
     :config
@@ -419,7 +419,7 @@ ARG non nil means Vim like movements."
           (helm-ag-edit))))
 
       (defun spacemacs//helm-navigation-ms-on-enter ()
-        "Initialization of helm micro-state."
+        "Initialization of helm transient-state."
         ;; faces
         (spacemacs//helm-navigation-ms-set-face)
         (setq spacemacs--helm-navigation-ms-face-cookie-minibuffer
@@ -428,7 +428,7 @@ ARG non nil means Vim like movements."
                'spacemacs-helm-navigation-ms-face)))
 
       (defun spacemacs//helm-navigation-ms-set-face ()
-        "Set the face for helm header in helm navigation micro-state"
+        "Set the face for helm header in helm navigation transient-state"
         (with-helm-window
           (setq spacemacs--helm-navigation-ms-face-cookie-header
                 (face-remap-add-relative
@@ -436,25 +436,12 @@ ARG non nil means Vim like movements."
                  'spacemacs-helm-navigation-ms-face))))
 
       (defun spacemacs//helm-navigation-ms-on-exit ()
-        "Action to perform when exiting helm micro-state."
+        "Action to perform when exiting helm transient-state."
         (with-helm-window
           (face-remap-remove-relative
            spacemacs--helm-navigation-ms-face-cookie-header))
         (face-remap-remove-relative
          spacemacs--helm-navigation-ms-face-cookie-minibuffer))
-
-      (defun spacemacs//helm-navigation-ms-full-doc ()
-        "Full documentation for helm navigation micro-state."
-        "
-  [?]          display this help
-  [a]          toggle action selection page
-  [e]          edit occurrences if supported
-  [j] [k]      next/previous candidate
-  [h] [l]      previous/next source
-  [t]          toggle visible mark
-  [T]          toggle all mark
-  [v]          persistent action
-  [q]          quit")
 
       ;; Define functions to pick actions
       (dotimes (n 10)
@@ -465,10 +452,18 @@ ARG non nil means Vim like movements."
                    (intern)
                    (helm-select-nth-action ,(1- n))))))
 
-      (spacemacs|define-micro-state helm-navigation
-        :persistent t
-        :disable-evil-leader t
-        :define-key (helm-map . "M-SPC") (helm-map . "s-M-SPC")
+      (defun spacemacs/helm-transient-state-select-action ()
+        (interactive)
+        (call-interactively 'helm-select-action)
+        (spacemacs//helm-navigation-ms-set-face))
+
+      (spacemacs|define-transient-state helm-navigation
+        :title "Helm Transient State"
+        :doc "
+[_j_/_k_]  next/prev candidate  [_v_]^^     persistent action     [_e_]^^    edit occurrences
+[_h_/_l_]  prev/next source     [_1_.._0_]  action 1..10          [_t_/_T_]  toggle visible/all mark
+[_q_]^^    quit                 [_a_]^^     action selection pg"
+        :foreign-keys run
         :on-enter (spacemacs//helm-navigation-ms-on-enter)
         :on-exit  (spacemacs//helm-navigation-ms-on-exit)
         :bindings
@@ -485,8 +480,8 @@ ARG non nil means Vim like movements."
         ("<tab>" helm-select-action :exit t)
         ("TAB" helm-select-action :exit t)
         ("<RET>" helm-maybe-exit-minibuffer :exit t)
-        ("?" nil :doc (spacemacs//helm-navigation-ms-full-doc))
-        ("a" helm-select-action :post (spacemacs//helm-navigation-ms-set-face))
+        ;; ("?" nil :doc (spacemacs//helm-navigation-ms-full-doc))
+        ("a" spacemacs/helm-transient-state-select-action)
         ("e" spacemacs/helm-edit)
         ("g" helm-beginning-of-buffer)
         ("G" helm-end-of-buffer)
@@ -498,6 +493,10 @@ ARG non nil means Vim like movements."
         ("t" helm-toggle-visible-mark)
         ("T" helm-toggle-all-marks)
         ("v" helm-execute-persistent-action))
+      (define-key helm-map (kbd "M-SPC")
+        'spacemacs/helm-navigation-transient-state/body)
+      (define-key helm-map (kbd "s-M-SPC")
+        'spacemacs/helm-navigation-transient-state/body)
 
       ;; Swap default TAB and C-z commands.
       ;; For GUI.
@@ -885,6 +884,7 @@ Search for a search tool in the order provided by `dotspacemacs-search-tools'."
         "pb"  'helm-projectile-switch-to-buffer
         "pd"  'helm-projectile-find-dir
         "pf"  'helm-projectile-find-file
+        "pF"  'helm-projectile-find-file-dwim
         "ph"  'helm-projectile
         "pp"  'helm-projectile-switch-project
         "pr"  'helm-projectile-recentf

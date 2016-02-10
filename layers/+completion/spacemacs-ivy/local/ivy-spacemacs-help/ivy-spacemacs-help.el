@@ -79,8 +79,6 @@
                 `("Spacemacs documentation" . ,r))
                ((string-equal r "FAQ.org")
                 `("Spacemacs FAQ" . ,r))
-               ((string-equal r "HOWTOs.org")
-                `("Quick HOW-TOs for Spacemacs" . ,r))
                ((string-equal r "LAYERS.org")
                 `("Tips on writing layers for Spacemacs" . ,r))
                ((string-equal r "QUICK_START.org")
@@ -342,6 +340,17 @@
   (ivy-read ".spacemacs variables: "
             (ivy-spacemacs-help//dotspacemacs-candidates)
             :action 'ivy-spacemacs-help//go-to-dotfile-variable))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; FAQ
+
+;;;###autoload
+(defun ivy-spacemacs-help-faq ()
+  "Show FAQ and launch swiper session."
+  (interactive)
+  (find-file-read-only
+   (expand-file-name "FAQ.org" spacemacs-docs-directory))
+  (swiper "\\*\\* "))
 
 (provide 'ivy-spacemacs-help)
 

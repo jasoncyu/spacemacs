@@ -38,12 +38,13 @@
 
 (defun version-control/stage-hunk ()
   (interactive)
-  (let ((current-prefix-arg t))
-    (call-interactively
-     (cl-case version-control-diff-tool
-       (diff-hl     (message "staging not available."))
-       (git-gutter  'git-gutter:stage-hunk)
-       (git-gutter+ 'git-gutter+-stage-hunks)))))
+  (if (eq 'diff-hl version-control-diff-tool)
+      (message "Staging not available")
+    (let ((current-prefix-arg t))
+      (call-interactively
+       (cl-case version-control-diff-tool
+         (git-gutter  'git-gutter:stage-hunk)
+         (git-gutter+ 'git-gutter+-stage-hunks))))))
 
 (defun version-control/show-hunk ()
   (interactive)
@@ -59,7 +60,7 @@
   (let ((current-prefix-arg t))
     (call-interactively
      (cl-case version-control-diff-tool
-       (diff-hl     'diff-hl-margin-minor-mode)
+       (diff-hl     'diff-hl-mode)
        (git-gutter  'git-gutter-mode)
        (git-gutter+ 'git-gutter+-mode)))))
 
@@ -68,7 +69,7 @@
   (let ((current-prefix-arg nil))
     (call-interactively
      (cl-case version-control-diff-tool
-       (diff-hl     'diff-hl-margin-minor-mode)
+       (diff-hl     'diff-hl-mode)
        (git-gutter  'git-gutter-mode)
        (git-gutter+ 'git-gutter+-mode)))))
 
@@ -77,7 +78,7 @@
   (let ((current-prefix-arg t))
     (call-interactively
      (cl-case version-control-diff-tool
-       (diff-hl     'diff-hl-margin-mode)
+       (diff-hl     'global-diff-hl-mode)
        (git-gutter  'global-git-gutter-mode)
        (git-gutter+ 'global-git-gutter+-mode)))))
 
@@ -86,7 +87,7 @@
   (let ((current-prefix-arg nil))
     (call-interactively
      (cl-case version-control-diff-tool
-       (diff-hl     'diff-hl-margin-mode)
+       (diff-hl     'global-diff-hl-mode)
        (git-gutter  'global-git-gutter-mode)
        (git-gutter+ 'global-git-gutter+-mode)))))
 
@@ -98,14 +99,14 @@
 (defun version-control/margin-p ()
   (interactive)
   (cl-case version-control-diff-tool
-    (diff-hl     diff-hl-margin-minor-mode)
+    (diff-hl     diff-hl-mode)
     (git-gutter  git-gutter-mode)
     (git-gutter+ git-gutter+-mode)))
 
 (defun version-control/margin-global-p ()
   (interactive)
   (cl-case version-control-diff-tool
-    (diff-hl     diff-hl-margin-mode)
+    (diff-hl     global-diff-hl-mode)
     (git-gutter  global-git-gutter-mode)
     (git-gutter+ global-git-gutter+-mode)))
 
