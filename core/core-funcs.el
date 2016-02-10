@@ -11,6 +11,8 @@
 
 (defvar configuration-layer--protected-packages)
 (defvar dotspacemacs-filepath)
+(defvar spacemacs-repl-list '()
+  "List of all registered REPLs.")
 
 (defun spacemacs/load-or-install-protected-package (pkg &optional log file-to-load)
   "Load PKG package, and protect it against being deleted as an orphan.
@@ -262,5 +264,13 @@ Emacs versions."
   (interactive)
   (byte-recompile-directory package-user-dir nil t))
 
-(provide 'core-funcs)
+(defun spacemacs/register-repl (feature repl-func &optional tag)
+  "Register REPL-FUNC to the global list of REPLs SPACEMACS-REPL-LIST.
+FEATURE will be loaded before running the REPL, in case it is not already
+loaded. If TAG is non-nil, it will be used as the string to show in the helm
+buffer."
+  (push `(,(or tag (symbol-name repl-func))
+          . (,feature . ,repl-func))
+        spacemacs-repl-list))
 
+(provide 'core-funcs)
