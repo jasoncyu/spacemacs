@@ -127,7 +127,13 @@
 (defun html/init-less-css-mode ()
   (use-package less-css-mode
     :defer t
-    :mode ("\\.less\\'" . less-css-mode)))
+    :mode ("\\.less\\'" . less-css-mode)
+    :config
+    (progn
+      (add-hook 'less-css-mode-hook
+                '(lambda ()
+                   (linum-mode)))
+      )))
 
 (defun html/init-sass-mode ()
   (use-package sass-mode
