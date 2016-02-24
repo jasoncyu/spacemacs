@@ -318,7 +318,7 @@ Will work on both org-mode and any mode that accepts plain html."
       (spacemacs/set-leader-keys-for-major-mode 'org-agenda-mode
         ":" 'org-agenda-set-tags
         "a" 'org-agenda
-	"d" 'org-agenda-deadline
+  "d" 'org-agenda-deadline
         "f" 'org-agenda-set-effort
         "I" 'org-agenda-clock-in
         "O" 'org-agenda-clock-out
@@ -332,6 +332,9 @@ Will work on both org-mode and any mode that accepts plain html."
       :bindings
       "j" 'org-agenda-next-line
       "k" 'org-agenda-previous-line
+      ;; Navigate between "blocks", which are sections in the agenda
+      "J" 'org-agenda-forward-block
+      "K" 'org-agenda-backward-block
       (kbd "M-j") 'org-agenda-next-item
       (kbd "M-k") 'org-agenda-previous-item
       (kbd "M-h") 'org-agenda-earlier
