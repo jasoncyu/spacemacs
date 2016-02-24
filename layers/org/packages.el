@@ -323,9 +323,9 @@ Will work on both org-mode and any mode that accepts plain html."
         "I" 'org-agenda-clock-in
         "O" 'org-agenda-clock-out
         "P" 'org-agenda-set-property
-        "q" 'org-agenda-refile
+        "R" 'org-agenda-refile
         "Q" 'org-agenda-clock-cancel
-        "s" 'org-agenda-schedule))
+        "S" 'org-agenda-schedule))
     :config
     (evilified-state-evilify-map org-agenda-mode-map
       :mode org-agenda-mode
