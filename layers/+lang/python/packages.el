@@ -17,7 +17,6 @@
     ;; company-anaconda
     cython-mode
     eldoc
-    evil-jumper
     evil-matchit
     flycheck
     helm-cscope
@@ -56,7 +55,10 @@
         "gu" 'anaconda-mode-find-references)
       (evilified-state-evilify anaconda-mode-view-mode anaconda-mode-view-mode-map
         (kbd "q") 'quit-window)
-      (spacemacs|hide-lighter anaconda-mode))))
+      (spacemacs|hide-lighter anaconda-mode)
+
+      (defadvice anaconda-mode-goto (before python/anaconda-mode-goto activate)
+        (evil--jumps-push)))))
 
 (when (configuration-layer/layer-usedp 'auto-completion)
   (defun python/post-init-company ()
@@ -86,11 +88,11 @@
         "gu" 'anaconda-mode-usages))))
 
 (defun python/post-init-eldoc ()
-  (add-hook 'python-mode-hook 'eldoc-mode))
-
-(defun python/post-init-evil-jumper ()
-  (defadvice anaconda-mode-goto (before python/anaconda-mode-goto activate)
-    (evil-jumper--push)))
+  (defun spacemacs//init-eldoc-python-mode ()
+    (eldoc-mode)
+    (when (configuration-layer/package-usedp 'anaconda-mode)
+      (anaconda-eldoc-mode)))
+  (add-hook 'python-mode-hook 'spacemacs//init-eldoc-python-mode))
 
 (defun python/post-init-evil-matchit ()
   (add-hook `python-mode-hook `turn-on-evil-matchit-mode))
@@ -192,7 +194,7 @@
     (progn
       (evilified-state-evilify pylookup-mode pylookup-mode-map)
       (spacemacs/set-leader-keys-for-major-mode 'python-mode
-        "mhH" 'pylookup-lookup))
+        "hH" 'pylookup-lookup))
     :config
     (progn
       (let ((dir (configuration-layer/get-layer-local-dir 'python)))
@@ -270,27 +272,27 @@
         (interactive)
         (python-shell-send-buffer)
         (python-shell-switch-to-shell)
-        (evil-insert-state))
+        (spacemacs/normal-to-insert-state))
 
       (defun python-shell-send-defun-switch ()
         "Send function content to shell and switch to it in insert mode."
         (interactive)
         (python-shell-send-defun nil)
         (python-shell-switch-to-shell)
-        (evil-insert-state))
+        (spacemacs/normal-to-insert-state))
 
       (defun python-shell-send-region-switch (start end)
         "Send region content to shell and switch to it in insert mode."
         (interactive "r")
         (python-shell-send-region start end)
         (python-shell-switch-to-shell)
-        (evil-insert-state))
+        (spacemacs/normal-to-insert-state))
 
       (defun python-start-or-switch-repl ()
         "Start and/or switch to the REPL."
         (interactive)
         (python-shell-switch-to-shell)
-        (evil-insert-state))
+        (spacemacs/normal-to-insert-state))
 
       ;; reset compile-command (by default it is `make -k')
       (setq compile-command nil)
@@ -316,7 +318,7 @@
         (spacemacs/python-execute-file arg)
         (switch-to-buffer-other-window "*compilation*")
         (end-of-buffer)
-        (evil-insert-state))
+        (spacemacs/normal-to-insert-state))
 
       (spacemacs/declare-prefix-for-mode 'python-mode "mc" "execute")
       (spacemacs/declare-prefix-for-mode 'python-mode "md" "debug")

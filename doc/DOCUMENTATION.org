@@ -786,7 +786,6 @@ Spacemacs ships with the following evil plugins:
 | [[https://github.com/juanjux/evil-search-highlight-persist][evil-search-highlight-persist]] | emulation of hlsearch behavior                           |
 | [[https://github.com/cofi/evil-numbers][evil-numbers]]                  | like ~C-a~ and ~C-x~ in vim                              |
 | [[https://github.com/wcsmith/evil-args][evil-args]]                     | motions and text objects for arguments                   |
-| [[https://github.com/bling/evil-jumper][evil-jumper]]                   | jump list emulation                                      |
 | [[https://github.com/jaypei/emacs-neotree][NeoTree]]                       | mimic [[https://github.com/scrooloose/nerdtree][NERD Tree]]                                          |
 
 * Spacemacs UI
@@ -1521,9 +1520,9 @@ Windows manipulation commands (start with ~w~):
 |------------------------+-----------------------------------------------------------------------------|
 | ~SPC w =~              | balance split windows                                                       |
 | ~SPC w b~              | force the focus back to the minibuffer (usefull with =helm= popups)         |
-| ~SPC w c~              | close a window                                                              |
-| ~SPC w C~              | delete another window using [[https://github.com/abo-abo/ace-window][ace-delete-window]]                               |
-| ~SPC w d~              | toggle window dedication (dedicated window cannot be reused by a mode)      |
+| ~SPC w d~              | delete a window                                                             |
+| ~SPC w D~              | delete another window using [[https://github.com/abo-abo/ace-window][ace-delete-window]]                               |
+| ~SPC w t~              | toggle window dedication (dedicated window cannot be reused by a mode)      |
 | ~SPC w f~              | toggle follow mode                                                          |
 | ~SPC w h~              | move to window on the left                                                  |
 | ~SPC w H~              | move window to the left                                                     |
@@ -1555,7 +1554,7 @@ window resizing.
 
 | Key Binding   | Description                                                   |
 |---------------+---------------------------------------------------------------|
-| ~SPC w .~     | initiate transient-state                                          |
+| ~SPC w .~     | initiate transient-state                                      |
 | ~?~           | display the full documentation in minibuffer                  |
 | ~0~           | go to window number 0                                         |
 | ~1~           | go to window number 1                                         |
@@ -1573,8 +1572,8 @@ window resizing.
 | ~]~           | enlarge window horizontally                                   |
 | ~{~           | shrink window vertically                                      |
 | ~}~           | enlarge window vertically                                     |
-| ~c~           | close window                                                  |
-| ~C~           | close other windows                                           |
+| ~d~           | delete window                                                 |
+| ~D~           | delete other windows                                          |
 | ~g~           | toggle =golden-ratio= on and off                              |
 | ~h~           | go to window on the left                                      |
 | ~j~           | go to window below                                            |
@@ -1593,7 +1592,7 @@ window resizing.
 | ~v~           | vertical split                                                |
 | ~V~           | horizontal split and focus new window                         |
 | ~w~           | focus other window                                            |
-| Any other key | leave the transient-state                                         |
+| Any other key | leave the transient-state                                     |
 
 **** Golden ratio
 If you resize windows like crazy you may want to give a try to [[https://github.com/roman/golden-ratio.el][golden-ratio]].
@@ -1619,7 +1618,7 @@ Buffer manipulation commands (start with ~b~):
 |-------------+--------------------------------------------------------------------------|
 | ~SPC TAB~   | switch to alternate buffer in the current window (switch back and forth) |
 | ~SPC b b~   | switch to a buffer using =helm=                                          |
-| ~SPC b c~   | kill the current buffer (does not delete the visited file)               |
+| ~SPC b d~   | kill the current buffer (does not delete the visited file)               |
 | ~SPC b e~   | erase the content of the buffer (ask for confirmation)                   |
 | ~SPC b h~   | open =*spacemacs*= home buffer                                           |
 | ~SPC b k~   | kill a buffer                                                            |
@@ -2186,14 +2185,18 @@ Text related commands (start with ~x~):
 
     | Key Binding | Description                                                   |
     |-------------+---------------------------------------------------------------|
-    | ~SPC x a a~ | align region (or guessed section) using default rules         |
-    | ~SPC x a r~ | align region using user-specified regexp                      |
-    | ~SPC x a m~ | align region at arithmetic operators (+-*/)                   |
-    | ~SPC x a .~ | align region at . (for numeric tables)                        |
+    | ~SPC x a &~ | align region at &                                             |
+    | ~SPC x a (~ | align region at (                                             |
+    | ~SPC x a )~ | align region at )                                             |
     | ~SPC x a ,~ | align region at ,                                             |
+    | ~SPC x a .~ | align region at . (for numeric tables)                        |
+    | ~SPC x a :~ | align region at :                                             |
     | ~SPC x a ;~ | align region at ;                                             |
     | ~SPC x a =~ | align region at =                                             |
-    | ~SPC x a &~ | align region at &                                             |
+    | ~SPC x a a~ | align region (or guessed section) using default rules         |
+    | ~SPC x a c~ | align current intendation region using default rules          |
+    | ~SPC x a r~ | align region using user-specified regexp                      |
+    | ~SPC x a m~ | align region at arithmetic operators (+-*/)                   |
     | ~SPC x a ¦~ | align region at ¦                                             |
     | ~SPC x c~   | count the number of chars/words/lines in the selection region |
     | ~SPC x d w~ | delete trailing whitespaces                                   |
@@ -2205,8 +2208,8 @@ Text related commands (start with ~x~):
     | ~SPC x j l~ | set the justification to left                                 |
     | ~SPC x j n~ | set the justification to none                                 |
     | ~SPC x j r~ | set the justification to right                                |
-    | ~SPC x J~   | move down a line of text (enter transient-state)                  |
-    | ~SPC x K~   | move up a line of text (enter transient-state)                    |
+    | ~SPC x J~   | move down a line of text (enter transient-state)              |
+    | ~SPC x K~   | move up a line of text (enter transient-state)                |
     | ~SPC x l s~ | sort lines                                                    |
     | ~SPC x l u~ | uniquify lines                                                |
     | ~SPC x o~   | use avy to select a link in the frame and open it             |
@@ -2224,10 +2227,13 @@ Text insertion commands (start with ~i~):
 
     | Key binding | Description                                                           |
     |-------------+-----------------------------------------------------------------------|
-    | ~SPC i u~   | Search for Unicode characters and insert them into the active buffer. |
     | ~SPC i l l~ | insert lorem-ipsum list                                               |
     | ~SPC i l p~ | insert lorem-ipsum paragraph                                          |
     | ~SPC i l s~ | insert lorem-ipsum sentence                                           |
+    | ~SPC i u~   | Search for Unicode characters and insert them into the active buffer. |
+    | ~SPC i U 1~ | insert UUIDv1 (use universal argument to insert with CID format)      |
+    | ~SPC i U 4~ | insert UUIDv4 (use universal argument to insert with CID format)      |
+    | ~SPC i U U~ | insert UUIDv4 (use universal argument to insert with CID format)      |
 
 *** Smartparens Strict mode
 [[https://github.com/Fuco1/smartparens][Smartparens]] comes with a strict mode which prevents deletion of parenthesis if
@@ -2760,24 +2766,25 @@ with ~SPC SPC spacemacs/recompile-elpa~.
 | [[https://github.com/syl20bnr/spacemacs/pull/4089][2000th pull request]] | [[https://github.com/channingwalton][channingwalton]] |
 
 ** Stars, forks and watchers
-| Achievements     | Account         |
-|------------------+-----------------|
-| 100th watcher    | [[https://github.com/adouzzy][adouzzy]]         |
-| 100th fork       | [[https://github.com/balajisivaraman][balajisivaraman]] |
-| 200th fork       | [[https://github.com/alcol80][alcol80]]         |
-| 300th fork       | [[https://github.com/mlopes][mlopes]]          |
-| 100th star       | [[https://github.com/Jackneill][Jackneill]]       |
-| 200th star       | [[https://github.com/jb55][jb55]]            |
-| 400th star       | [[https://github.com/dbohdan][dbohdan]]         |
-| 600th star       | [[https://github.com/laat][laat]]            |
-| 700th star       | [[https://github.com/kendall][kendall]]         |
-| 800th star       | [[https://github.com/urso][urso]]            |
-| 900th star       | [[https://github.com/luisgerhorst][luisgerhorst]]    |
-| 1000th star!     | [[https://github.com/rashly][rashly]]          |
-| 2000th star!!    | [[https://github.com/stshine][stshine]]         |
-| 3000th star!!!   | [[https://github.com/TheBB][TheBB]]           |
-| 4000th star!!!!  | [[https://github.com/nixmaniack][nixmaniack]]      |
-| 5000th star!!!!! | [[https://github.com/StreakyCobra][StreakyCobra]]    |
+| Achievements      | Account         |
+|-------------------+-----------------|
+| 100th watcher     | [[https://github.com/adouzzy][adouzzy]]         |
+| 100th fork        | [[https://github.com/balajisivaraman][balajisivaraman]] |
+| 200th fork        | [[https://github.com/alcol80][alcol80]]         |
+| 300th fork        | [[https://github.com/mlopes][mlopes]]          |
+| 100th star        | [[https://github.com/Jackneill][Jackneill]]       |
+| 200th star        | [[https://github.com/jb55][jb55]]            |
+| 400th star        | [[https://github.com/dbohdan][dbohdan]]         |
+| 600th star        | [[https://github.com/laat][laat]]            |
+| 700th star        | [[https://github.com/kendall][kendall]]         |
+| 800th star        | [[https://github.com/urso][urso]]            |
+| 900th star        | [[https://github.com/luisgerhorst][luisgerhorst]]    |
+| 1000th star!      | [[https://github.com/rashly][rashly]]          |
+| 2000th star!!     | [[https://github.com/stshine][stshine]]         |
+| 3000th star!!!    | [[https://github.com/TheBB][TheBB]]           |
+| 4000th star!!!!   | [[https://github.com/nixmaniack][nixmaniack]]      |
+| 5000th star!!!!!  | [[https://github.com/StreakyCobra][StreakyCobra]]    |
+| 6000th star!!!!!! | [[https://github.com/NJBS][NJBS]]            |
 
 ** Gitter chat
 | Achievements                    | Account     |

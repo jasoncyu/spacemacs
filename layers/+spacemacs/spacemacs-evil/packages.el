@@ -15,7 +15,6 @@
         evil-exchange
         evil-iedit-state
         evil-indent-plus
-        evil-jumper
         evil-lisp-state
         ;; for testing purpose, contribute by reporting bugs and sending PRs
         ;; to https://github.com/gabesoft/evil-mc
@@ -29,7 +28,7 @@
         ;; https://github.com/7696122/evil-terminal-cursor-changer/issues/8
         (evil-terminal-cursor-changer :excluded t)
         evil-tutor
-        (evil-unimpaired :skip-install t)))
+        (evil-unimpaired :location local)))
 
 (defun spacemacs-evil/init-evil-anzu ()
   (use-package evil-anzu
@@ -69,7 +68,9 @@
 (defun spacemacs-evil/init-evil-iedit-state ()
   (use-package evil-iedit-state
     :commands (evil-iedit-state evil-iedit-state/iedit-mode)
-    :init (spacemacs/set-leader-keys "se" 'evil-iedit-state/iedit-mode)
+    :init (spacemacs/set-leader-keys "se" (if (eq dotspacemacs-editing-style 'emacs)
+                                              'iedit-mode
+                                            'evil-iedit-state/iedit-mode))
     :config
     ;; activate leader in iedit and iedit-insert states
     (define-key evil-iedit-state-map
@@ -78,10 +79,6 @@
 (defun spacemacs-evil/init-evil-indent-plus ()
   (use-package evil-indent-plus
     :init (evil-indent-plus-default-bindings)))
-
-(defun spacemacs-evil/init-evil-jumper ()
-  (use-package evil-jumper
-    :init (evil-jumper-mode t)))
 
 (defun spacemacs-evil/init-evil-lisp-state ()
   (use-package evil-lisp-state

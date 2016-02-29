@@ -177,7 +177,7 @@
 (ivy-set-actions
  'ivy-spacemacs-help-layers
  '(("a" ivy-spacemacs-help//layer-action-add-layer "add layer")
-   ("e" ivy-spacemacs-help//layer-action-open-readme-edit "add readme for editing")
+   ("e" ivy-spacemacs-help//layer-action-open-readme-edit "open readme for editing")
    ("p" ivy-spacemacs-help//layer-action-open-packages "open packages.el")
    ("r" ivy-spacemacs-help//layer-action-open-readme "open readme")))
 
@@ -191,7 +191,10 @@
          (number-to-string
           (cl-reduce
            (lambda (a x) (max (length (symbol-name (oref x :name))) a))
-           ivy-spacemacs-help-all-layers :initial-value 0))))
+           ivy-spacemacs-help-all-layers :initial-value 0)))
+        (owners (cl-remove-duplicates
+                 (mapcar (lambda (pkg) (oref pkg :owner))
+                         ivy-spacemacs-help-all-packages))))
     (dolist (pkg ivy-spacemacs-help-all-packages)
       (push (list (format (concat "%-" left-column-width "S %s %s")
                           (oref pkg :owner)
@@ -204,21 +207,35 @@
                   (symbol-name (oref pkg :owner))
                   (symbol-name (oref pkg :name)))
             result))
+    (dolist (layer (delq nil
+                         (cl-remove-if
+                          (lambda (layer)
+                            (memq (oref layer :name) owners))
+                          ivy-spacemacs-help-all-layers)))
+      (push (list (format (concat "%-" left-column-width "S %s")
+                          (oref layer :name)
+                          (propertize "no packages"
+                                      'face 'warning))
+                  (oref layer :name)
+                  nil)
+            result))
     (sort result (lambda (a b) (string< (car a) (car b))))))
 
 (defun ivy-spacemacs-help//help-action (args)
   "Open the file `packages.el' and go to the init function."
-  (let* ((layer-str (car args))
-         (layer-sym (intern layer-str))
-         (package-str (cadr args))
-         (path (file-name-as-directory
-                (concat (ht-get configuration-layer-paths layer-sym)
-                        layer-str)))
-         (filename (concat path "packages.el")))
-    (find-file filename)
-    (goto-char (point-min))
-    (re-search-forward (format "init-%s" package-str))
-    (beginning-of-line)))
+  (if (null (cadr args))
+      (message "There are no packages associated with this layer.")
+    (let* ((layer-str (car args))
+           (layer-sym (intern layer-str))
+           (package-str (cadr args))
+           (path (file-name-as-directory
+                  (concat (ht-get configuration-layer-paths layer-sym)
+                          layer-str)))
+           (filename (concat path "packages.el")))
+      (find-file filename)
+      (goto-char (point-min))
+      (re-search-forward (format "init-%s" package-str))
+      (beginning-of-line))))
 
 (defun ivy-spacemacs-help//help-action-add-layer (args)
   (let* ((layer-str (car args))
@@ -232,6 +249,13 @@
     (goto-char (point-min))
     (re-search-forward (format "init-%s" package-str))
     (beginning-of-line)))
+
+(defun ivy-spacemacs-help//help-action-describe-package (args)
+  "Describe the passed package using Spacemacs describe function."
+  (if (null (cadr args))
+      (message "There are no packages associated with this layer.")
+    (let ((package-str (cadr args)))
+      (configuration-layer/describe-package (intern package-str)))))
 
 (defun ivy-spacemacs-help//help-action-open-packages (args)
   "Open the `packages.el' file of the passed CANDIDATE."
@@ -271,7 +295,8 @@
 (ivy-set-actions
  'ivy-spacemacs-help
  '(("a" ivy-spacemacs-help//help-action-add-layer "add layer")
-   ("e" ivy-spacemacs-help//help-action-open-readme-edit "add readme for editing")
+   ("d" ivy-spacemacs-help//help-action-describe-package "describe package")
+   ("e" ivy-spacemacs-help//help-action-open-readme-edit "open readme for editing")
    ("p" ivy-spacemacs-help//help-action-open-packages "open packages.el")
    ("r" ivy-spacemacs-help//help-action-open-readme "open readme")))
 
@@ -299,7 +324,7 @@
             (setq toggle-doc
                   (format "%s (%s)"
                           toggle-doc
-                          (propertize key 'face 'helm-M-x-key)))))
+                          (propertize key 'face 'font-lock-keyword-face)))))
         (if (plist-member (cdr toggle) :documentation)
             (push `(,toggle-doc . ,toggle-symbol) result)
           (push `(,toggle-name . ,toggle-symbol) result))))

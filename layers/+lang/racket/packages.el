@@ -16,7 +16,8 @@
   ;; company-quickhelp calls it. Note hook is appendended for proper ordering.
   (add-hook 'company-mode-hook
             '(lambda ()
-               (when (equal major-mode 'racket-mode)
+               (when (and (equal major-mode 'racket-mode)
+                          (bound-and-true-p company-quickhelp-mode))
                  (company-quickhelp-mode -1))) t))
 
 (defun racket/init-racket-mode ()
@@ -42,7 +43,7 @@
 `insert state'."
         (interactive)
         (racket-run-and-switch-to-repl)
-        (evil-insert-state))
+        (spacemacs/normal-to-insert-state))
 
       (defun spacemacs/racket-send-last-sexp-focus ()
         "Call `racket-send-last-sexp' and switch to REPL buffer in
@@ -50,7 +51,7 @@
         (interactive)
         (racket-send-last-sexp)
         (racket-repl)
-        (evil-insert-state))
+        (spacemacs/normal-to-insert-state))
 
       (defun spacemacs/racket-send-definition-focus ()
         "Call `racket-send-definition' and switch to REPL buffer in
@@ -58,7 +59,7 @@
         (interactive)
         (racket-send-definition)
         (racket-repl)
-        (evil-insert-state))
+        (spacemacs/normal-to-insert-state))
 
       (defun spacemacs/racket-send-region-focus (start end)
         "Call `racket-send-region' and switch to REPL buffer in
@@ -66,7 +67,14 @@
         (interactive "r")
         (racket-send-region start end)
         (racket-repl)
-        (evil-insert-state))
+        (spacemacs/normal-to-insert-state))
+
+      (dolist (prefix '(("mg" . "navigation")
+                        ("mh" . "doc")
+                        ("mi" . "insert")
+                        ("ms" . "repl")
+                        ("mt" . "tests")))
+        (spacemacs/declare-prefix-for-mode 'racket-mode (car prefix) (cdr prefix)))
 
       (spacemacs/set-leader-keys-for-major-mode 'racket-mode
         ;; navigation

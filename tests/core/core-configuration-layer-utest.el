@@ -12,6 +12,38 @@
 (require 'core-configuration-layer)
 
 ;; ---------------------------------------------------------------------------
+;; class cfgl-package
+;; ---------------------------------------------------------------------------
+
+(ert-deftest test-cfgl-package-enabledp--default-toggle-eval-non-nil ()
+  (let ((pkg (cfgl-package "testpkg" :name 'testpkg)))
+    (should (cfgl-package-enabledp pkg))))
+
+(ert-deftest test-cfgl-package-enabledp--symbol-toggle-eval-non-nil-example ()
+  (let ((pkg (cfgl-package "testpkg" :name 'testpkg :toggle 'package-toggle))
+        (package-toggle t))
+    (should (cfgl-package-enabledp pkg))))
+
+(ert-deftest test-cfgl-package-enabledp--symbol-toggle-eval-nil-example ()
+  (let ((pkg (cfgl-package "testpkg" :name 'testpkg :toggle 'package-toggle))
+        (package-toggle nil))
+    (should (null (cfgl-package-enabledp pkg)))))
+
+(ert-deftest test-cfgl-package-enabledp--list-toggle-eval-non-nil-example ()
+  (let ((pkg (cfgl-package "testpkg"
+                           :name 'testpkg
+                           :toggle '(memq package-toggle '(foo bar))))
+        (package-toggle 'foo))
+    (should (cfgl-package-enabledp pkg))))
+
+(ert-deftest test-cfgl-package-enabledp--list-toggle-eval-nil-example ()
+  (let ((pkg (cfgl-package "testpkg"
+                           :name 'testpkg
+                           :toggle '(memq package-toggle '(foo bar))))
+        (package-toggle 'other))
+    (should (null (cfgl-package-enabledp pkg)))))
+
+;; ---------------------------------------------------------------------------
 ;; configuration-layer//resolve-package-archives
 ;; ---------------------------------------------------------------------------
 
@@ -50,6 +82,34 @@
         dotspacemacs-elpa-https)
     (should (equal '(("melpa" . "https://melpa.org/packages/"))
                    (configuration-layer//resolve-package-archives input)))))
+
+;; ---------------------------------------------------------------------------
+;; configuration-layer/retrieve-package-archives
+;; ---------------------------------------------------------------------------
+
+(ert-deftest test-retrieve-package-archives--catch-time-out-error ()
+  (let ((package-archives '(("gnu" . "https://elpa.gnu.org/packages/")))
+        (configuration-layer--package-archives-refreshed nil)
+        (dotspacemacs-elpa-timeout -1))
+    (mocker-let
+        ((message (format-string &rest args)
+                  ((:record-cls 'mocker-stub-record :output nil))))
+      (configuration-layer/retrieve-package-archives))))
+
+(ert-deftest test-retrieve-package-archives--catch-connection-errors ()
+  (let ((package-archives '(("gnu" . "https://elpa.gnu.org/packages/")))
+        (configuration-layer--package-archives-refreshed nil))
+    (cl-letf (((symbol-function 'url-retrieve-synchronously)
+               (lambda (x)
+                 (signal 'file-error '("make client process failed"
+                                       "connection refused"
+                                       :name "elpa.gnu.org"
+                                       :buffer dummy
+                                       :host "elpa.gnu.org"
+                                       :service 443
+                                       :nowait nil))))
+              ((symbol-function 'message) 'ignore))
+      (configuration-layer/retrieve-package-archives))))
 
 ;; ---------------------------------------------------------------------------
 ;; configuration-layer//make-layers
@@ -473,7 +533,7 @@
       (layer1/init-pkg nil ((:output nil :occur 1))))
      (configuration-layer//configure-package pkg))))
 
-(ert-deftest test-configure-packages--pre-init-is-evaluated ()
+(ert-deftest test-configure-package--pre-init-is-evaluated ()
   (let ((pkg (cfgl-package "pkg" :name 'pkg :owner 'layer1 :pre-layers '(layer2)))
         (configuration-layer--layers
          `(,(cfgl-layer "layer1" :name 'layer1)
@@ -557,6 +617,31 @@
       (spacemacs-buffer/loading-animation nil ((:output nil))))
      (configuration-layer//configure-packages-2 `(,pkg)))))
 
+(ert-deftest test-configure-packages-2--site-package-is-configured()
+  (let ((pkg (cfgl-package "pkg" :name 'pkg :owner 'layer1 :location 'site))
+        (mocker-mock-default-record-cls 'mocker-stub-record))
+    (mocker-let
+     ((configuration-layer//configure-package (p) ((:occur 1)))
+      (spacemacs-buffer/loading-animation nil ((:output nil))))
+     (configuration-layer//configure-packages-2 `(,pkg)))))
+
+(ert-deftest test-configure-packages-2--toggle-t-is-configured ()
+  (let ((pkg (cfgl-package "pkg" :name 'pkg :owner 'layer1 :toggle t))
+        (mocker-mock-default-record-cls 'mocker-stub-record))
+    (mocker-let
+     ((configuration-layer//configure-package (p) ((:occur 1)))
+      (spacemacs-buffer/loading-animation nil ((:output nil))))
+     (configuration-layer//configure-packages-2 `(,pkg)))))
+
+(ert-deftest test-configure-packages-2--toggle-nil-is-not-configured ()
+  (let ((pkg (cfgl-package "pkg" :name 'pkg :owner 'layer1 :toggle nil))
+        (mocker-mock-default-record-cls 'mocker-stub-record))
+    (mocker-let
+     ((configuration-layer//configure-package (p) nil)
+      (spacemacs-buffer/loading-animation nil ((:output nil)))
+      (spacemacs-buffer/message (m) ((:output nil))))
+     (configuration-layer//configure-packages-2 `(,pkg)))))
+
 (ert-deftest test-configure-packages-2--protected-package-is-configured()
   (let ((pkg (cfgl-package "pkg" :name 'pkg :owner 'layer1 :protected t))
         (mocker-mock-default-record-cls 'mocker-stub-record))
@@ -567,14 +652,6 @@
 
 (ert-deftest test-configure-packages-2--protected-excluded-package-is-configured()
   (let ((pkg (cfgl-package "pkg" :name 'pkg :owner 'layer1 :excluded t :protected t))
-        (mocker-mock-default-record-cls 'mocker-stub-record))
-    (mocker-let
-     ((configuration-layer//configure-package (p) ((:occur 1)))
-      (spacemacs-buffer/loading-animation nil ((:output nil))))
-     (configuration-layer//configure-packages-2 `(,pkg)))))
-
-(ert-deftest test-configure-packages-2--skip-install-package-is-configured()
-  (let ((pkg (cfgl-package "pkg" :name 'pkg :owner 'layer1 :skip-install t))
         (mocker-mock-default-record-cls 'mocker-stub-record))
     (mocker-let
      ((configuration-layer//configure-package (p) ((:occur 1)))

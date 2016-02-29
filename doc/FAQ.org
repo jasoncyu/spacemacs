@@ -19,6 +19,7 @@
    - [[Why does my color theme not render correctly in terminal mode?][Why does my color theme not render correctly in terminal mode?]]
    - [[Why do I get =(wrong-type-argument arrayp nil)= errors on startup?][Why do I get =(wrong-type-argument arrayp nil)= errors on startup?]]
    - [[Typing quickly =fd= takes me out of =insert state=. What is going on?][Typing quickly =fd= takes me out of =insert state=. What is going on?]]
+   - [[Why do I get files starting with .#?][Why do I get files starting with .#?]]
  - [[How do I...][How do I...]]
    - [[Install a package not provided by a layer?][Install a package not provided by a layer?]]
    - [[Disable a package completely?][Disable a package completely?]]
@@ -173,6 +174,15 @@ more information.
 
 If you don't like this feature, you can deactivate it by adding =evil-escape= to
 =dotspacemacs-excluded-packages= in your init file.
+
+** Why do I get files starting with .#?
+These are lockfiles, created by Emacs to prevent editing conflicts which occur
+when the same file is edited simultaneously by two different programs. To
+disable this behaviour:
+
+#+BEGIN_SRC emacs-lisp
+(setq create-lockfiles nil)
+#+END_SRC
 
 * How do I...
 ** Install a package not provided by a layer?
@@ -453,7 +463,7 @@ Check if your Emacs has HTTPS capabilities by doing =M-:= and then:
   (gnutls-available-p)
 #+END_SRC
 
-If this returns =nil=, you need to install the GnuTLS DDL file in the same
+If this returns =nil=, you need to install the GnuTLS DLL file in the same
 directory as Emacs. See [[https://www.gnu.org/software/emacs/manual/html_mono/emacs-gnutls.html#Help-For-Users][here]] for instructions.
 
 ** The powerline isn't shown correctly when Spacemacs is used within =PuTTY=.

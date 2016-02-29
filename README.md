@@ -1,5 +1,5 @@
 <a name="top"></a>
-[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/syl20bnr/spacemacs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Build Status](https://travis-ci.org/syl20bnr/spacemacs.svg)](https://travis-ci.org/syl20bnr/spacemacs)   [![Made with Spacemacs](https://cdn.rawgit.com/syl20bnr/spacemacs/442d025779da2f62fc86c2082703697714db6514/assets/spacemacs-badge.svg)](http://github.com/syl20bnr/spacemacs)  [![Buy A Drink](https://img.shields.io/badge/Paypal-Buy%20a%20Drink-blue.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=ESFVNPKP4Y742) [![Recommend Spacemacs](https://img.shields.io/badge/Slant-Recommend-ff69b4.svg)](http://www.slant.co/topics/12/~what-are-the-best-programming-text-editors)[![Twitter][]](http://www.twitter.com/spacemacs)
+[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/syl20bnr/spacemacs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Build Status](https://travis-ci.org/syl20bnr/spacemacs.svg)](https://travis-ci.org/syl20bnr/spacemacs)   [![Made with Spacemacs](https://cdn.rawgit.com/syl20bnr/spacemacs/442d025779da2f62fc86c2082703697714db6514/assets/spacemacs-badge.svg)](http://github.com/syl20bnr/spacemacs)  [![Buy A Drink](https://img.shields.io/badge/Paypal-Buy%20a%20Drink-blue.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=ESFVNPKP4Y742) [![Recommend Spacemacs](https://img.shields.io/badge/Slant-Recommend-ff69b4.svg)](http://www.slant.co/topics/12/~what-are-the-best-programming-text-editors) [![ZenHub](https://raw.githubusercontent.com/ZenHubIO/support/master/zenhub-badge.png)](https://zenhub.io) [![Twitter][]](http://www.twitter.com/spacemacs)
 ***
 <p align="center"><img src="/doc/img/title2.png" alt="Spacemacs"/></p>
 <p align="center">
@@ -124,6 +124,10 @@ Install Emacs from the package manager of your Linux distribution.
 You should install the "emacs" package, not the "xemacs" package.
 XEmacs is an old fork of Emacs. The X in its name is unrelated to X11.
 Both Emacs and XEmacs have graphical support.
+
+**Note:** Ubuntu LTS 12.04 and 14.04 repositories have only Emacs 24.3
+available. You are advised to [build from source](https://www.gnu.org/software/emacs/manual/html_node/efaq/Installing-Emacs.html) Emacs 24.4 or greater, as most packages require
+this version. The same may be true for other distributions as well.
 
 ### OS X
 
@@ -266,7 +270,7 @@ Click on the arrow to update Spacemacs to the last version.
 
 ```sh
 git fetch
-git reset --hard <tag version which you are updating to> 
+git reset --hard <tag version which you are updating to>
 ```
 
 ## On develop branch

@@ -57,7 +57,7 @@ the focus."
 `insert state'."
         (interactive)
         (cider-insert-last-sexp-in-repl t)
-        (evil-insert-state))
+        (spacemacs/normal-to-insert-state))
 
       (defun spacemacs/cider-send-region-to-repl (start end)
         "Send region to REPL and evaluate it without changing
@@ -72,7 +72,7 @@ the focus."
         (interactive "r")
         (cider-insert-in-repl
          (buffer-substring-no-properties start end) t)
-        (evil-insert-state))
+        (spacemacs/normal-to-insert-state))
 
       (defun spacemacs/cider-send-function-to-repl ()
         "Send current function to REPL and evaluate it without changing
@@ -85,7 +85,7 @@ the focus."
 `insert state'."
         (interactive)
         (cider-insert-defun-in-repl t)
-        (evil-insert-state))
+        (spacemacs/normal-to-insert-state))
 
       (defun spacemacs/cider-send-ns-form-to-repl ()
         "Send buffer's ns form to REPL and evaluate it without changing
@@ -98,7 +98,7 @@ the focus."
 `insert state'."
         (interactive)
         (cider-insert-ns-form-in-repl t)
-        (evil-insert-state))
+        (spacemacs/normal-to-insert-state))
 
       (defun spacemacs/cider-send-buffer-in-repl-and-focus ()
         "Send the current buffer in the REPL and switch to the REPL in
@@ -106,7 +106,7 @@ the focus."
         (interactive)
         (cider-load-buffer)
         (cider-switch-to-repl-buffer)
-        (evil-insert-state))
+        (spacemacs/normal-to-insert-state))
 
       (defun spacemacs/cider-test-run-focused-test ()
         (interactive)
@@ -116,7 +116,7 @@ the focus."
       (defun spacemacs/cider-test-run-all-tests ()
         (interactive)
         (cider-load-buffer)
-        (spacemacs//cider-eval-in-repl-no-focus (cider-test-run-tests nil)))
+        (spacemacs//cider-eval-in-repl-no-focus (cider-test-run-ns-tests nil)))
 
       (defun spacemacs/cider-test-rerun-tests ()
         (interactive)
@@ -193,13 +193,14 @@ If called with a prefix argument, uses the other-window instead."
         (kbd "q")   'cider-popup-buffer-quit
         (kbd "r")   'cider-test-rerun-tests
         (kbd "t")   'cider-test-run-test
-        (kbd "T")   'cider-test-run-tests)
+        (kbd "T")   'cider-test-run-ns-tests)
 
       ;; TODO: having this work for cider-macroexpansion-mode would be nice,
       ;;       but the problem is that it uses clojure-mode as its major-mode
 
       (dolist (m '(clojure-mode clojurec-mode clojurescript-mode clojurex-mode))
         (spacemacs/set-leader-keys-for-major-mode m
+          "ha" 'cider-apropos
           "hh" 'cider-doc
           "hg" 'cider-grimoire
           "hj" 'cider-javadoc
@@ -229,6 +230,7 @@ If called with a prefix argument, uses the other-window instead."
           "sI" 'cider-jack-in-clojurescript
           "sn" 'spacemacs/cider-send-ns-form-to-repl
           "sN" 'spacemacs/cider-send-ns-form-to-repl-focus
+          "so" 'cider-repl-switch-to-other
           "sq" 'cider-quit
           "sr" 'spacemacs/cider-send-region-to-repl
           "sR" 'spacemacs/cider-send-region-to-repl-focus
@@ -263,6 +265,7 @@ If called with a prefix argument, uses the other-window instead."
 
         "sc" 'cider-repl-clear-buffer
         "sn" 'cider-repl-set-ns
+        "so" 'cider-repl-switch-to-other
         "sq" 'cider-quit
         "ss" 'cider-switch-to-last-clojure-buffer
         "sx" 'cider-refresh
@@ -280,9 +283,8 @@ If called with a prefix argument, uses the other-window instead."
       (when clojure-enable-fancify-symbols
         (clojure/fancify-symbols 'cider-repl-mode)))
 
-    (when (configuration-layer/package-usedp 'evil-jumper)
-      (defadvice cider-jump-to-var (before add-evil-jump activate)
-        (evil-set-jump)))))
+    (defadvice cider-jump-to-var (before add-evil-jump activate)
+      (evil-set-jump))))
 
 (defun clojure/init-cider-eval-sexp-fu ()
   (with-eval-after-load 'eval-sexp-fu
