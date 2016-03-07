@@ -254,7 +254,7 @@ evil-normal state."
       (spacemacs/set-leader-keys "re" 'evil-show-registers)
       (define-key evil-visual-state-map (kbd "<escape>") 'keyboard-quit)
       ;; motions keys for help buffers
-      (evil-define-key 'motion help-mode-map (kbd "ESC") 'quit-window)
+      (evil-define-key 'motion help-mode-map (kbd "<escape>") 'quit-window)
       (evil-define-key 'motion help-mode-map (kbd "<tab>") 'forward-button)
       (evil-define-key 'motion help-mode-map (kbd "S-<tab>") 'backward-button)
       (evil-define-key 'motion help-mode-map (kbd "]") 'help-go-forward)
@@ -300,9 +300,10 @@ Example: (evil-map visual \"<\" \"<gv\")"
         i.e. `SPC m h h`, to lookup the source of the definition,
         while falling back to `evil-lookup'"
         (interactive)
-        (condition-case nil
-            (execute-kbd-macro (kbd (concat dotspacemacs-leader-key " mhh")))
-          (error (evil-lookup))))
+        (let ((binding (key-binding (kbd (concat dotspacemacs-leader-key " mhh")))))
+          (if (commandp binding)
+              (call-interactively binding)
+            (evil-lookup))))
       (define-key evil-normal-state-map (kbd "K") 'spacemacs/evil-smart-doc-lookup)
 
       (defun spacemacs/evil-smart-goto-definition ()
@@ -311,9 +312,10 @@ Example: (evil-map visual \"<\" \"<gv\")"
         i.e. `SPC m g g`, to lookup the source of the definition,
         while falling back to `evil-goto-definition'"
         (interactive)
-        (condition-case nil
-            (execute-kbd-macro (kbd (concat dotspacemacs-leader-key " mgg")))
-          (error (evil-goto-definition))))
+        (let ((binding (key-binding (kbd (concat dotspacemacs-leader-key " mgg")))))
+          (if (commandp binding)
+              (call-interactively binding)
+            (evil-goto-definition))))
       (define-key evil-normal-state-map
         (kbd "gd") 'spacemacs/evil-smart-goto-definition)
 
@@ -329,8 +331,8 @@ Example: (evil-map visual \"<\" \"<gv\")"
       (spacemacs/set-leader-keys
         "n," 'spacemacs/scroll-transient-state/evil-scroll-page-up
         "n." 'spacemacs/scroll-transient-state/evil-scroll-page-down
-        "n<" 'spacemacs/scroll-transient-state/scroll-half-page-up
-        "n>" 'spacemacs/scroll-transient-state/scroll-half-page-down)
+        "n<" 'spacemacs/scroll-transient-state/evil-scroll-up
+        "n>" 'spacemacs/scroll-transient-state/evil-scroll-down)
 
       ;; pasting transient-state
       (evil-define-command spacemacs//transient-state-0 ()

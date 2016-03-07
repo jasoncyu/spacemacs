@@ -15,6 +15,7 @@
 
 (require 'cl-lib)
 (require 'eieio)
+(require 'subr-x)
 (require 'package)
 (require 'warnings)
 (require 'help-mode)
@@ -66,7 +67,7 @@
    (packages :initarg :packages
              :initform nil
              :type list
-             :documentation "List of package names declared in this layer.")
+             :documentation "List of package symbols declared in this layer.")
    (variables :initarg :variables
               :initform nil
               :type list
@@ -81,6 +82,20 @@
              :type list
              :documentation "A list of layer where this layer is disabled."))
   "A configuration layer.")
+
+(defmethod cfgl-layer-owned-packages ((layer cfgl-layer))
+  "Return the list of owned packages by LAYER.
+LAYER has to be installed for this method to work properly."
+  (delq nil (mapcar
+             (lambda (x)
+               (let ((pkg (object-assoc x :name configuration-layer--packages)))
+                 (when (and pkg (eq (oref layer :name) (oref pkg :owner)))
+                   x)))
+             (oref layer :packages))))
+
+(defmethod cfgl-layer-owned-packages ((layer nil))
+  "Accept nil as argument and return nil."
+  nil)
 
 (defclass cfgl-package ()
   ((name :initarg :name
@@ -367,12 +382,14 @@ Properties that can be copied are `:location', `:step' and `:excluded'."
          (location (when (listp pkg) (plist-get (cdr pkg) :location)))
          (step (when (listp pkg) (plist-get (cdr pkg) :step)))
          (excluded (when (listp pkg) (plist-get (cdr pkg) :excluded)))
+         (toggle (when (listp pkg) (plist-get (cdr pkg) :toggle)))
          (protected (when (listp pkg) (plist-get (cdr pkg) :protected)))
          (copyp (not (null obj)))
          (obj (if obj obj (cfgl-package name-str :name name-sym))))
     (when location (oset obj :location location))
     (when step (oset obj :step step))
     (oset obj :excluded excluded)
+    (when toggle (oset obj :toggle toggle))
     ;; cannot override protected packages
     (unless copyp
       (oset obj :protected protected)
@@ -921,7 +938,7 @@ path."
              pkg-name (if layer (format "@%S" layer) "")
              installed-count noinst-count) t)
     (unless (package-installed-p pkg-name)
-      (condition-case err
+      (condition-case-unless-debug err
           (cond
            ((or (null pkg) (eq 'elpa location))
             (configuration-layer//install-from-elpa pkg-name)
@@ -1525,6 +1542,55 @@ to select one."
             (spacemacs//redisplay))
           (spacemacs-buffer/append "\n"))
       (spacemacs-buffer/message "No orphan package to delete."))))
+
+(defun configuration-layer//gather-auto-mode-extensions (mode)
+  "Return a regular expression matching all the extensions associate to MODE."
+  (let (gather-extensions)
+    (dolist (x auto-mode-alist)
+      (let ((ext (car x))
+            (auto-mode (cdr x)))
+        (when (and (stringp ext)
+                   (symbolp auto-mode)
+                   (eq auto-mode mode))
+          (push (car x) gather-extensions))))
+    (when gather-extensions
+        (concat "\\("
+                (string-join gather-extensions "\\|")
+                "\\)"))))
+
+(defun configuration-layer//lazy-install-extensions-for-layer (layer-symbol)
+  "Return an alist of owned modes and extensions for the passed layer."
+  (let* ((layer (object-assoc layer-symbol :name configuration-layer--layers))
+         (packages (cfgl-layer-owned-packages layer))
+         result)
+    (dolist (pkg-sym packages)
+      (dolist (mode (list pkg-sym (intern (format "%S-mode" pkg-sym))))
+        (let ((ext (configuration-layer//gather-auto-mode-extensions mode)))
+          (when ext (push (cons mode ext) result)))))
+    result))
+
+(defun configuration-layer//insert-lazy-install-form (mode ext)
+  "Insert a configuration form for lazy installation of MODE."
+  (let ((str (concat "(configuration-layer/lazy-install '"
+                     (symbol-name mode)
+                     " :extensions '("
+                     (let ((print-quoted t)) (prin1-to-string ext))
+                     "))\n")))
+    (insert str)))
+
+(defun configuration-layer/insert-lazy-install-configuration ()
+  "Prompt for a layer and insert the forms to configure lazy installation."
+  (interactive)
+  (let ((layer-sym
+         (completing-read
+          "Choose a used layer"
+          (sort (object-assoc-list :name configuration-layer--layers)
+                (lambda (x y)
+                  (string< (oref (cdr x) :name) (oref (cdr y) :name)))))))
+    (let ((mode-exts (configuration-layer//lazy-install-extensions-for-layer
+                      (intern layer-sym))))
+      (dolist (x mode-exts)
+        (configuration-layer//insert-lazy-install-form (car x) (cdr x))))))
 
 (defun configuration-layer//increment-error-count ()
   "Increment the error counter."

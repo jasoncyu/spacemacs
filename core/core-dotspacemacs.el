@@ -75,8 +75,10 @@ packages then consider to create a layer, you can also put the
 configuration in `dotspacemacs/user-config'.")
 
 (defvar dotspacemacs-editing-style 'vim
-  "Either `vim' or `emacs'. Evil is always enabled but if the variable
-is `emacs' then the `holy-mode' is enabled at startup.")
+  "One of `vim', `emacs' or `hybrid'. Evil is always enabled but if the
+variable is `emacs' then the `holy-mode' is enabled at startup. `hybrid'
+uses emacs key bindings for vim's insert mode, but otherwise leaves evil
+unchanged.")
 
 (defvar dotspacemacs-startup-banner 'official
    "Specify the startup banner. Default value is `official', it displays
@@ -413,7 +415,7 @@ If ARG is non nil then Ask questions to the user before installing the dotfile."
              ("spacemacs-helm"
               ,(dotspacemacs//ido-completing-read
                 "What type of completion framework do you want? "
-                '(("An heavy one but full-featured (helm)"
+                '(("A heavy one but full-featured (helm)"
                    "spacemacs-helm")
                   ("A lighter one but still very powerful (ivy)"
                    "spacemacs-ivy")

@@ -309,7 +309,10 @@ Helm hack."
         "skF" 'spacemacs/search-ack-region-or-symbol
         "skp" 'spacemacs/search-project-ack
         "skP" 'spacemacs/search-project-ack-region-or-symbol)
-      (global-set-key (kbd "M-x") 'counsel-M-x)
+
+      ;; remaps built-in commands that have a counsel replacement
+      (counsel-mode 1)
+      (spacemacs|hide-lighter counsel-mode)
 
       ;; Note: Must be set before which-key is loaded.
       (setq prefix-help-command 'counsel-descbinds)

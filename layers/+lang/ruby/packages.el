@@ -25,6 +25,7 @@
         ruby-tools
         rvm
         smartparens
+        rake
         ))
 (if ruby-enable-enh-ruby-mode
     (add-to-list 'ruby-packages 'enh-ruby-mode)
@@ -56,22 +57,11 @@
 (defun ruby/init-chruby ()
   (use-package chruby
     :if (equal ruby-version-manager 'chruby)
+    :commands chruby-use-corresponding
     :defer t
     :init
     (progn
-      (defun spacemacs//enable-chruby ()
-        "Enable chruby, use .ruby-version if exists."
-        (let ((version-file-path (chruby--locate-file ".ruby-version")))
-          (chruby)
-          ;; try to use the ruby defined in .ruby-version
-          (if version-file-path
-              (progn
-                (chruby-use (chruby--read-version-from-file
-                             version-file-path))
-                (message (concat "[chruby] Using ruby version "
-                                 "from .ruby-version file.")))
-            (message "[chruby] Using the currently activated ruby."))))
-      (spacemacs/add-to-hooks 'spacemacs//enable-chruby
+      (spacemacs/add-to-hooks 'chruby-use-corresponding
                               '(ruby-mode-hook enh-ruby-mode-hook)))))
 
 (defun ruby/init-enh-ruby-mode ()
@@ -94,6 +84,8 @@
 
 (defun ruby/post-init-popwin ()
   (push '("*rspec-compilation*" :dedicated t :position bottom :stick t :noselect t :height 0.4)
+        popwin:special-display-config)
+  (push '("*rake-compilation*" :dedicated t :position bottom :stick t :noselect t :height 0.4)
         popwin:special-display-config))
 
 (defun ruby/init-rbenv ()
@@ -257,3 +249,15 @@
        :post-handlers '(sp-ruby-post-handler
                         (spacemacs/smartparens-pair-newline-and-indent "RET"))
        :suffix ""))))
+
+(defun ruby/init-rake ()
+  (use-package rake
+    :defer t
+    :init (setq rake-cache-file (concat spacemacs-cache-directory "rake.cache"))
+    :config
+    (dolist (mode '(ruby-mode enh-ruby-mode))
+      (spacemacs/set-leader-keys-for-major-mode mode
+        "kk"    'rake
+        "kr"    'rake-rerun
+        "kR"    'rake-regenerate-cache
+        "kf"    'rake-find-task))))
