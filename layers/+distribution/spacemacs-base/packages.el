@@ -252,7 +252,6 @@ evil-normal state."
       (define-key evil-window-map (kbd "<up>") 'evil-window-up)
       (define-key evil-window-map (kbd "<down>") 'evil-window-down)
       (spacemacs/set-leader-keys "re" 'evil-show-registers)
-      (define-key evil-visual-state-map (kbd "<escape>") 'keyboard-quit)
       ;; motions keys for help buffers
       (evil-define-key 'motion help-mode-map (kbd "<escape>") 'quit-window)
       (evil-define-key 'motion help-mode-map (kbd "<tab>") 'forward-button)
@@ -412,9 +411,10 @@ below. Anything else exits."
             ad-do-it)))
 
       ;; Define history commands for comint
-      (evil-define-key 'insert comint-mode-map
-        (kbd "C-k") 'comint-previous-input
-        (kbd "C-j") 'comint-next-input)
+      (when (eq dotspacemacs-editing-style 'vim)
+        (evil-define-key 'insert comint-mode-map
+          (kbd "C-k") 'comint-previous-input
+          (kbd "C-j") 'comint-next-input))
       (evil-define-key 'normal comint-mode-map
         (kbd "C-k") 'comint-previous-input
         (kbd "C-j") 'comint-next-input))))
@@ -556,8 +556,6 @@ below. Anything else exits."
     :init
     (progn
       (ido-vertical-mode t)
-      (when dotspacemacs-use-ido
-        (spacemacs/set-leader-keys "ff" 'ido-find-file))
       (defun spacemacs//ido-minibuffer-setup ()
         "Setup the minibuffer."
         ;; Since ido is implemented in a while loop where each
@@ -772,14 +770,15 @@ below. Anything else exits."
                projectile-ag
                projectile-compile-project
                projectile-dired
-               projectile-grep
                projectile-find-dir
                projectile-find-file
                projectile-find-tag
                projectile-find-test-file
+               projectile-grep
                projectile-invalidate-cache
                projectile-kill-buffers
                projectile-multi-occur
+               projectile-project-p
                projectile-project-root
                projectile-recentf
                projectile-regenerate-tags
@@ -876,24 +875,15 @@ below. Anything else exits."
       "Restart emacs without the spacemacs configuration, enable
 debug-init and load the given list of packages."
       (interactive
-       (let* ((guess (function-called-at-point)))
-         (require 'finder-inf nil t)
-         ;; Load the package list if necessary (but don't activate them).
+       (progn
          (unless package--initialized
            (package-initialize t))
          (let ((packages (append (mapcar 'car package-alist)
                                  (mapcar 'car package-archive-contents)
                                  (mapcar 'car package--builtins))))
-           (unless (memq guess packages)
-             (setq guess nil))
            (setq packages (mapcar 'symbol-name packages))
-           (let ((val
-                  (completing-read-multiple
-                   (if guess
-                       (format "Describe package (default %s): "
-                               guess)
-                     "Describe package: ")
-                   packages nil t nil nil guess)))
+           (let ((val (completing-read-multiple "Packages to load (comma separated): "
+                                                packages nil t)))
              `(,val)))))
       (let ((load-packages-string (mapconcat (lambda (pkg) (format "(use-package %s)" pkg))
                                              packages " ")))

@@ -327,6 +327,15 @@ argument takes the kindows rotate backwards."
               (buffer-string)))
            (t (concat "/sudo:root@localhost:" fname))))))
 
+;; check when opening large files - literal file open
+(defun spacemacs/check-large-file ()
+  (let ((size (nth 7 (file-attributes (buffer-file-name)))))
+    (when (and size (> size (* 1024 1024 dotspacemacs-large-file-size))
+               (y-or-n-p "This is a large file, open literally to avoid performance issues?"))
+      (setq buffer-read-only t)
+      (buffer-disable-undo)
+      (fundamental-mode))))
+
 ;; found at http://emacswiki.org/emacs/KillingBuffers
 (defun spacemacs/kill-other-buffers ()
   "Kill all other buffers."

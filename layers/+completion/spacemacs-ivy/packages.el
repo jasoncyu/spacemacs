@@ -113,11 +113,12 @@ around point as the initial input. If DIR is non nil start in
 that directory."
     (interactive)
     (require 'counsel)
-    (letf* ((initial-input (when use-initial-input
-                             (if (region-active-p)
-                                 (buffer-substring-no-properties
-                                  (region-beginning) (region-end))
-                               (thing-at-point 'symbol t))))
+    (letf* ((initial-input (if use-initial-input
+                               (if (region-active-p)
+                                   (buffer-substring-no-properties
+                                    (region-beginning) (region-end))
+                                 (thing-at-point 'symbol t))
+                             ""))
             (tool (catch 'tool
                     (dolist (tool tools)
                       (when (and (assoc-string tool spacemacs--counsel-commands)
@@ -140,7 +141,7 @@ that directory."
                                               spacemacs--counsel-search-max-path-length)
                                            (length counsel--git-grep-dir))))))
        (spacemacs//make-counsel-search-function tool)
-       :initial-input initial-input
+       :initial-input (rxt-quote-pcre initial-input)
        :dynamic-collection t
        :history 'counsel-git-grep-history
        :action #'counsel-git-grep-action
