@@ -888,6 +888,8 @@ Search for a search tool in the order provided by `dotspacemacs-search-tools'."
         'spacemacs/helm-project-do-grep-region-or-symbol 'helm-projectile-grep)
 
       (spacemacs/set-leader-keys
+        ;; Opens the "other file", as defined by projectile-other-file-alist
+        "po"  'projectile-find-other-file-other-window
         "pb"  'helm-projectile-switch-to-buffer
         "pd"  'helm-projectile-find-dir
         "pf"  'helm-projectile-find-file
