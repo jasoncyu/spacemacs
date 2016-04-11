@@ -123,10 +123,7 @@
         (unless (member company-prefix company-mode-completion-cancel-keywords)
           candidates))
       (setq company-transformers '(spacemacs//company-transformer-cancel
-                                   company-sort-by-occurrence))
-      ;; Use fuzzy matching
-      ;; https://github.com/company-mode/company-mode/issues/47
-      (push 'company-capf company-backends))))
+                                   company-sort-by-occurrence)))))
 
 (defun auto-completion/init-company-statistics ()
   (use-package company-statistics
