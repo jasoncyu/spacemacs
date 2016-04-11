@@ -1,14 +1,13 @@
 #+TITLE: Ranger layer
-#+HTML_HEAD_EXTRA: <link rel="stylesheet" type="text/css" href="../../../css/readtheorg.css" />
 
-* Table of Contents                                         :TOC_4_org:noexport:
- - [[Description][Description]]
- - [[Features][Features]]
- - [[Configuration][Configuration]]
-   - [[Customizing][Customizing]]
-   - [[Parent options][Parent options]]
-   - [[Preview options][Preview options]]
- - [[Key Bindings][Key Bindings]]
+* Table of Contents                                         :TOC_4_gh:noexport:
+ - [[#description][Description]]
+ - [[#features][Features]]
+ - [[#configuration][Configuration]]
+   - [[#customizing][Customizing]]
+   - [[#parent-options][Parent options]]
+   - [[#preview-options][Preview options]]
+ - [[#key-bindings][Key Bindings]]
 
 * Description
 
@@ -114,6 +113,10 @@ To set the max files size (in MB), set the following parameter:
 | ~C-p~       | (ranger) toggle ranger in dired buffer               |
 | ~j~         | (ranger) navigate down                               |
 | ~k~         | (ranger) navigate up                                 |
+| ~yy~        | (ranger) copy                                        |
+| ~pp~        | (ranger) paste                                       |
+| ~R~         | (ranger) rename                                      |
+| ~D~         | (ranger) delete                                      |
 | ~C-j~       | (ranger) scroll preview window down                  |
 | ~C-k~       | (ranger) scroll preview window up                    |
 | ~f~         | (ranger) search for file names                       |
@@ -133,3 +136,5 @@ To set the max files size (in MB), set the following parameter:
 | ~V~         | (ranger) visually select lines                       |
 | ~S~         | (ranger) enter shell                                 |
 | ~C-SPC~     | (ranger) mark current file                           |
+| ~;C~        | (ranger) copy directory / copy and move directory    |
+| ~;+~        | (ranger) create directory                            |

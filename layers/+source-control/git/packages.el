@@ -41,11 +41,10 @@
     ))
 
 (defun git/init-evil-magit ()
-  (unless (eq dotspacemacs-editing-style 'emacs)
-    (with-eval-after-load 'magit
-      (require 'evil-magit)
-      (evil-define-key 'motion magit-mode-map
-        (kbd dotspacemacs-leader-key) spacemacs-default-map))))
+  (with-eval-after-load 'magit
+    (require 'evil-magit)
+    (evil-define-key 'motion magit-mode-map
+      (kbd dotspacemacs-leader-key) spacemacs-default-map)))
 
 (when (configuration-layer/layer-usedp 'spacemacs-helm)
   (defun git/init-helm-gitignore ()
@@ -158,7 +157,8 @@
         "gP" 'magit-push-popup
         "gs" 'magit-status
         "gS" 'magit-stage-file
-        "gU" 'magit-unstage-file)
+        "gU" 'magit-unstage-file
+        "gx" 'magit-reset-popup)
 
       (spacemacs|define-micro-state git-blame
         :title "Git Blame Transient State"

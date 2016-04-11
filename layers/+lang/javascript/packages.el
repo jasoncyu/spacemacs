@@ -88,15 +88,18 @@
       (add-hook 'js2-mode-hook 'js2-imenu-extras-mode))
     :config
     (progn
-      (spacemacs/set-leader-keys-for-major-mode 'js2-mode "w" 'js2-mode-toggle-warnings-and-errors)
-
+      (spacemacs/declare-prefix-for-mode 'js2-mode "mh" "documentation")
+      (spacemacs/declare-prefix-for-mode 'js2-mode "mg" "goto")
+      (spacemacs/declare-prefix-for-mode 'js2-mode "mr" "refactor")
       (spacemacs/declare-prefix-for-mode 'js2-mode "mz" "folding")
-      (spacemacs/set-leader-keys-for-major-mode 'js2-mode "zc" 'js2-mode-hide-element)
-      (spacemacs/set-leader-keys-for-major-mode 'js2-mode "zo" 'js2-mode-show-element)
-      (spacemacs/set-leader-keys-for-major-mode 'js2-mode "zr" 'js2-mode-show-all)
-      (spacemacs/set-leader-keys-for-major-mode 'js2-mode "ze" 'js2-mode-toggle-element)
-      (spacemacs/set-leader-keys-for-major-mode 'js2-mode "zF" 'js2-mode-toggle-hide-functions)
-      (spacemacs/set-leader-keys-for-major-mode 'js2-mode "zC" 'js2-mode-toggle-hide-comments))))
+      (spacemacs/set-leader-keys-for-major-mode 'js2-mode
+        "w" 'js2-mode-toggle-warnings-and-errors
+        "zc" 'js2-mode-hide-element
+        "zo" 'js2-mode-show-element
+        "zr" 'js2-mode-show-all
+        "ze" 'js2-mode-toggle-element
+        "zF" 'js2-mode-toggle-hide-functions
+        "zC" 'js2-mode-toggle-hide-comments))))
 
 (defun javascript/post-init-evil-matchit ()
   (add-hook `js2-mode `turn-on-evil-matchit-mode))
@@ -189,6 +192,7 @@
 (defun javascript/init-tern ()
   (use-package tern
     :defer t
+    :if (javascript//tern-detect)
     :init (add-hook 'js2-mode-hook 'tern-mode)
     :config
     (progn
@@ -231,14 +235,14 @@
         (interactive)
         (skewer-load-buffer)
         (skewer-repl)
-        (spacemacs/normal-to-insert-state))
+        (evil-insert-state))
 
       (defun spacemacs/skewer-eval-defun-and-focus ()
        "Execute function at point in browser and switch to REPL in insert state."
        (interactive)
        (skewer-eval-defun)
        (skewer-repl)
-       (spacemacs/normal-to-insert-state))
+       (evil-insert-state))
 
       (defun spacemacs/skewer-eval-region (beg end)
         "Execute the region as JavaScript code in the attached browser."
@@ -250,7 +254,7 @@
         (interactive "r")
         (spacemacs/skewer-eval-region beg end)
         (skewer-repl)
-        (spacemacs/normal-to-insert-state))
+        (evil-insert-state))
 
       (spacemacs/set-leader-keys-for-major-mode 'js2-mode
         "'" 'spacemacs/skewer-start-repl

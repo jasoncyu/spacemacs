@@ -8,8 +8,14 @@
 ;; This file is not part of GNU Emacs.
 ;;
 ;;; License: GPLv3
+(defconst spacemacs-buffer-version-info "0.105"
+  "Current version used to display addition release information.")
+
 (defconst spacemacs-buffer-name "*spacemacs*"
   "The name of the spacemacs buffer.")
+
+(defconst spacemacs-buffer-logo-title "[S P A C E M A C S]"
+  "The title displayed beneath the logo.")
 
 (defconst spacemacs-buffer--banner-length 75
   "Width of a banner.")
@@ -28,6 +34,10 @@ version the release note it displayed")
 
 (defvar spacemacs-buffer--previous-insert-type nil
   "Previous type of note inserted.")
+
+(defvar spacemacs-buffer--fresh-install
+  (not (file-exists-p dotspacemacs-filepath))
+  "Non-nil if this Emacs instance if a fresh install.")
 
 (defvar spacemacs-buffer-mode-map
   (let ((map (make-sparse-keymap)))
@@ -53,13 +63,13 @@ version the release note it displayed")
   :abbrev-table nil
   (setq buffer-read-only t
         truncate-lines t)
-  (page-break-lines-mode)
+  (when (fboundp 'page-break-lines-mode)
+    (page-break-lines-mode))
   ;; needed to make tab work correctly in terminal
   (evil-define-key 'motion spacemacs-buffer-mode-map
     (kbd "C-i") 'widget-forward)
   ;; motion state since this is a special mode
-  (unless (eq dotspacemacs-editing-style 'emacs)
-    (evil-set-initial-state 'spacemacs-buffer-mode 'motion)))
+  (evil-set-initial-state 'spacemacs-buffer-mode 'motion))
 
 (defun spacemacs-buffer/insert-banner-and-buttons ()
   "Choose a banner according to `dotspacemacs-startup-banner'and insert it
@@ -78,30 +88,30 @@ Doge special text banner can be reachable via `999', `doge' or `random*'.
           (insert-file-contents banner))
         (spacemacs-buffer//inject-version))
       (spacemacs-buffer//insert-buttons)
-      (if (file-exists-p spacemacs-buffer--cache-file)
-          (load spacemacs-buffer--cache-file)
-        (unless (file-exists-p dotspacemacs-filepath)
-          ;; fresh install of spacemacs, the release notes are not displayed
-          (setq spacemacs-buffer--release-note-version spacemacs-version)
-          (spacemacs/dump-vars-to-file
-           '(spacemacs-buffer--release-note-version)
-           spacemacs-buffer--cache-file)))
-      ;; if there is no installed dotfile we assume the user is
-      ;; new to spacemacs and open the quickhelp
-      (when (not (file-exists-p dotspacemacs-filepath))
-        (spacemacs-buffer/toggle-note
-         (concat spacemacs-info-directory "quickhelp.txt")
-         (spacemacs-buffer//insert-note-p 'quickhelp)))
-      ;; if there is an installed dotfile we check the variable
-      ;; spacemacs-buffer--release-note-version to decide whether
-      ;; we show the release note
-      (when (and (file-exists-p dotspacemacs-filepath)
-                 (or (not spacemacs-buffer--release-note-version)
-                     (version< spacemacs-buffer--release-note-version
-                               spacemacs-version)))
-        (spacemacs-buffer/toggle-note
-         (concat spacemacs-release-notes-directory "0.105.txt") 'release-note))
       (spacemacs//redisplay))))
+
+(defun spacemacs-buffer/display-info-box ()
+  "Display an info box."
+  (when (file-exists-p spacemacs-buffer--cache-file)
+    (load spacemacs-buffer--cache-file))
+  (cond
+   (spacemacs-buffer--fresh-install
+    ;; we assume the user is  new to spacemacs and open the quickhelp
+    (spacemacs-buffer/toggle-note
+     (concat spacemacs-info-directory "quickhelp.txt")
+     (spacemacs-buffer//insert-note-p 'quickhelp))
+    (setq spacemacs-buffer--release-note-version spacemacs-version)
+    (spacemacs/dump-vars-to-file '(spacemacs-buffer--release-note-version)
+                                   spacemacs-buffer--cache-file))
+   ((or (not spacemacs-buffer--release-note-version)
+        (version< spacemacs-buffer--release-note-version
+                  spacemacs-version))
+    ;; check the variable ;; spacemacs-buffer--release-note-version
+    ;; to decide whether ;; we show the release note
+    (spacemacs-buffer/toggle-note
+     (concat spacemacs-release-notes-directory
+             spacemacs-buffer-version-info ".txt") 'release-note)))
+  (spacemacs//redisplay))
 
 (defun spacemacs-buffer//choose-banner ()
   "Return the full path of a banner based on the dotfile value."
@@ -146,24 +156,24 @@ If ALL is non-nil then truly all banners can be selected."
 (defun spacemacs-buffer//insert-image-banner (banner)
   "Display an image banner."
   (when (file-exists-p banner)
-    (let* ((title "[S P A C E M A C S]")
+    (let* ((title spacemacs-buffer-logo-title)
            (spec (create-image banner))
            (size (image-size spec))
            (width (car size))
            (left-margin (floor (- spacemacs-buffer--banner-length width) 2)))
       (goto-char (point-min))
       (insert "\n")
-      (insert (make-string (- left-margin 1) ?\ ))
+      (insert (make-string left-margin ?\ ))
       (insert-image spec)
       (insert "\n\n")
-      (insert (make-string (+ left-margin
-                              (floor (/ (- width (length title)) 2))) ?\ ))
+      (insert (make-string (floor (/ (- spacemacs-buffer--banner-length
+                                        (+ (length title) 1)) 2)) ?\ ))
       (insert (format "%s\n\n" title)))))
 
 (defun spacemacs-buffer//inject-version (&optional insert-distro)
   "Inject the current version of spacemacs in the first line of the
 buffer, right justified."
-  (with-current-buffer (get-buffer-create "*spacemacs*")
+  (with-current-buffer (get-buffer-create spacemacs-buffer-name)
     (save-excursion
       (let* ((maxcol spacemacs-buffer--banner-length)
              (lhs (format "(emacs-%s)" emacs-version))
@@ -281,16 +291,19 @@ If TYPE is nil, just remove widgets."
                            :tag (propertize "Click here for full change log"
                                             'face 'font-lock-warning-face)
                            :help-echo "Open the full change log."
-                           :action (lambda (&rest ignore)
-                                     (funcall 'spacemacs/view-org-file
-                                              (concat user-emacs-directory
-                                                      "CHANGELOG.org")
-                                              "Release 0.105.x"
-                                              'subtree))
+                           :action
+                           (lambda (&rest ignore)
+                             (funcall 'spacemacs/view-org-file
+                                      (concat user-emacs-directory
+                                              "CHANGELOG.org")
+                                      (format "Release %s.x"
+                                              spacemacs-buffer-version-info)
+                                      'subtree))
                            :mouse-face 'highlight
                            :follow-link "\C-m")))))
     (spacemacs-buffer//insert-note file
-                                   " Important Notes (Release 0.105.x) "
+                                   (format " Important Notes (Release %s.x) "
+                                           spacemacs-buffer-version-info)
                                    widget-func))
 
   (setq spacemacs-buffer--release-note-version nil)
@@ -307,7 +320,7 @@ If TYPE is nil, just remove widgets."
 
 (defun spacemacs-buffer/set-mode-line (format)
   "Set mode-line format for spacemacs buffer."
-  (with-current-buffer (get-buffer-create "*spacemacs*")
+  (with-current-buffer (get-buffer-create spacemacs-buffer-name)
     (setq mode-line-format format)))
 
 (defun spacemacs-buffer/message (msg &rest args)
@@ -328,7 +341,7 @@ The message is always displayed. "
 (defun spacemacs-buffer/append (msg &optional messagebuf)
   "Append MSG to spacemacs buffer. If MESSAGEBUF is not nil then MSG is
  also written in message buffer."
-  (with-current-buffer (get-buffer-create "*spacemacs*")
+  (with-current-buffer (get-buffer-create spacemacs-buffer-name)
     (goto-char (point-max))
     (let ((buffer-read-only nil))
       (insert msg)
@@ -338,7 +351,7 @@ The message is always displayed. "
 (defun spacemacs-buffer/replace-last-line (msg &optional messagebuf)
   "Replace the last line of the spacemacs buffer with MSG. If MESSAGEBUF is
  not nil then MSG is also written in message buffer."
-  (with-current-buffer (get-buffer-create "*spacemacs*")
+  (with-current-buffer (get-buffer-create spacemacs-buffer-name)
     (goto-char (point-max))
     (let ((buffer-read-only nil))
       (delete-region (line-beginning-position) (point-max))
@@ -352,7 +365,7 @@ The message is always displayed. "
 
 See `spacemacs//render-framed-text' for documentation of the other
 parameters."
-  (with-current-buffer (get-buffer-create "*spacemacs*")
+  (with-current-buffer (get-buffer-create spacemacs-buffer-name)
     (let ((buffer-read-only nil))
       (insert (spacemacs//render-framed-text msg spacemacs-buffer--banner-length
                                              caption hpadding)))))
@@ -367,7 +380,7 @@ If FILEPATH does not exists the function returns nil.
 See `spacemacs//render-framed-text' for documentation of the other
 parameters."
   (when (file-exists-p filepath)
-    (with-current-buffer (get-buffer-create "*spacemacs*")
+    (with-current-buffer (get-buffer-create spacemacs-buffer-name)
       (let ((buffer-read-only nil))
         (insert (spacemacs//render-framed-text
                  filepath spacemacs-buffer--banner-length caption hpadding))))))
@@ -531,7 +544,8 @@ border."
                  :action (lambda (&rest ignore)
                            (spacemacs-buffer/toggle-note
                             (concat spacemacs-release-notes-directory
-                                    "0.105.txt")
+                                    spacemacs-buffer-version-info
+                                    ".txt")
                             ;; if nil is returned,
                             ;; just delete the current note widgets
                             (spacemacs-buffer//insert-note-p 'release-note)))
@@ -719,7 +733,8 @@ border."
                        (bookmark-all-names))
                   (spacemacs//insert--shortcut "b" "Bookmarks:")
                   (insert list-separator)))
-               ((eq el 'projects)
+               ((and (eq el 'projects)
+                     (fboundp 'projectile-mode))
                 (projectile-mode)
                 (when (spacemacs-buffer//insert-file-list
                        "Projects:"
@@ -735,6 +750,26 @@ border."
     (with-demoted-errors "spacemacs buffer error: %s"
       (widget-forward 1))))
 
+(defun spacemacs-buffer//startup-hook ()
+  "Code executed when Emacs has finished loading."
+  (with-current-buffer (get-buffer spacemacs-buffer-name)
+    (when dotspacemacs-startup-lists
+      (spacemacs-buffer/insert-startupify-lists))
+    (if configuration-layer-error-count
+        (progn
+          (spacemacs-buffer-mode)
+          (spacemacs-buffer/set-mode-line
+           (format
+            (concat "%s error(s) at startup! "
+                    "Spacemacs may not be able to operate properly.")
+            configuration-layer-error-count))
+          (face-remap-add-relative 'mode-line
+                                   '((:background "red") mode-line)))
+      (spacemacs-buffer/set-mode-line spacemacs--default-mode-line)
+      (spacemacs-buffer-mode))
+    (force-mode-line-update)
+    (spacemacs-buffer/goto-link-line)))
+
 (defun spacemacs-buffer/goto-buffer ()
   "Create the special buffer for `spacemacs-buffer-mode' if it doesn't
 already exist, and switch to it."
@@ -746,34 +781,15 @@ already exist, and switch to it."
         ;; needed in case the buffer was deleted and we are recreating it
         (setq spacemacs-buffer--note-widgets nil)
         (spacemacs-buffer/insert-banner-and-buttons)
-        ;; non-nil if emacs is loaded
-        (if after-init-time
+        ;; non-nil if emacs-startup-hook was run
+        (if (bound-and-true-p spacemacs-initialized)
             (progn
               (when dotspacemacs-startup-lists
                 (spacemacs-buffer/insert-startupify-lists))
               (spacemacs-buffer/set-mode-line spacemacs--default-mode-line)
               (force-mode-line-update)
               (spacemacs-buffer-mode))
-          (add-hook
-           'emacs-startup-hook
-           (lambda ()
-             (with-current-buffer (get-buffer spacemacs-buffer-name)
-               (when dotspacemacs-startup-lists
-                 (spacemacs-buffer/insert-startupify-lists))
-               (if configuration-layer-error-count
-                   (progn
-                     (spacemacs-buffer-mode)
-                     (spacemacs-buffer/set-mode-line
-                      (format
-                       (concat "%s error(s) at startup! "
-                               "Spacemacs may not be able to operate properly.")
-                       configuration-layer-error-count))
-                     (face-remap-add-relative 'mode-line
-                                              '((:background "red") mode-line)))
-                 (spacemacs-buffer/set-mode-line spacemacs--default-mode-line)
-                 (spacemacs-buffer-mode))
-               (force-mode-line-update)
-               (spacemacs-buffer/goto-link-line))) t)))))
+          (add-hook 'emacs-startup-hook 'spacemacs-buffer//startup-hook t)))))
   (spacemacs-buffer/goto-link-line)
   (switch-to-buffer spacemacs-buffer-name)
   (spacemacs//redisplay))

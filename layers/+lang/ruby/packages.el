@@ -14,6 +14,7 @@
         bundler
         chruby
         company
+        (enh-ruby-mode :toggle ruby-enable-enh-ruby-mode)
         evil-matchit
         flycheck
         popwin
@@ -21,15 +22,13 @@
         robe
         rspec-mode
         rubocop
+        (ruby-mode :location built-in :toggle (not ruby-enable-enh-ruby-mode))
         ruby-test-mode
         ruby-tools
         rvm
         smartparens
         rake
         ))
-(if ruby-enable-enh-ruby-mode
-    (add-to-list 'ruby-packages 'enh-ruby-mode)
-  (add-to-list 'ruby-packages 'ruby-mode))
 
 (defun ruby/init-bundler ()
   (use-package bundler
@@ -186,6 +185,7 @@
   (use-package ruby-mode
     :defer t
     :mode "Puppetfile"
+    :init (spacemacs/declare-prefix-for-mode 'ruby-mode "mt" "ruby/test")
     :config
     (progn
       (spacemacs/set-leader-keys-for-major-mode 'ruby-mode

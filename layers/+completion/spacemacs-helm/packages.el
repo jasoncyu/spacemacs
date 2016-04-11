@@ -11,6 +11,7 @@
 
 (setq spacemacs-helm-packages
       '(ace-jump-helm-line
+        bookmark
         helm
         helm-ag
         helm-descbinds
@@ -30,6 +31,9 @@
     :init
     (with-eval-after-load 'helm
       (define-key helm-map (kbd "C-q") 'ace-jump-helm-line))))
+
+(defun spacemacs-helm/post-init-bookmark ()
+  (spacemacs/set-leader-keys "fb" 'helm-filtered-bookmarks))
 
 (defun spacemacs-helm/init-helm ()
   (use-package helm
@@ -189,7 +193,6 @@
         "fF"   'helm-find-files
         "fL"   'helm-locate
         "fr"   'helm-recentf
-        "fb"   'helm-filtered-bookmarks
         "hdd"  'helm-apropos
         "hdF"  'spacemacs/helm-faces
         "hi"   'helm-info-at-point
@@ -389,13 +392,12 @@ Removes the automatic guessing of the initial value based on thing at point. "
       (add-hook 'helm-mode-hook 'simpler-helm-bookmark-keybindings)
 
       ;; helm navigation on hjkl
-      (defun spacemacs//helm-hjkl-navigation (&optional arg)
-        "Set navigation in helm on `jklh'.
-ARG non nil means Vim like movements."
+      (defun spacemacs//helm-hjkl-navigation (style)
+        "Set navigation on 'hjkl' for the given editing STYLE."
         (cond
-         (arg
-          ;; better navigation on homerow
-          ;; rebind `describe-key' for convenience
+         ((or (eq 'vim style)
+              (and (eq 'hybrid style)
+                   hybrid-mode-enable-hjkl-bindings))
           (define-key helm-map (kbd "C-j") 'helm-next-line)
           (define-key helm-map (kbd "C-k") 'helm-previous-line)
           (define-key helm-map (kbd "C-h") 'helm-next-source)
@@ -405,6 +407,7 @@ ARG non nil means Vim like movements."
             (dolist (keymap (list helm-find-files-map helm-read-file-map))
               (define-key keymap (kbd "C-l") 'helm-execute-persistent-action)
               (define-key keymap (kbd "C-h") 'helm-find-files-up-one-level)
+              ;; rebind `describe-key' for convenience
               (define-key keymap (kbd "C-S-h") 'describe-key))))
          (t
           (define-key helm-map (kbd "C-j") 'helm-execute-persistent-action)
@@ -412,10 +415,9 @@ ARG non nil means Vim like movements."
           (define-key helm-map (kbd "C-h") nil)
           (define-key helm-map
             (kbd "C-l") 'helm-recenter-top-bottom-other-window))))
-      (add-hook 'spacemacs--hjkl-completion-navigation-functions
-                'spacemacs//helm-hjkl-navigation)
-      (run-hook-with-args 'spacemacs--hjkl-completion-navigation-functions
-                          (member dotspacemacs-editing-style '(vim hybrid)))
+      (add-hook 'spacemacs-editing-style-hook 'spacemacs//helm-hjkl-navigation)
+      ;; ensure that the correct bindings are set at startup
+      (spacemacs//helm-hjkl-navigation dotspacemacs-editing-style)
 
       (defun spacemacs/helm-edit ()
         "Switch in edit mode depending on the current helm buffer."
@@ -964,4 +966,4 @@ Search for a search tool in the order provided by `dotspacemacs-search-tools'."
     :defer t
     :init
     (spacemacs/set-leader-keys
-      "Th" 'helm-themes)))
+      "Ts" 'helm-themes)))
