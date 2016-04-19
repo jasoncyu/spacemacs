@@ -152,7 +152,14 @@
 (defun html/init-scss-mode ()
   (use-package scss-mode
     :defer t
-    :mode ("\\.scss\\'" . scss-mode)))
+    :mode ("\\.scss\\'" . scss-mode)
+    :config
+    (progn
+      (add-hook 'scss-mode-hook
+                '(lambda ()
+                   (setq comment-start "//")
+                   (setq comment-end ""))))
+    ))
 
 (defun html/init-slim-mode ()
   (use-package slim-mode
