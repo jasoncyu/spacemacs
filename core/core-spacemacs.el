@@ -242,7 +242,9 @@ defer call using `spacemacs-post-user-config-hook'."
 
 (defun spacemacs/report-issue (arg)
   "Browse the page for creating a new Spacemacs issue on GitHub,
-with the message pre-filled with template and information."
+with the message pre-filled with template and information.
+
+With prefix arg also inlcude last pressed keys."
   (interactive "P")
   (let* ((url "http://github.com/syl20bnr/spacemacs/issues/new?body=")
          (template (with-temp-buffer
@@ -278,9 +280,5 @@ with the message pre-filled with template and information."
     ;; HACK: Needed because the first `#' is not encoded
     (setq url (replace-regexp-in-string "#" "%23" url))
     (browse-url url)))
-
-(when (and (display-graphic-p)
-           (string-equal "04/01/16" (format-time-string "%D")))
-  (require 'zemacs))
 
 (provide 'core-spacemacs)

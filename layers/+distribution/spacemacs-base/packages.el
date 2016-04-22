@@ -463,7 +463,7 @@
       (setq popwin:special-display-config nil)
 
       ;; buffers that we manage
-      (push '("*Help*"                 :dedicated t :position bottom :stick t :noselect nil :height 0.4) popwin:special-display-config)
+      (push '("*Help*"                 :dedicated t :position bottom :stick t :noselect t   :height 0.4) popwin:special-display-config)
       (push '("*compilation*"          :dedicated t :position bottom :stick t :noselect t   :height 0.4) popwin:special-display-config)
       (push '("*Shell Command Output*" :dedicated t :position bottom :stick t :noselect nil            ) popwin:special-display-config)
       (push '("*Async Shell Command*"  :dedicated t :position bottom :stick t :noselect nil            ) popwin:special-display-config)
@@ -492,7 +492,7 @@
                projectile-find-dir
                projectile-find-file
                projectile-find-tag
-               projectile-find-test-file
+               projectile-test-project
                projectile-grep
                projectile-invalidate-cache
                projectile-kill-buffers
@@ -541,7 +541,7 @@
         "pk" 'projectile-kill-buffers
         "po" 'projectile-multi-occur
         "pR" 'projectile-replace
-        "pT" 'projectile-find-test-file
+        "pT" 'projectile-test-project
         "py" 'projectile-find-tag))
     :config
     (progn
