@@ -213,7 +213,7 @@ the current state and point position."
 
 ;; from magnars modified by ffevotte for dedicated windows support
 (defun spacemacs/rotate-windows (count)
-  "Rotate your windows.
+  "Rotate your windows counterclockwise.
 Dedicated windows are left untouched. Giving a negative prefix
 argument takes the kindows rotate backwards."
   (interactive "p")
@@ -242,7 +242,7 @@ argument takes the kindows rotate backwards."
                (setq i next-i)))))))
 
 (defun spacemacs/rotate-windows-backward (count)
-  "Rotate your windows backward."
+  "Rotate your windows clockwise."
   (interactive "p")
   (spacemacs/rotate-windows (* -1 count)))
 
@@ -535,12 +535,12 @@ toggling fullscreen."
    nil
    `((maximized
       . ,(unless (memq (frame-parameter nil 'fullscreen) '(fullscreen fullboth))
-	   (frame-parameter nil 'fullscreen)))
+     (frame-parameter nil 'fullscreen)))
      (fullscreen
       . ,(if (memq (frame-parameter nil 'fullscreen) '(fullscreen fullboth))
-	     (if (eq (frame-parameter nil 'maximized) 'maximized)
-		 'maximized)
-	   'fullboth)))))
+       (if (eq (frame-parameter nil 'maximized) 'maximized)
+     'maximized)
+     'fullboth)))))
 
 ;; taken from Prelude: https://github.com/bbatsov/prelude
 (defmacro spacemacs|advise-commands (advice-name commands class &rest body)
@@ -895,4 +895,3 @@ is nonempty."
   "Close the window containing the '*compilation*' buffer."
   (interactive)
   (delete-windows-on "*compilation*"))
-
