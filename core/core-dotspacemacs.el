@@ -159,6 +159,10 @@ size to make separators look not too crappy.")
 (defvar dotspacemacs-remap-Y-to-y$ nil
   "If non nil `Y' is remapped to `y$' in Evil states.")
 
+(defvar dotspacemacs-retain-visual-state-on-shift t
+  "If non-nil, the shift mappings `<' and `>' retain visual state
+if used there.")
+
 (defvar dotspacemacs-ex-substitute-global nil
   "If non nil, inverse the meaning of `g' in `:substitute' Evil ex-command.")
 
@@ -388,6 +392,7 @@ Called with `C-u C-u' skips `dotspacemacs/user-config' _and_ preleminary tests."
                                      "function has been skipped)."))
                   (dotspacemacs|call-func dotspacemacs/user-config
                                           "Calling dotfile user config...")
+                  (run-hooks 'spacemacs-post-user-config-hook)
                   (message "Done.")))
             (switch-to-buffer-other-window dotspacemacs-test-results-buffer)
             (spacemacs-buffer/warning "Some tests failed, check `%s' buffer"

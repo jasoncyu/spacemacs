@@ -39,9 +39,7 @@
         (process-menu :location built-in)
         projectile
         (recentf :location built-in)
-        ;; request is not a built-in package
-        ;; this is a hack to be able to configure request cache directory.
-        (request :location built-in)
+        request
         restart-emacs
         (savehist :location built-in)
         (saveplace :location built-in)
@@ -50,6 +48,7 @@
         undo-tree
         (uniquify :location built-in)
         (url :location built-in)
+        (visual-line-mode :location built-in)
         (whitespace :location built-in)
         (winner :location built-in)
         ws-butler))
@@ -100,9 +99,11 @@
                dired-jump-other-window
                dired-omit-mode)))
 
-
 (defun spacemacs-base/init-electric-indent-mode ()
   (electric-indent-mode))
+
+(defun spacemacs-base/init-visual-line-mode ()
+  (spacemacs|diminish visual-line-mode " Ⓛ" " L"))
 
 ;; notes from mijoharas
 ;; We currently just set a few variables to make it look nicer.

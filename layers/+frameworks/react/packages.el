@@ -16,8 +16,7 @@
         evil-matchit
         flycheck
         js-doc
-        js2-mode
-        js2-refactor
+        smartparens
         tern
         web-beautify
         web-mode
@@ -36,37 +35,56 @@
                                             (evilmi-javascript-get-tag evilmi-javascript-jump)
                                             (evilmi-html-get-tag evilmi-html-jump)))))
 
-(defun react/pre-init-flycheck ()
-  (spacemacs|use-package-add-hook flycheck
-    :post-config
-    (progn
-      (flycheck-add-mode 'javascript-eslint 'react-mode)
-
-      (defun react/disable-jshint ()
-        (push 'javascript-jshint flycheck-disabled-checkers))
-
-      (add-hook 'react-mode-hook #'react/disable-jshint))))
-
 (defun react/post-init-flycheck ()
+  (with-eval-after-load 'flycheck
+    (flycheck-add-mode 'javascript-eslint 'react-mode))
+  (defun react/use-eslint-from-node-modules ()
+    (let* ((root (locate-dominating-file
+                  (or (buffer-file-name) default-directory)
+                  "node_modules"))
+           (global-eslint (executable-find "eslint"))
+           (local-eslint (expand-file-name "node_modules/.bin/eslint"
+                                           root))
+           (eslint (if (file-executable-p local-eslint)
+                       local-eslint
+                     global-eslint)))
+      (setq-local flycheck-javascript-eslint-executable eslint)))
+
+  (add-hook 'react-mode-hook #'react/use-eslint-from-node-modules)
+
   (spacemacs/add-flycheck-hook 'react-mode))
 
 (defun react/post-init-js-doc ()
   (add-hook 'react-mode-hook 'spacemacs/js-doc-require)
   (spacemacs/js-doc-set-key-bindings 'react-mode))
 
-(defun react//setup-imenu ()
-  (setq imenu-create-index-function #'js2-mode-create-imenu-index))
+(defun react/post-init-smartparens ()
+  (if dotspacemacs-smartparens-strict-mode
+      (add-hook 'react-mode-hook #'smartparens-strict-mode)
+    (add-hook 'react-mode-hook #'smartparens-mode)))
 
-(defun react/post-init-js2-mode ()
-  (add-hook 'react-mode-hook 'react//setup-imenu)
-  (add-hook 'react-mode-hook 'js2-imenu-extras-mode)
-  (add-hook 'react-mode-hook 'js2-minor-mode))
-
-(defun react/post-init-js2-refactor ()
-  (add-hook 'react-mode-hook 'spacemacs/js2-refactor-require)
-  (spacemacs/js2-refactor-set-key-bindings 'react-mode))
-
-(defun react/post-init-tern ()
+(defun react/init-tern ()
+  (defun react//tern-detect ()
+    "Detect tern binary and warn if not found."
+    (let ((found (executable-find "tern")))
+      (unless found
+        (spacemacs-buffer/warning "tern binary not found!"))
+      found))
+  (use-package tern
+    :defer t
+    :if (react//tern-detect)
+    :init (add-hook 'react-mode-hook 'tern-mode)
+    :config
+    (progn
+      (when javascript-disable-tern-port-files
+        (add-to-list 'tern-command "--no-port-file" 'append))
+      (spacemacs/set-leader-keys-for-major-mode 'react-mode "rrV" 'tern-rename-variable)
+      (spacemacs/set-leader-keys-for-major-mode 'react-mode "hd" 'tern-get-docs)
+      (spacemacs/set-leader-keys-for-major-mode 'react-mode "ht" 'tern-get-type)
+      (spacemacs/set-leader-keys-for-major-mode 'react-mode "gg" 'tern-find-definition)
+      (spacemacs/set-leader-keys-for-major-mode 'react-mode "gG" 'tern-find-definition-by-name)
+      (spacemacs/set-leader-keys-for-major-mode 'react-mode (kbd " C-g") 'tern-pop-find-definition)
+      (spacemacs/set-leader-keys-for-major-mode 'react-mode "ht" 'tern-get-type)))
   (add-hook 'react-mode-hook 'tern-mode))
 
 (defun react/post-init-web-beautify ()
@@ -79,6 +97,7 @@
   (add-to-list 'auto-mode-alist '("\\index.android.js\\'" . react-mode))
   (add-to-list 'auto-mode-alist '("\\index.ios.js\\'" . react-mode))
   (add-to-list 'magic-mode-alist '("/\\*\\* @jsx React\\.DOM \\*/" . react-mode))
+  (add-to-list 'magic-mode-alist '("^import React" . react-mode))
   (defun spacemacs//setup-react-mode ()
     "Adjust web-mode to accommodate react-mode"
     (emmet-mode 0)
@@ -89,9 +108,5 @@
     ;; Force jsx content type
     (web-mode-set-content-type "jsx")
     ;; Don't auto-quote attribute values
-    (setq-local web-mode-enable-auto-quoting nil)
-    ;; Why do we do this ?
-    (defadvice web-mode-highlight-part (around tweak-jsx activate)
-      (let ((web-mode-enable-part-face nil))
-        ad-do-it)))
+    (setq-local web-mode-enable-auto-quoting nil))
   (add-hook 'react-mode-hook 'spacemacs//setup-react-mode))

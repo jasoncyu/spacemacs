@@ -11,6 +11,7 @@
 
 (setq spacemacs-bootstrap-packages
       '(
+        (async :step bootstrap)
         (bind-map :step bootstrap)
         (bind-key :step bootstrap)
         (dash :step bootstrap)
@@ -23,6 +24,8 @@
         ))
 
 ;; Note: `use-package' cannot be used for bootstrap packages configuration
+
+(defun spacemacs-bootstrap/init-async ())
 
 (defun spacemacs-bootstrap/init-bind-key ())
 
@@ -108,8 +111,9 @@
   (add-hook 'after-change-major-mode-hook 'spacemacs//set-evil-shift-width 'append)
 
   ;; Keep the region active when shifting
-  (evil-map visual "<" "<gv")
-  (evil-map visual ">" ">gv")
+  (when dotspacemacs-retain-visual-state-on-shift
+    (evil-map visual "<" "<gv")
+    (evil-map visual ">" ">gv"))
 
   ;; move selection up and down
   (define-key evil-visual-state-map "J" (concat ":m '>+1" (kbd "RET") "gv=gv"))

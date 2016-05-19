@@ -17,6 +17,7 @@
         ;; treat it as a stand-alone package
         (ivy :location built-in)
         (ivy-spacemacs-help :location local)
+        pcre2el
         smex
         swiper
         wgrep))
@@ -315,8 +316,6 @@ Helm hack."
       (counsel-mode 1)
       (spacemacs|hide-lighter counsel-mode)
 
-      ;; Note: Must be set before which-key is loaded.
-      (setq prefix-help-command 'counsel-descbinds)
       ;; TODO: Commands to port
       (spacemacs//ivy-command-not-implemented-yet "jI")
 
@@ -515,6 +514,9 @@ perspectives does."
               ("l" spacemacs/ivy-perspectives)
               ("C" spacemacs/ivy-persp-close-other :exit t)
               ("X" spacemacs/ivy-persp-kill-other :exit t))))))
+
+(defun spacemacs-ivy/init-pcre2el ()
+  (use-package pcre2el :defer t))
 
 (defun spacemacs-ivy/init-smex ()
   (use-package smex

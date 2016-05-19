@@ -270,13 +270,17 @@
 
 (defun spacemacs-ui-visual/init-spaceline ()
   (use-package spaceline-config
-    ;; not possible for now, maybe we can add support for it in spaceline itself
-    ;; :defer 0.1
     :init
     (progn
+      (add-hook 'spacemacs-post-user-config-hook 'spaceline-compile)
+      (setq-default powerline-default-separator 'utf-8)
       (spacemacs|do-after-display-system-init
-       (setq-default powerline-default-separator
-                     (if (display-graphic-p) 'wave 'utf-8))))
+       (when (and (eq 'utf-8 powerline-default-separator))
+         (setq-default powerline-default-separator 'wave))
+       ;; seems to be needed to avoid weird graphical artefacts with the
+       ;; first graphical client
+       (require 'spaceline)
+       (spaceline-compile)))
     :config
     (progn
       (defun spacemacs/customize-powerline-faces ()
@@ -333,10 +337,10 @@
                       map)))
 
       (spaceline-define-segment new-version
-        (spacemacs-powerline-new-version
-         (spacemacs/get-new-version-lighter-face
-          spacemacs-version spacemacs-new-version))
-        :when spacemacs-new-version)
+        (when spacemacs-new-version
+          (spacemacs-powerline-new-version
+           (spacemacs/get-new-version-lighter-face
+            spacemacs-version spacemacs-new-version))))
 
       (spaceline-spacemacs-theme '(new-version :when active))
       (spaceline-helm-mode t)
@@ -390,12 +394,14 @@
          :evil-leader "T~")
        ;; don't enable it on spacemacs home buffer
        (with-current-buffer spacemacs-buffer-name
-         (vi-tilde-fringe-mode -1))
+         (spacemacs/disable-vi-tilde-fringe))
        ;; after a major mode is loaded, check if the buffer is read only
        ;; if so, disable vi-tilde-fringe-mode
-       (add-hook 'after-change-major-mode-hook (lambda ()
-                                                 (when buffer-read-only
-                                                   (vi-tilde-fringe-mode -1)))))
+       (add-hook 'after-change-major-mode-hook
+                 'spacemacs/disable-vi-tilde-fringe-read-only)
+       ;; TODO move this hook if/when we have a layer for eww
+       (spacemacs/add-to-hooks 'spacemacs/disable-vi-tilde-fringe
+                               '(eww-mode-hook)))
      :config
      (spacemacs|hide-lighter vi-tilde-fringe-mode))))
 
