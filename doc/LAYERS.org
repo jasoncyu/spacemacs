@@ -12,14 +12,15 @@
    - [[#eval-after-load][Eval after load]]
    - [[#use-package][Use-package]]
  - [[#anatomy-of-a-layer][Anatomy of a layer]]
+   - [[#configel][config.el]]
    - [[#packagesel][packages.el]]
-   - [[#packages-configel][packages-config.el]]
-   - [[#configel-packages-funcsel-and-keybindingsel][config.el, packages-funcs.el and keybindings.el]]
+   - [[#funcsel][funcs.el]]
+   - [[#keybindingsel][keybindings.el]]
  - [[#the-spacemacs-loading-process][The Spacemacs loading process]]
  - [[#case-study-auto-completion][Case study: auto-completion]]
  - [[#layer-tips-and-tricks][Layer tips and tricks]]
    - [[#cross-dependencies][Cross-dependencies]]
-   - [[#use-package][Use-package]]
+   - [[#use-package-1][Use-package]]
    - [[#use-package-hooks][Use-package hooks]]
    - [[#best-practices][Best practices]]
      - [[#package-ownership][Package ownership]]
@@ -279,24 +280,28 @@ A layer is simply a folder somewhere in Spacemacs' layer search path that
 usually contains these files.
 
 - =config.el= :: layer specific configuration
-- =packages.el= :: the list of packages
-- =packages-config.el= :: packages configuration and keybindings
-- =packages-funcs.el= :: additional packages functions
-
-Other files (rarely needed):
-
-- =funcs.el= :: layer specific functions
-- =keybindings.el= :: key bindings for Emacs built-in feature
+- =packages.el= :: the packages list and configuration
+- =funcs.el= :: all functions used in the layer should be declared here
+- =keybindings.el= :: general key bindings
 
 Additionally, for each local package (see the next section), there should be a
 folder =<layer>/local/<package>/= containing the source code for that package.
 Before initializing that package, Spacemacs will add this folder to the load
 path for you.
 
+** config.el
+This file configure the layer like declaring layer variables and setup some
+other variables related to the layer.
+
+This is the first file loaded when loading a layer.
+
 ** packages.el
-This file should define a variable called =<layer>-packages=, which should be a
-list of all the packages that this layer needs. Some valid package
-specifications are as follows. Do not define other things in this file.
+It contains this list of packages of the layer and the actual configuration for
+the packages included in the layer.
+
+It must define a variable called =<layer>-packages=, which should be a list of
+all the packages that this layer needs. Some valid package specifications are
+as follows:
 
 #+begin_src emacs-lisp
   (setq mylayer-packages
@@ -327,7 +332,6 @@ Packages may be /excluded/ by setting the =:excluded= property to true. This
 will prevent the package from being installed even if it is used by another
 layer.
 
-** packages-config.el
 For each included package, you may define one or more of the following
 functions, which are called in order by Spacemacs to initialize the package.
 
@@ -345,14 +349,25 @@ does mandatory setup while the =pre-init= and =post-init= functions do optional
 setup. This can be used for managing cross-layer dependencies, which we will
 discuss later.
 
-** config.el, packages-funcs.el and keybindings.el
-These files contain no magic variables or functions, merely code that is
-executed. The intended use cases are
+** funcs.el
+It contains all the defined functions used in the layer.
 
-- config.el :: configuration code that is independent of packages, declaration
-     layer variables, and so on
-- packages-funcs.el :: definition of general utility functions
-- keybindings.el :: general keybindings
+This file is loaded _after_ =config.el= and =packages.el=.
+
+It is good practice to guard the definition of functions to make sure a package
+is actually used. For instance:
+
+#+begin_src emacs-lisp
+(when (configuration-layer/package-usedp 'my-package)
+  (defun spacemacs/my-package-enable () ...)
+  (defun spacemacs/my-package-disable () ...))
+#+end_src
+
+By guarding these functions we avoid to define them in case the package
+`my-package` is not used.
+
+** keybindings.el
+It contains general key bindings.
 
 The word /general/ here means /independent of any package/. Since the end user
 can exclude an arbitrary set of packages, you cannot be sure that, just because
@@ -365,13 +380,11 @@ More on this in the next section.
 * The Spacemacs loading process
 The Spacemacs loading process can be summarized as follows:
 
-1. A handful of packages are installed and loaded as part of the bootstrap process.
-   Among these packages, of particular interest to us, is =use-package=. All
-   subsequent code in the loading process may make use of it.
-2. Spacemacs goes through all the enabled layers and evaluates their files. The
-   changes introduced by =config.el= are thus applied, but nothing happens from
-   =packages.el=, since these files only define functions and variables.
-3. Spacemacs checks which packages should be downloaded and installed. To be
+1. Spacemacs goes through all the enabled layers and evaluates their files. The
+   changes introduced by =config.el= are thus applied, then =funcs.el= and
+   =packages.el= are loaded, but nothing happens from =packages.el=, since these
+   files only define functions and variables.
+2. Spacemacs checks which packages should be downloaded and installed. To be
    installed, a package must be
    - included by a layer that the user has enabled,
    - not be excluded by any other layer that the user has enabled,
@@ -380,13 +393,14 @@ The Spacemacs loading process can be summarized as follows:
      it.
    Alternatively, if a package is part of the end user's
    =dotspacemacs-additional-packages=, it will also be installed.
-4. All packages which should be installed are installed, and all packages which
-   are installed but which shouldn't be are removed. (This last behavior is
-   optional but default.)
-5. The =pre-init=, =init= and =post-init= functions for each installed package
+3. All packages which should be installed are installed in alphabetical order,
+   =package.el= built-in Emacs library is in charge of implicit dependencies.
+   Installed packages not following the rules of 2. are removed as well as
+   their dependencies if possible. (This last behavior is optional but default.)
+4. The =pre-init=, =init= and =post-init= functions for each installed package
    are executed in turn.
 
-It is step five that interests us. It is very important that a package is not
+It is step four that interests us. It is very important that a package is not
 installed if no =init= function is defined for it.
 
 We say that a layer *owns* a package if it defines an =init= function for it. A
@@ -559,11 +573,9 @@ if the =auto-completion= layer is enabled.
                         ;; ...
                         )
 
-  (when (configuration-layer/layer-usedp 'auto-completion)
+  (when (configuration-layer/package-usedp 'company)
     (defun yoyo/init-some-weird-package ()
       (use-package some-weird-package
-        ;; Only if company is installed
-        :if (configuration-layer/package-usedp 'company)
         :defer t
         ;; This has to be in init because it's a package entry point
         :init
