@@ -28,13 +28,12 @@
         (erc-yank :location local :excluded t)
         erc-yt
         persp-mode
-        smooth-scrolling
         ))
 
 (when (spacemacs/system-is-mac)
   (push 'erc-terminal-notifier erc-packages))
 
-(when (configuration-layer/layer-usedp 'auto-completion)
+(when (configuration-layer/package-usedp 'company)
   (defun erc/post-init-company ()
     (spacemacs|add-company-hook erc-mode)
     (push 'company-capf company-backends-erc-mode))
@@ -249,6 +248,3 @@
       (if erc-server-list
           (erc/default-servers)
         (call-interactively 'erc)))))
-
-(defun erc/post-init-smooth-scrolling ()
-  (add-hook 'erc-mode-hook 'spacemacs//unset-scroll-margin))
