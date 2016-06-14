@@ -14,7 +14,7 @@
       company
       elm-mode
       flycheck
-      flycheck-elm
+      (flycheck-elm :toggle (configuration-layer/package-usedp 'flycheck))
       popwin
       smartparens
       ))
@@ -27,12 +27,11 @@
   (add-hook 'elm-mode-hook 'flycheck-mode)
   (add-hook 'elm-mode-hook 'spacemacs//elm-find-root))
 
-(when (configuration-layer/package-usedp 'flycheck)
-  (defun elm/init-flycheck-elm ()
-    "Initialize flycheck-elm"
-    (use-package flycheck-elm
-      :defer t
-      :init (add-hook 'flycheck-mode-hook 'flycheck-elm-setup t))))
+(defun elm/init-flycheck-elm ()
+  "Initialize flycheck-elm"
+  (use-package flycheck-elm
+    :defer t
+    :init (add-hook 'flycheck-mode-hook 'flycheck-elm-setup t)))
 
 (defun elm/init-elm-mode ()
   "Initialize elm-mode"
@@ -61,6 +60,9 @@
         ;; oracle
         "ht" 'elm-oracle-type-at-point
 
+        ;; refactoring
+        "ri" 'elm-sort-imports
+
         ;; repl
         "'"  'elm-repl-load
         "si" 'elm-repl-load
@@ -82,13 +84,12 @@
                    ("mc" . "compile")
                    ("mh" . "help")
                    ("mp" . "package")
+                   ("mr" . "refactor")
                    ("ms" . "repl")))
         (spacemacs/declare-prefix-for-mode 'elm-mode (car x) (cdr x)))
 
       (evilified-state-evilify elm-package-mode elm-package-mode-map
         "g" 'elm-package-refresh
-        "n" 'elm-package-next
-        "p" 'elm-package-prev
         "v" 'elm-package-view
         "m" 'elm-package-mark
         "u" 'elm-package-unmark

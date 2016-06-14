@@ -14,9 +14,15 @@
     alchemist
     company
     elixir-mode
+    flycheck
+    flycheck-mix
     popwin
     smartparens
     ))
+
+(defun elixir/post-init-company ()
+  (spacemacs|add-company-hook elixir-mode)
+  (spacemacs|add-company-hook alchemist-iex-mode))
 
 (defun elixir/init-alchemist ()
   (use-package alchemist
@@ -25,7 +31,9 @@
     (progn
       (spacemacs/register-repl 'alchemist 'alchemist-iex-run "alchemist")
       (add-hook 'elixir-mode-hook 'alchemist-mode)
-      (setq alchemist-project-compile-when-needed t)
+      (setq alchemist-project-compile-when-needed t
+            alchemist-test-status-modeline nil)
+      ;; setup company backends
       (push 'alchemist-company company-backends-elixir-mode)
       (push 'alchemist-company company-backends-alchemist-iex-mode))
     :config
@@ -107,28 +115,45 @@
       (evil-define-key 'normal mode
         (kbd "q") 'quit-window))))
 
-(defun elixir/post-init-company ()
-  (spacemacs|add-company-hook elixir-mode)
-  (spacemacs|add-company-hook alchemist-iex-mode))
-
-(defun elixir/post-init-smartparens ()
-  (sp-with-modes '(elixir-mode)
-    (sp-local-pair "->" "end"
-                   :when '(("RET"))
-                   :post-handlers '(:add spacemacs//elixir-do-end-close-action)
-                   :actions '(insert)))
-
-  (sp-with-modes '(elixir-mode)
-    (sp-local-pair "do" "end"
-                   :when '(("SPC" "RET"))
-                   :post-handlers '(:add spacemacs//elixir-do-end-close-action)
-                   :actions '(insert))))
+(defun elixir/init-flycheck-mix ()
+  (use-package flycheck-mix
+    :commands (flycheck-mix-setup)
+    :init
+    (progn
+      (add-to-list 'safe-local-variable-values
+                   (cons 'elixir-enable-compilation-checking nil))
+      (add-to-list 'safe-local-variable-values
+                   (cons 'elixir-enable-compilation-checking t))
+      (add-hook 'elixir-mode-hook
+                'spacemacs//elixir-enable-compilation-checking t))))
 
 (defun elixir/init-elixir-mode ()
   (use-package elixir-mode
     :defer t))
 
+(defun elixir/post-init-flycheck ()
+  (spacemacs/add-flycheck-hook 'elixir-mode)
+  (add-hook 'elixir-mode-hook
+            'spacemacs//elixir-flycheck-check-on-save-only t))
+
 (defun elixir/pre-init-popwin ()
   (spacemacs|use-package-add-hook popwin
     :post-config
     (push '("*mix*" :tail t :noselect t) popwin:special-display-config)))
+
+(defun elixir/post-init-smartparens ()
+  (spacemacs|use-package-add-hook smartparens
+    :post-config
+    (progn
+      (sp-with-modes '(elixir-mode)
+        (sp-local-pair
+         "->" "end"
+         :when '(("RET"))
+         :post-handlers '(:add spacemacs//elixir-do-end-close-action)
+         :actions '(insert)))
+      (sp-with-modes '(elixir-mode)
+        (sp-local-pair
+         "do" "end"
+         :when '(("SPC" "RET"))
+         :post-handlers '(:add spacemacs//elixir-do-end-close-action)
+         :actions '(insert))))))

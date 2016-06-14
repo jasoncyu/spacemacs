@@ -62,10 +62,9 @@ version the release note it displayed")
   :group 'spacemacs
   :syntax-table nil
   :abbrev-table nil
+  (page-break-lines-mode)
   (setq buffer-read-only t
         truncate-lines t)
-  (when (fboundp 'page-break-lines-mode)
-    (page-break-lines-mode))
   ;; needed to make tab work correctly in terminal
   (evil-define-key 'motion spacemacs-buffer-mode-map
     (kbd "C-i") 'widget-forward)
@@ -78,7 +77,7 @@ in spacemacs buffer along with quick buttons underneath.
 
 Easter egg:
 Doge special text banner can be reachable via `999', `doge' or `random*'.
-Cate special text banner can de reachable via `998', `cate' or `random*'.
+Cate special text banner can de reachable via `998', `cat' or `random*'.
 `random' ignore special banners whereas `random*' does not."
   (let ((banner (spacemacs-buffer//choose-banner))
         (buffer-read-only nil))
@@ -88,8 +87,10 @@ Cate special text banner can de reachable via `998', `cate' or `random*'.
         (if (image-type-available-p (intern (file-name-extension banner)))
             (spacemacs-buffer//insert-image-banner banner)
           (insert-file-contents banner))
-        (spacemacs-buffer//inject-version t))
+        (spacemacs-buffer//inject-version))
       (spacemacs-buffer//insert-buttons)
+      (unless (bound-and-true-p spacemacs-initialized)
+        (spacemacs-buffer/insert-page-break))
       (spacemacs//redisplay))))
 
 (defun spacemacs-buffer/display-info-box ()
@@ -128,7 +129,7 @@ Cate special text banner can de reachable via `998', `cate' or `random*'.
            (spacemacs-buffer//choose-random-text-banner t))
           ((eq 'doge dotspacemacs-startup-banner)
            (spacemacs-buffer//get-banner-path 999))
-          ((eq 'cate dotspacemacs-startup-banner)
+          ((eq 'cat dotspacemacs-startup-banner)
            (spacemacs-buffer//get-banner-path 998))
           ((integerp dotspacemacs-startup-banner)
            (spacemacs-buffer//get-banner-path dotspacemacs-startup-banner))
@@ -174,25 +175,54 @@ If ALL is non-nil then truly all banners can be selected."
                                         (+ (length title) 1)) 2))) ?\ ))
       (insert (format "%s\n\n" title)))))
 
-(defun spacemacs-buffer//inject-version (&optional insert-distro)
+(defun spacemacs-buffer//inject-version ()
   "Inject the current version of spacemacs in the first line of the
 buffer, right justified."
   (with-current-buffer (get-buffer-create spacemacs-buffer-name)
     (save-excursion
-      (let* ((maxcol spacemacs-buffer--banner-length)
-             (lhs (format "(emacs-%s)" emacs-version))
-             (rhs (if insert-distro
-                           (format "(%s-%s)"
-                                   dotspacemacs-distribution
-                                   spacemacs-version)
-                         (format "(%s)" spacemacs-version)))
-             (len (- maxcol (length lhs)))
-             (buffer-read-only nil))
+      (let ((maxcol spacemacs-buffer--banner-length)
+            (version (format "%s@%s (%s)"
+                             spacemacs-version
+                             emacs-version
+                             dotspacemacs-distribution))
+            (buffer-read-only nil))
         (goto-char (point-min))
         (delete-region (point) (progn (end-of-line) (point)))
-        (insert (format
-                 (format "%%s%%%ds" len)
-                 lhs rhs))))))
+        (insert (format (format "%%%ds" maxcol) version))))))
+
+(defun spacemacs-buffer//insert-footer ()
+  (save-excursion
+    (let* ((maxcol spacemacs-buffer--banner-length)
+           (badge-path spacemacs-badge-official-png)
+           (badge (when (image-type-available-p
+                         (intern (file-name-extension badge-path)))
+                  (create-image badge-path)))
+           (badge-size (when badge (car (image-size badge))))
+           (heart-path spacemacs-purple-heart-png)
+           (heart (when (image-type-available-p
+                         (intern (file-name-extension heart-path)))
+                    (create-image heart-path)))
+           (heart-size (when heart (car (image-size heart))))
+           (build-lhs "Made with ")
+           (build-rhs " by the community")
+           (buffer-read-only nil))
+      (when (or badge heart)
+        (goto-char (point-max))
+        (spacemacs-buffer/insert-page-break)
+        (insert "\n")
+        (when badge
+          (insert (make-string (floor (/ (- maxcol badge-size) 2)) ?\ ))
+          (insert-image badge))
+        (when heart
+          (when badge (insert "\n\n"))
+          (insert (make-string (floor (/ (- maxcol
+                                            (length build-lhs)
+                                            heart-size
+                                            (length build-rhs)) 2)) ?\ ))
+          (insert build-lhs)
+          (insert-image heart)
+          (insert build-rhs)
+          (insert "\n"))))))
 
 (defun spacemacs-buffer//insert-note (file caption &optional additional-widgets)
   "Insert the release note just under the banner.
@@ -340,7 +370,7 @@ The message is always displayed. "
 
 (defun spacemacs-buffer/insert-page-break ()
   "Insert a page break line in spacemacs buffer."
-  (spacemacs-buffer/append "\n\n\n"))
+  (spacemacs-buffer/append "\n\n"))
 
 (defun spacemacs-buffer/append (msg &optional messagebuf)
   "Append MSG to spacemacs buffer. If MESSAGEBUF is not nil then MSG is
@@ -456,13 +486,21 @@ border."
 `spacemacs--loading-dots-chunk-threshold'."
   (when dotspacemacs-loading-progress-bar
     (setq spacemacs-loading-counter (1+ spacemacs-loading-counter))
+    (setq spacemacs-loading-value (1+ spacemacs-loading-value))
     (when (>= spacemacs-loading-counter spacemacs-loading-dots-chunk-threshold)
-      (setq spacemacs-loading-counter 0)
-      (setq spacemacs-loading-string
-            (concat spacemacs-loading-string
-                    (make-string spacemacs-loading-dots-chunk-size
-                                 spacemacs-loading-char)))
-      (spacemacs-buffer/set-mode-line spacemacs-loading-string)
+      (let ((suffix (format "> %s/%s" spacemacs-loading-value
+                            (length configuration-layer--packages))))
+        (setq spacemacs-loading-counter 0)
+        (setq spacemacs-loading-string
+              (make-string
+               (max 0
+                    (- (* spacemacs-loading-dots-chunk-size
+                          (floor (/ spacemacs-loading-value
+                                    spacemacs-loading-dots-chunk-threshold)))
+                       (length suffix)))
+               spacemacs-loading-char))
+        (spacemacs-buffer/set-mode-line (concat spacemacs-loading-string
+                                                suffix)))
       (spacemacs//redisplay))))
 
 (defmacro spacemacs//insert--shortcut (shortcut-char search-label
@@ -735,7 +773,7 @@ border."
                   (spacemacs//insert--shortcut "c" "Agenda:")
                   (insert list-separator)))
                ((eq el 'bookmarks)
-                (when (configuration-layer/layer-usedp 'helm)
+                (when (configuration-layer/package-usedp 'helm)
                   (helm-mode))
                 (require 'bookmark)
                 (when (spacemacs-buffer//insert-bookmark-list
@@ -765,6 +803,7 @@ border."
   (with-current-buffer (get-buffer spacemacs-buffer-name)
     (when dotspacemacs-startup-lists
       (spacemacs-buffer/insert-startupify-lists))
+    (spacemacs-buffer//insert-footer)
     (if configuration-layer-error-count
         (progn
           (spacemacs-buffer-mode)
@@ -790,6 +829,7 @@ already exist, and switch to it."
       (setq spacemacs-buffer--banner-length
             (- (window-total-width) 2)))
     (with-current-buffer (get-buffer-create spacemacs-buffer-name)
+      (page-break-lines-mode)
       (save-excursion
         (spacemacs-buffer/set-mode-line "")
         ;; needed in case the buffer was deleted and we are recreating it
@@ -800,6 +840,7 @@ already exist, and switch to it."
             (progn
               (when dotspacemacs-startup-lists
                 (spacemacs-buffer/insert-startupify-lists))
+              (spacemacs-buffer//insert-footer)
               (spacemacs-buffer/set-mode-line spacemacs--default-mode-line)
               (force-mode-line-update)
               (spacemacs-buffer-mode))
