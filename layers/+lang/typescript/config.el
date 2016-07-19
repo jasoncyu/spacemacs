@@ -6,3 +6,5 @@
 for TypeScript source code formatting.
 Currently avaliable 'tide (default)
 and 'typescript-formatter .")
+
+(spacemacs|defvar-company-backends typescript-mode)

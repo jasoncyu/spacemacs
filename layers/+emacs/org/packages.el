@@ -29,6 +29,8 @@
     org-pomodoro
     org-present
     org-repo-todo
+    ;; ox-confluence is installed by `org-plus-contrib'
+    (ox-confluence :location built-in)
     ;; use a for of ox-gfm to fix index generation
     (ox-gfm :location (recipe :fetcher github :repo "syl20bnr/ox-gfm")
             :toggle org-enable-github-support)
@@ -36,12 +38,13 @@
     persp-mode
     ))
 
-(defun org/post-init-company ()
-  (spacemacs|add-company-hook org-mode)
-  (push 'company-capf company-backends-org-mode))
+;; Disable auto-complete tospeed up org mode
+;; (defun org/post-init-company ()
+;;   (spacemacs|add-company-hook org-mode)
+;;   (push 'company-capf company-backends-org-mode))
 
-(defun org/post-init-company-emoji ()
-  (push 'company-emoji company-backends-org-mode))
+;; (defun org/post-init-company-emoji ()
+;;   (push 'company-emoji company-backends-org-mode))
 
 (defun org/post-init-emoji-cheat-sheet-plus ()
   (add-hook 'org-mode-hook 'spacemacs/delay-emoji-cheat-sheet-hook))
@@ -523,6 +526,9 @@ Headline^^            Visit entry^^               Filter^^                    Da
 
 (defun org/init-ox-gfm ()
   (spacemacs|use-package-add-hook org :post-config (require 'ox-gfm)))
+
+(defun org/init-ox-confluence ()
+  (spacemacs|use-package-add-hook org :post-config (require 'ox-confluence)))
 
 (defun org/init-ox-reveal ()
   (spacemacs|use-package-add-hook org :post-config (require 'ox-reveal)))

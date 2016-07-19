@@ -61,7 +61,8 @@
         ;; register/ring
         "ry"  'counsel-yank-pop
         ;; jumping
-        "sj"  'counsel-imenu
+        ;; Removing because the default works better
+        ;; "sj"  'counsel-imenu
         ;; themes
         "Ts"  'counsel-load-theme
         ;; search

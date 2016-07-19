@@ -33,7 +33,13 @@
                         (setq flycheck-check-syntax-automatically '(save mode-enabled))
                         (eldoc-mode t)
                         (when (configuration-layer/package-usedp 'company)
-                          (company-mode-on)))))
+                          (spacemacs|add-company-hook typescript-mode)
+                          (push 'company-tide company-backends-typescript-mode)
+                          (company-mode-on))
+                        ;; According to this (http://bit.ly/29cDIVN), we
+                        ;; should add tide to our list of backends like so.
+                         ;; (add-to-list 'company-backends 'company-tide)
+                        )))
     :config (progn
               (spacemacs/declare-prefix-for-mode 'typescript-mode "mg" "goto")
               (spacemacs/declare-prefix-for-mode 'typescript-mode "mh" "help")
@@ -65,7 +71,9 @@
                 (setq flycheck-check-syntax-automatically '(save mode-enabled))
                 (eldoc-mode +1)
                 (when (configuration-layer/package-usedp 'company)
-                  (company-mode-on))))))
+                  (push 'company-tide company-backends-web-mode)
+                  (company-mode-on)
+                  )))))
 
 (defun typescript/init-typescript-mode ()
   (use-package typescript-mode
