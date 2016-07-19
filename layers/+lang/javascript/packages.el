@@ -16,12 +16,14 @@
     (company-tern :toggle (configuration-layer/package-usedp 'company))
     evil-matchit
     flycheck
+    ggtags
+    helm-gtags
     js-doc
     js2-mode
     js2-refactor
     json-mode
     json-snatcher
-    tern
+    (tern :toggle (spacemacs//tern-detect))
     web-beautify
     skewer-mode
     livid-mode
@@ -58,6 +60,12 @@
 (defun javascript/post-init-flycheck ()
   (dolist (mode '(coffee-mode js2-mode json-mode))
     (spacemacs/add-flycheck-hook mode)))
+
+(defun javascript/post-init-ggtags ()
+  (add-hook 'js2-mode-hook #'spacemacs/ggtags-mode-enable))
+
+(defun javascript/post-init-helm-gtags ()
+  (spacemacs/helm-gtags-define-keys-for-mode 'js2-mode))
 
 (defun javascript/init-js-doc ()
   (use-package js-doc
@@ -191,19 +199,13 @@
 (defun javascript/init-tern ()
   (use-package tern
     :defer t
-    :if (javascript//tern-detect)
     :diminish tern-mode
     :init (add-hook 'js2-mode-hook 'tern-mode)
     :config
     (progn
       (when javascript-disable-tern-port-files
         (add-to-list 'tern-command "--no-port-file" 'append))
-      (spacemacs/set-leader-keys-for-major-mode 'js2-mode "rrV" 'tern-rename-variable)
-      (spacemacs/set-leader-keys-for-major-mode 'js2-mode "hd" 'tern-get-docs)
-      (spacemacs/set-leader-keys-for-major-mode 'js2-mode "gg" 'tern-find-definition)
-      (spacemacs/set-leader-keys-for-major-mode 'js2-mode "gG" 'tern-find-definition-by-name)
-      (spacemacs/set-leader-keys-for-major-mode 'js2-mode (kbd " C-g") 'tern-pop-find-definition)
-      (spacemacs/set-leader-keys-for-major-mode 'js2-mode "ht" 'tern-get-type))))
+      (spacemacs//set-tern-key-bindings 'js2-mode))))
 
 (defun javascript/init-web-beautify ()
   (use-package web-beautify

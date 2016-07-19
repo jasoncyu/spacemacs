@@ -16,6 +16,8 @@
     elixir-mode
     flycheck
     flycheck-mix
+    ggtags
+    helm-gtags
     popwin
     smartparens
     ))
@@ -124,8 +126,8 @@
                    (cons 'elixir-enable-compilation-checking nil))
       (add-to-list 'safe-local-variable-values
                    (cons 'elixir-enable-compilation-checking t))
-      (add-hook 'elixir-mode-hook
-                'spacemacs//elixir-enable-compilation-checking t))))
+      (add-hook 'elixir-mode-local-vars-hook
+                'spacemacs//elixir-enable-compilation-checking))))
 
 (defun elixir/init-elixir-mode ()
   (use-package elixir-mode
@@ -157,3 +159,9 @@
          :when '(("SPC" "RET"))
          :post-handlers '(:add spacemacs//elixir-do-end-close-action)
          :actions '(insert))))))
+
+(defun elixir/post-init-ggtags ()
+  (add-hook 'elixir-mode-hook #'spacemacs/ggtags-mode-enable))
+
+(defun elixir/post-init-helm-gtags ()
+  (spacemacs/helm-gtags-define-keys-for-mode 'elixir-mode))
