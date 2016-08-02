@@ -12,7 +12,7 @@
 (setq python-packages
   '(
     ;; Anaconda mode's been giving me weird errors
-    ;; anaconda-mode
+    anaconda-mode
     company
     (company-anaconda :toggle (configuration-layer/package-usedp 'company))
     cython-mode

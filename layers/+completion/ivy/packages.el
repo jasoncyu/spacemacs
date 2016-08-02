@@ -62,7 +62,7 @@
         "ry"  'counsel-yank-pop
         ;; jumping
         ;; Removing because the default works better
-        ;; "sj"  'counsel-imenu
+        "sj"  'counsel-imenu
         ;; themes
         "Ts"  'counsel-load-theme
         ;; search

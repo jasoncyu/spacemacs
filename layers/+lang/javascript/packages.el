@@ -23,7 +23,8 @@
     js2-refactor
     json-mode
     json-snatcher
-    (tern :toggle (spacemacs//tern-detect))
+    ;; Use gtags instead of tern
+    ;; (tern :toggle (spacemacs//tern-detect))
     web-beautify
     skewer-mode
     livid-mode
