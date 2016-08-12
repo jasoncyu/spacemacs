@@ -456,7 +456,7 @@ guidelines first in [[file:../CONTRIBUTING.org][CONTRIBUTING]].
 
 ** Example: Themes Megapack example
 This is a simple configuration layer listing a bunch of themes which you can
-find [[../layers/themes-megapack][here]].
+find [[../layers/themes-megapack/README.org][here]].
 
 To install it, just add =themes-megapack= to your =~/.spacemacs= like so:
 
@@ -2405,7 +2405,7 @@ Navigation between the highlighted symbols can be done with the commands:
 
 | Key Binding | Description                                                                        |
 |-------------+------------------------------------------------------------------------------------|
-| ~/~         | initiate navigation transient state on current symbol and jump forwards            |
+| ~*~         | initiate navigation transient state on current symbol and jump forwards            |
 | ~#~         | initiate navigation transient state on current symbol and jump backwards           |
 | ~SPC s e~   | edit all occurrences of the current symbol(/)                                      |
 | ~SPC s h~   | highlight the current symbol and all its occurrence within the current range       |
@@ -2607,7 +2607,7 @@ You can zoom in and out the whole content of the frame with the commands:
 | Any other key | leave the zoom frame transient state                                        |
 
 *** Increase/Decrease numbers
-Spacemacs uses [[https://github.com/cofi/evil-numbers][evil-numbers]] to easily increase or increase numbers.
+Spacemacs uses [[https://github.com/cofi/evil-numbers][evil-numbers]] to easily increase or decrease numbers.
 
 | Key Binding | Description                                                         |
 |-------------+---------------------------------------------------------------------|
@@ -2845,7 +2845,7 @@ When in =lisp state= the color of the mode-line changes to pink.
 
 Examples:
   - to slurp three times while in normal state: ~SPC k 3 s~
-  - to wrap a symbol in parenthesis then slurping two times: ~SPC k w 2 s~
+  - to wrap a symbol in parentheses then slurp two times: ~SPC k w 2 s~
 
 *Note*: The =lisp state= commands are available in /any/ modes! Try it out.
 
@@ -3212,7 +3212,7 @@ with ~SPC SPC spacemacs/recompile-elpa~.
 | The Librarian (doc-fmt tool and space-doc mode) | [[https://github.com/JAremko][JAremko]]      |
 
 * Thank you
-[[Using configuration layers][Jokes aside]], thank you Richard for this great piece of software.
+Thank you Richard for this great piece of software.
 
 Thank you to all the contributors and the whole Emacs community from core
 developers to elisp hackers!

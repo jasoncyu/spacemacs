@@ -33,11 +33,11 @@
     pytest
     (python :location built-in)
     pyvenv
-    py-yapf
     semantic
     smartparens
     stickyfunc-enhance
     xcscope
+    yapfify
     ))
 
 (defun python/init-anaconda-mode ()
@@ -192,6 +192,9 @@
        (`on-project-switch
         (add-hook 'projectile-after-switch-project-hook
                   'spacemacs//pyenv-mode-set-local-version)))
+      ;; setup shell correctly on environment switch
+      (dolist (func '(pyenv-mode-set pyenv-mode-unset))
+        (advice-add func :after 'spacemacs/python-setup-shell))
       (spacemacs/set-leader-keys-for-major-mode 'python-mode
         "vu" 'pyenv-mode-unset
         "vs" 'pyenv-mode-set))))
@@ -205,7 +208,10 @@
         (spacemacs/set-leader-keys-for-major-mode mode
           "Va" 'pyvenv-activate
           "Vd" 'pyvenv-deactivate
-          "Vw" 'pyvenv-workon)))))
+          "Vw" 'pyvenv-workon))
+      ;; setup shell correctly on environment switch
+      (dolist (func '(pyvenv-activate pyvenv-deactivate pyvenv-workon))
+        (advice-add func :after 'spacemacs/python-setup-shell)))))
 
 (defun python/init-pylookup ()
   (use-package pylookup
@@ -256,18 +262,14 @@
         ;; make C-j work the same way as RET
         (local-set-key (kbd "C-j") 'newline-and-indent))
 
-      (defun python-setup-shell ()
-        (if (executable-find "ipython")
-            (setq python-shell-interpreter "ipython")
-          (setq python-shell-interpreter "python")))
 
       (defun inferior-python-setup-hook ()
         (setq indent-tabs-mode t))
 
       (add-hook 'inferior-python-mode-hook #'inferior-python-setup-hook)
       (add-hook 'python-mode-hook #'python-default)
-      ;; call `python-setup-shell' once, don't put it in a hook (see issue #5988)
-      (python-setup-shell))
+      ;; call `spacemacs/python-setup-shell' once, don't put it in a hook (see issue #5988)
+      (spacemacs/python-setup-shell))
     :config
     (progn
       ;; add support for `ahs-range-beginning-of-defun' for python-mode
@@ -373,14 +375,6 @@
       (define-key inferior-python-mode-map
         (kbd "C-c M-l") 'spacemacs/comint-clear-buffer))))
 
-(defun python/init-py-yapf ()
-  (use-package py-yapf
-    :commands py-yapf-buffer
-    :init (spacemacs/set-leader-keys-for-major-mode 'python-mode
-            "=" 'py-yapf-buffer)
-    :config (when python-enable-yapf-format-on-save
-              (add-hook 'python-mode-hook 'py-yapf-enable-on-save))))
-
 (defun python/post-init-semantic ()
   (when (configuration-layer/package-usedp 'anaconda-mode)
       (add-hook 'python-mode-hook
@@ -417,3 +411,11 @@ fix this issue."
     :post-init
     (spacemacs/set-leader-keys-for-major-mode 'python-mode
       "gi" 'cscope/run-pycscope)))
+
+(defun python/init-yapfify ()
+  (use-package yapfify
+    :defer t
+    :init (spacemacs/set-leader-keys-for-major-mode 'python-mode
+            "=" 'yapfify-buffer)
+    :config (when python-enable-yapf-format-on-save
+              (add-hook 'python-mode-hook 'yapf-mode))))

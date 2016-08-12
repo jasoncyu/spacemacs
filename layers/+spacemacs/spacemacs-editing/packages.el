@@ -86,9 +86,7 @@
 
 (defun spacemacs-editing/init-clean-aindent-mode ()
   (use-package clean-aindent-mode
-    :defer t
-    :init
-    (add-hook 'prog-mode-hook 'clean-aindent-mode)))
+    :config (clean-aindent-mode)))
 
 (defun spacemacs-editing/init-eval-sexp-fu ()
   ;; ignore obsolete function warning generated on startup
@@ -288,6 +286,8 @@
       (require 'smartparens-config)
       (spacemacs|diminish smartparens-mode " ⓟ" " p")
       (spacemacs//adaptive-smartparent-pair-overlay-face)
+      (add-hook 'spacemacs-post-theme-change-hook
+                'spacemacs//adaptive-smartparent-pair-overlay-face)
       (show-smartparens-global-mode +1)
       ;; don't create a pair with single quote in minibuffer
       (sp-local-pair 'minibuffer-inactive-mode "'" nil :actions nil)

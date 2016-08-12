@@ -62,15 +62,13 @@
   (evil-insert-newline-below)
   (evil-paste-after 1))
 
-(defun evil-unimpaired/insert-space-above ()
-  (interactive)
-  (save-excursion
-    (evil-insert-newline-above)))
+(defun evil-unimpaired/insert-space-above (count)
+  (interactive "p")
+  (dotimes (_ count) (save-excursion (evil-insert-newline-above))))
 
-(defun evil-unimpaired/insert-space-below ()
-  (interactive)
-  (save-excursion
-    (evil-insert-newline-below)))
+(defun evil-unimpaired/insert-space-below (count)
+  (interactive "p")
+  (dotimes (_ count) (save-excursion (evil-insert-newline-below))))
 
 (defun evil-unimpaired/next-frame ()
   (interactive)
@@ -91,8 +89,8 @@
 (define-key evil-visual-state-map (kbd "] e") ":move'>+1")
 ;; (define-key evil-visual-state-map (kbd "[ e") 'move-text-up)
 ;; (define-key evil-visual-state-map (kbd "] e") 'move-text-down)
-(define-key evil-normal-state-map (kbd "[ b") 'spacemacs/previous-useful-buffer)
-(define-key evil-normal-state-map (kbd "] b") 'spacemacs/next-useful-buffer)
+(define-key evil-normal-state-map (kbd "[ b") 'previous-buffer)
+(define-key evil-normal-state-map (kbd "] b") 'next-buffer)
 (define-key evil-normal-state-map (kbd "[ f") 'evil-unimpaired/previous-file)
 (define-key evil-normal-state-map (kbd "] f") 'evil-unimpaired/next-file)
 (define-key evil-normal-state-map (kbd "] l") 'spacemacs/next-error)

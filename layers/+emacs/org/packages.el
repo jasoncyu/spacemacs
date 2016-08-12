@@ -118,7 +118,7 @@
 
       (with-eval-after-load 'org-indent
         (spacemacs|hide-lighter org-indent-mode))
-      (let ((dir (configuration-layer/get-layer-property 'org :dir)))
+      (let ((dir (configuration-layer/get-layer-local-dir 'org)))
         (setq org-export-async-init-file (concat dir "org-async-init.el")))
       (defmacro spacemacs|org-emphasize (fname char)
         "Make function for setting the emphasis in org mode"
@@ -141,7 +141,7 @@
           "a" 'org-edit-src-abort
           "k" 'org-edit-src-abort))
 
-      (let ((dir (configuration-layer/get-layer-property 'org :dir)))
+      (let ((dir (configuration-layer/get-layer-local-dir 'org)))
         (setq org-export-async-init-file (concat dir "org-async-init.el")))
       (defmacro spacemacs|org-emphasize (fname char)
         "Make function for setting the emphasis in org mode"
@@ -542,4 +542,7 @@ Headline^^            Visit entry^^               Filter^^                    Da
   (spacemacs|define-custom-layout "@Org"
     :binding "o"
     :body
-    (find-file (first (org-agenda-files)))))
+    (let ((agenda-files (org-agenda-files)))
+      (if agenda-files
+          (find-file (first agenda-files))
+        (user-error "Error: No agenda files configured, nothing to display.")))))

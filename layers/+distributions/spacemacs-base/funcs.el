@@ -9,6 +9,8 @@
 ;;
 ;;; License: GPLv3
 
+(require 'cl-lib)
+
 ;; add emacs binary helper functions
 (defun spacemacs/emacsbin-path ()
   (interactive)
@@ -80,7 +82,7 @@ auto-indent."
   (sp-newline))
 
 (defun spacemacs/push-mark-and-goto-beginning-of-line ()
-  "Push a mark at current location and go to the beginnign of the line."
+  "Push a mark at current location and go to the beginning of the line."
   (interactive)
   (push-mark (point))
   (evil-beginning-of-line))
@@ -91,21 +93,17 @@ auto-indent."
   (push-mark (point))
   (evil-end-of-line))
 
-;; insert one or several line below without changing current evil state
-(defun spacemacs/evil-insert-line-below (count)
-  "Insert one of several lines below the current point's line without changing
-the current state and point position."
-  (interactive "p")
-  (save-excursion
-    (evil-save-state (evil-open-below count))))
-
-;; insert one or several line above without changing current evil state
 (defun spacemacs/evil-insert-line-above (count)
-  "Insert one of several lines above the current point's line without changing
+  "Insert one or several lines above the current point's line without changing
 the current state and point position."
   (interactive "p")
-  (save-excursion
-    (evil-save-state (evil-open-above count))))
+  (dotimes (_ count) (save-excursion (evil-insert-newline-above))))
+
+(defun spacemacs/evil-insert-line-below (count)
+  "Insert one or several lines below the current point's line without changing
+the current state and point position."
+  (interactive "p")
+  (dotimes (_ count) (save-excursion (evil-insert-newline-below))))
 
 (defun spacemacs/evil-goto-next-line-and-indent (&optional count)
   (interactive "p")
@@ -215,22 +213,19 @@ automatically applied to."
     (spacemacs/maximize-horizontally)
     (call-interactively 'spacemacs-centered-buffer-mode)))
 
+(defun spacemacs/useful-buffer-p (buffer)
+  "Determines if a buffer is useful."
+  (let ((buf-name (buffer-name buffer)))
+    (or (with-current-buffer buffer
+          (derived-mode-p 'comint-mode))
+        (cl-loop for useful-regexp in spacemacs-useful-buffers-regexp
+                 thereis (string-match-p useful-regexp buf-name))
+        (cl-loop for useless-regexp in spacemacs-useless-buffers-regexp
+                 never (string-match-p useless-regexp buf-name)))))
 
 (defun spacemacs/useless-buffer-p (buffer)
-  "Determines if a buffer is useful."
-  (let ((buf-paren-major-mode (get (with-current-buffer buffer
-                                     major-mode)
-                                   'derived-mode-parent))
-        (buf-name (buffer-name buffer)))
-    ;; first find if useful buffer exists, if so returns nil and don't check for
-    ;; useless buffers. If no useful buffer is found, check for useless buffers.
-    (unless (cl-loop for regexp in spacemacs-useful-buffers-regexp do
-                     (when (or (eq buf-paren-major-mode 'comint-mode)
-                               (string-match regexp buf-name))
-                       (return t)))
-      (cl-loop for regexp in spacemacs-useless-buffers-regexp do
-               (when (string-match regexp buf-name)
-                 (return t))))))
+  "Determines if a buffer is useless."
+  (not (spacemacs/useful-buffer-p buffer)))
 
 ;; from magnars modified by ffevotte for dedicated windows support
 (defun spacemacs/rotate-windows (count)
@@ -266,24 +261,6 @@ argument takes the kindows rotate backwards."
   "Rotate your windows clockwise."
   (interactive "p")
   (spacemacs/rotate-windows (* -1 count)))
-
-(defun spacemacs/next-useful-buffer ()
-  "Switch to the next buffer and avoid special buffers."
-  (interactive)
-  (let ((start-buffer (current-buffer)))
-    (next-buffer)
-    (while (and (spacemacs/useless-buffer-p (current-buffer))
-                (not (eq (current-buffer) start-buffer)))
-      (next-buffer))))
-
-(defun spacemacs/previous-useful-buffer ()
-  "Switch to the previous buffer and avoid special buffers."
-  (interactive)
-  (let ((start-buffer (current-buffer)))
-    (previous-buffer)
-    (while (and (spacemacs/useless-buffer-p (current-buffer))
-                (not (eq (current-buffer) start-buffer)))
-      (previous-buffer))))
 
 (defun spacemacs/rename-file (filename &optional new-filename)
   "Rename FILENAME to NEW-FILENAME.
@@ -552,6 +529,7 @@ Useful for making the home buffer the only visible buffer in the frame."
   (delete-other-windows))
 
 (defun spacemacs/insert-line-above-no-indent (count)
+  "Insert a new line above with no indentation."
   (interactive "p")
   (let ((p (+ (point) count)))
     (save-excursion
@@ -566,7 +544,7 @@ Useful for making the home buffer the only visible buffer in the frame."
     (goto-char p)))
 
 (defun spacemacs/insert-line-below-no-indent (count)
-  "Insert a new line below with no identation."
+  "Insert a new line below with no indentation."
   (interactive "p")
   (save-excursion
     (evil-move-end-of-line)
@@ -706,13 +684,23 @@ The body of the advice is in BODY."
   (load-file (buffer-file-name))
   (ert t))
 
-(defun spacemacs/alternate-buffer ()
+(defun spacemacs/alternate-buffer (&optional window)
   "Switch back and forth between current and last buffer in the
 current window."
   (interactive)
-  (if (evil-alternate-buffer)
-      (switch-to-buffer (car (evil-alternate-buffer)))
-    (switch-to-buffer (other-buffer (current-buffer) t))))
+  (let ((current-buffer (window-buffer window))
+        (buffer-predicate
+         (frame-parameter (window-frame window) 'buffer-predicate)))
+    ;; switch to first buffer previously shown in this window that matches
+    ;; frame-parameter `buffer-predicate'
+    (switch-to-buffer
+     (or (cl-find-if (lambda (buffer)
+                       (and (not (eq buffer current-buffer))
+                            (or (null buffer-predicate)
+                                (funcall buffer-predicate buffer))))
+                     (mapcar #'car (window-prev-buffers window)))
+         ;; `other-buffer' honors `buffer-predicate' so no need to filter
+         (other-buffer current-buffer t)))))
 
 (defun current-line ()
   "Return the line at point as a string."
@@ -1049,7 +1037,7 @@ is nonempty."
 Delegates to flycheck if it is enabled and the next-error buffer
 is not visible. Otherwise delegates to regular Emacs next-error."
   (if (and (bound-and-true-p flycheck-mode)
-           (let ((buf (next-error-find-buffer)))
+           (let ((buf (ignore-errors (next-error-find-buffer))))
              (not (and buf (get-buffer-window buf)))))
       'flycheck
     'emacs))
