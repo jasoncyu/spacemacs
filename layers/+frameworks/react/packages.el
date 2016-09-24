@@ -72,7 +72,6 @@
 
 (defun react/post-init-web-mode ()
   (define-derived-mode react-mode web-mode "react")
-  (add-to-list 'auto-mode-alist '("\\.js\\'" . react-mode))
   (add-to-list 'auto-mode-alist '("\\.jsx\\'" . react-mode))
   (add-to-list 'auto-mode-alist '("\\.react.js\\'" . react-mode))
   (add-to-list 'auto-mode-alist '("\\index.android.js\\'" . react-mode))
