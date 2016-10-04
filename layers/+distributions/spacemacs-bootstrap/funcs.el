@@ -55,17 +55,6 @@
         (call-interactively binding)
       (evil-lookup))))
 
-(defun spacemacs/evil-smart-goto-definition ()
-  "Version of `evil-goto-definition' that attempts to use
-        the mode specific goto-definition binding,
-        i.e. `SPC m g g`, to lookup the source of the definition,
-        while falling back to `evil-goto-definition'"
-  (interactive)
-  (let ((binding (key-binding (kbd (concat dotspacemacs-leader-key " mgg")))))
-    (if (commandp binding)
-        (call-interactively binding)
-      (evil-goto-definition))))
-
 (defun spacemacs//set-evil-shift-width ()
   "Set the value of `evil-shift-width' based on the indentation settings of the
 current major mode."

@@ -84,6 +84,8 @@
                 #'spacemacs/save-eyebrowse-for-perspective)
       (add-hook 'persp-activated-functions
                 #'spacemacs/load-eyebrowse-for-perspective)
+      (add-hook 'persp-before-save-state-to-file-functions #'spacemacs/update-eyebrowse-for-perspective)
+      (add-hook 'persp-after-load-state-functions #'spacemacs/load-eyebrowse-after-loading-layout)
       ;; vim-style tab switching
       (define-key evil-motion-state-map "gt" 'eyebrowse-next-window-config)
       (define-key evil-motion-state-map "gT" 'eyebrowse-prev-window-config))))
@@ -107,7 +109,8 @@
             persp-nil-name dotspacemacs-default-layout-name
             persp-reset-windows-on-nil-window-conf nil
             persp-set-last-persp-for-new-frames nil
-            persp-save-dir spacemacs-layouts-directory)
+            persp-save-dir spacemacs-layouts-directory
+            persp-set-ido-hooks t)
 
       (defun spacemacs//activate-persp-mode ()
         "Always activate persp-mode, unless it is already active.

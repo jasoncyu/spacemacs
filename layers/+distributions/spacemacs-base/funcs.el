@@ -61,19 +61,6 @@
   (let ((message-log-max nil))
     (apply 'message msg args)))
 
-(defun spacemacs/jump-in-buffer ()
-  (interactive)
-  (call-interactively
-   (cond
-    ((and (configuration-layer/layer-usedp 'helm)
-          (eq major-mode 'org-mode))
-     'helm-org-in-buffer-headings)
-    ((configuration-layer/layer-usedp 'helm)
-     'helm-semantic-or-imenu)
-    ((configuration-layer/layer-usedp 'ivy)
-     'counsel-imenu)
-    (t 'imenu))))
-
 (defun spacemacs/split-and-new-line ()
   "Split a quoted string or s-expression and insert a new line with
 auto-indent."
@@ -229,9 +216,9 @@ automatically applied to."
 
 ;; from magnars modified by ffevotte for dedicated windows support
 (defun spacemacs/rotate-windows (count)
-  "Rotate your windows counterclockwise.
-Dedicated windows are left untouched. Giving a negative prefix
-argument takes the kindows rotate backwards."
+  "Rotate each window forwards.
+A negative prefix argument rotates each window backwards.
+Dedicated (locked) windows are left untouched."
   (interactive "p")
   (let* ((non-dedicated-windows (remove-if 'window-dedicated-p (window-list)))
          (num-windows (length non-dedicated-windows))
@@ -258,7 +245,8 @@ argument takes the kindows rotate backwards."
                (setq i next-i)))))))
 
 (defun spacemacs/rotate-windows-backward (count)
-  "Rotate your windows clockwise."
+  "Rotate each window backwards.
+Dedicated (locked) windows are left untouched."
   (interactive "p")
   (spacemacs/rotate-windows (* -1 count)))
 
@@ -518,7 +506,7 @@ If the universal prefix argument is used then will the windows too."
   (delete-other-windows)
   (split-window-right))
 
-(defalias 'spacemacs/home 'spacemacs-buffer/goto-buffer
+(defalias 'spacemacs/home 'spacemacs-buffer/refresh
   "Go to home Spacemacs buffer")
 
 (defun spacemacs/home-delete-other-windows ()
@@ -706,19 +694,27 @@ current window."
   "Return the line at point as a string."
   (buffer-substring (line-beginning-position) (line-end-position)))
 
-(defun spacemacs/open-in-external-app ()
-  "Open current file in external application."
-  (interactive)
-  (let ((file-path (if (eq major-mode 'dired-mode)
-                       (dired-get-file-for-visit)
-                     (buffer-file-name))))
-    (if file-path
-        (cond
-         ((spacemacs/system-is-mswindows) (w32-shell-execute "open" (replace-regexp-in-string "/" "\\\\" file-path)))
-         ((spacemacs/system-is-mac) (shell-command (format "open \"%s\"" file-path)))
-         ((spacemacs/system-is-linux) (let ((process-connection-type nil))
-                              (start-process "" nil "xdg-open" file-path))))
-      (message "No file associated to this buffer."))))
+(defun spacemacs//open-in-external-app (file-path)
+  "Open `file-path' in external application."
+  (cond
+   ((spacemacs/system-is-mswindows) (w32-shell-execute "open" (replace-regexp-in-string "/" "\\\\" file-path)))
+   ((spacemacs/system-is-mac) (shell-command (format "open \"%s\"" file-path)))
+   ((spacemacs/system-is-linux) (let ((process-connection-type nil))
+                                  (start-process "" nil "xdg-open" file-path)))))
+
+(defun spacemacs/open-file-or-directory-in-external-app (arg)
+  "Open current file in external application.
+If the universal prefix argument is used then open the folder
+containing the current file by the default explorer."
+  (interactive "P")
+  (if arg
+      (spacemacs//open-in-external-app (expand-file-name default-directory))
+    (let ((file-path (if (derived-mode-p 'dired-mode)
+                         (dired-get-file-for-visit)
+                       buffer-file-name)))
+      (if file-path
+          (spacemacs//open-in-external-app file-path)
+        (message "No file associated to this buffer.")))))
 
 (defun spacemacs/switch-to-minibuffer-window ()
   "switch to minibuffer window (if active)"
@@ -753,10 +749,14 @@ If JUSTIFY-RIGHT is non nil justify to the right instead of the
 left. If AFTER is non-nil, add whitespace to the left instead of
 the right."
   (interactive "r\nsAlign regexp: ")
-  (let ((complete-regexp (if after
-                             (concat regexp "\\([ \t]*\\)")
-                           (concat "\\([ \t]*\\)" regexp)))
-        (group (if justify-right -1 1)))
+  (let* ((ws-regexp (if (string-empty-p regexp)
+                        "\\(\\s-+\\)"
+                      "\\(\\s-*\\)"))
+         (complete-regexp (if after
+                              (concat regexp ws-regexp)
+                            (concat ws-regexp regexp)))
+         (group (if justify-right -1 1)))
+    (message "%S" complete-regexp)
     (align-regexp start end complete-regexp group 1 t)))
 
 ;; Modified answer from http://emacs.stackexchange.com/questions/47/align-vertical-columns-of-numbers-on-the-decimal-point
@@ -977,7 +977,7 @@ a split-side entry, its value must be usable as the SIDE argument for
     (pop-to-buffer buffer '(spacemacs//display-in-split (split-side . right)))))
 
 (defun spacemacs/find-file-split (file)
-  "find file in horizonatl split"
+  "find file in horizontal split"
   (interactive "FFind file (split): ")
   (let ((buffer (find-file-noselect file)))
     (pop-to-buffer buffer '(spacemacs//display-in-split (split-side . below)))))

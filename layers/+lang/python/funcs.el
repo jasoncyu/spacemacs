@@ -38,8 +38,8 @@
 (defun spacemacs/python-toggle-breakpoint ()
   "Add a break point, highlight it."
   (interactive)
-  (let ((trace (cond ((executable-find "ipdb") "import ipdb; ipdb.set_trace()")
-                     ((executable-find "pudb") "import pudb; pudb.set_trace()")
+  (let ((trace (cond ((spacemacs/pyenv-executable-find "ipdb") "import ipdb; ipdb.set_trace()")
+                     ((spacemacs/pyenv-executable-find "pudb") "import pudb; pudb.set_trace()")
                      (t "import pdb; pdb.set_trace()")))
         (line (thing-at-point 'line)))
     (if (and line (string-match trace line))
@@ -161,3 +161,10 @@ to be called for each testrunner. "
     "tt" 'spacemacs/python-test-one
     "tM" 'spacemacs/python-test-pdb-module
     "tm" 'spacemacs/python-test-module))
+
+(defun spacemacs//python-sort-imports ()
+  ;; py-isort-before-save checks the major mode as well, however we can prevent
+  ;; it from loading the package unnecessarily by doing our own check
+  (when (and python-sort-imports-on-save
+             (derived-mode-p 'python-mode))
+    (py-isort-before-save)))

@@ -63,21 +63,25 @@ environment, otherwise it is strongly recommended to let it set to t.")
 (defvar dotspacemacs-elpa-timeout 5
   "Maximum allowed time in seconds to contact an ELPA repository.")
 
+(defvar dotspacemacs-elpa-subdirectory nil
+  "If non-nil, a form that evaluates to a package directory. For
+example, to use different package directories for different Emacs
+versions, set this to `emacs-version'.")
+
 (defvar dotspacemacs-configuration-layer-path '()
   "List of additional paths where to look for configuration layers.
 Paths must have a trailing slash (ie. `~/.mycontribs/')")
 
-(defvar dotspacemacs-download-packages 'used
-  "Defines the behaviour of Spacemacs when downloading packages.
-Possible values are `used', `used-but-keep-unused' and `all'. `used' will
-download only explicitly used packages and remove any unused packages as well as
-their dependencies. `used-but-keep-unused' will download only the used packages
-but won't delete them if they become unused. `all' will download all the
-packages regardless if they are used or not and packages won't be deleted by
-Spacemacs.")
+(defvar dotspacemacs-install-packages 'used-only
+  "Defines the behaviour of Spacemacs when installing packages.
+Possible values are `used-only', `used-but-keep-unused' and `all'. `used-only'
+installs only explicitly used packages and uninstall any unused packages as well
+as their unused dependencies. `used-but-keep-unused' installs only the used
+packages but won't uninstall them if they become unused. `all' installs *all*
+packages supported by Spacemacs and never uninstall them.")
 
 (defvar dotspacemacs-enable-lazy-installation 'unused
-  " Lazy installation of layers (i.e. layers are installed only when a file
+  "Lazy installation of layers (i.e. layers are installed only when a file
 with a supported type is opened). Possible values are `all', `unused' and `nil'.
 `unused' will lazy install only unused layers (i.e. layers not listed in
 variable `dotspacemacs-configuration-layers'), `all' will lazy install any layer
@@ -206,6 +210,11 @@ start.")
 (defvar dotspacemacs-helm-position 'bottom
   "Position in which to show the `helm' mini-buffer.")
 
+(defvar dotspacemacs-helm-use-fuzzy 'always
+  "Controls fuzzy matching in helm. If set to `always', force fuzzy matching
+  in all non-asynchronous sources. If set to `source', preserve individual
+  source settings. Else, disable fuzzy matching in all sources.")
+
 (defvar dotspacemacs-large-file-size 1
   "Size (in MB) above which spacemacs will prompt to open the large file
 literally to avoid performance issues. Opening a file literally means that
@@ -220,6 +229,10 @@ Default value is `cache'.")
 (defvar dotspacemacs-enable-paste-transient-state t
   "If non nil the paste transient-state is enabled. While enabled pressing `p`
 several times cycle between the kill ring content.'")
+(defvaralias
+  'dotspacemacs-enable-paste-micro-state
+  'dotspacemacs-enable-paste-transient-state
+  "Old name of `dotspacemacs-enable-paste-transient-state'.")
 
 (defvar dotspacemacs-which-key-delay 0.4
   "Delay in seconds starting from the last keystroke after which
@@ -313,7 +326,13 @@ NOT USED FOR NOW :-)")
   "Association list of items to show in the startup buffer of the form
 `(list-type . list-size)`. If nil it is disabled.
 Possible values for list-type are:
-`recents' `bookmarks' `projects' `agenda' `todos'.")
+`recents' `bookmarks' `projects' `agenda' `todos'.
+List sizes may be nil, in which case
+`spacemacs--buffer-startup-lists-length' takes effect.
+")
+
+(defvar dotspacemacs-startup-buffer-responsive t
+  "True if the home buffer should respond to resize events.")
 
 (defvar dotspacemacs-excluded-packages '()
   "A list of packages that will not be install and loaded.")
@@ -539,7 +558,7 @@ error recovery."
   (defadvice dotspacemacs/layers
       (after error-recover-preserve-packages activate)
     (progn
-      (setq-default dotspacemacs-download-packages 'used-but-keep-unused)
+      (setq-default dotspacemacs-install-packages 'used-but-keep-unused)
       (ad-disable-advice 'dotspacemacs/layers 'after
                          'error-recover-preserve-packages)
       (ad-activate 'dotspacemacs/layers)))
@@ -573,7 +592,7 @@ error recovery."
   ;; protect global values of these variables
   (let (dotspacemacs-configuration-layer-path dotspacemacs-configuration-layers
         dotspacemacs-additional-packages dotspacemacs-excluded-packages
-        dotspacemacs-download-packages
+        dotspacemacs-install-packages
         (passed-tests 0) (total-tests 0))
     (load dotspacemacs-filepath)
     (dotspacemacs/layers)

@@ -46,8 +46,23 @@
       configuration-layer-private-directory))
   "Spacemacs default directory for private layers.")
 
-(defconst configuration-layer-rollback-directory
-  (expand-file-name (concat spacemacs-cache-directory ".rollback/"))
+(defun configuration-layer/elpa-directory (root)
+  "Evaluate the correct package subdirectory of ROOT. This is
+done according to the value of `dotspacemacs-elpa-subdirectory'.
+If it is nil, then ROOT is returned. Otherwise a subdirectory of
+ROOT is returned."
+  (if (not dotspacemacs-elpa-subdirectory)
+      root
+    (let ((subdir (if (eq 'emacs-version dotspacemacs-elpa-subdirectory)
+                      (format "%d%s%d"
+                              emacs-major-version
+                              version-separator
+                              emacs-minor-version)
+                    (eval dotspacemacs-elpa-subdirectory))))
+      (file-name-as-directory (expand-file-name subdir root)))))
+
+(defvar configuration-layer-rollback-directory
+  (concat spacemacs-cache-directory ".rollback/")
   "Spacemacs rollback directory.")
 
 (defconst configuration-layer-rollback-info "rollback-info"
@@ -82,7 +97,12 @@
    (disabled :initarg :disabled-for
              :initform nil
              :type list
-             :documentation "A list of layer where this layer is disabled."))
+             :documentation "A list of layers where this layer is disabled.")
+   (enabled :initarg :enabled-for
+            :initform 'unspecified
+            :type (satisfies (lambda (x) (or (listp x) (eq 'unspecified x))))
+            :documentation (concat "A list of layers where this layer is enabled. "
+                                   "(Takes precedence over `:disabled-for'.)")))
   "A configuration layer.")
 
 (defmethod cfgl-layer-owned-packages ((layer cfgl-layer))
@@ -180,6 +200,13 @@ LAYER has to be installed for this method to work properly."
     (when (configuration-layer/layer-usedp (car layers))
       (car layers))))
 
+(defmethod cfgl-package-set-property ((pkg cfgl-package) slot value)
+  "Set SLOT to the given VALUE for the package PKG.
+If `configuration-layer--package-properties-read-onlyp' is non-nil then VALUE
+is not set for the given SLOT."
+  (unless configuration-layer--package-properties-read-onlyp
+    (eval `(oset pkg ,slot value))))
+
 (defvar configuration-layer--elpa-archives
   '(("melpa" . "melpa.org/packages/")
     ("org"   . "orgmode.org/elpa/")
@@ -204,9 +231,6 @@ LAYER has to be installed for this method to work properly."
 (defvar configuration-layer--indexed-layers (make-hash-table :size 1024)
   "Hash map to index `cfgl-layer' objects by their names.")
 
-(defvar configuration-layer--delayed-layers '()
-  "A list of layer names to check again after first pass of package loading.")
-
 (defvar configuration-layer--used-packages '()
   "An alphabetically sorted list of used package names.")
 
@@ -228,6 +252,13 @@ LAYER has to be installed for this method to work properly."
 (defvar configuration-layer--inhibit-warnings nil
   "If non-nil then warning message emitted by the layer system are ignored.")
 
+(defvar configuration-layer--package-properties-read-onlyp nil
+  "If non-nil then package properties are read only and cannot be overriden by
+`configuration-layer/make-package'.")
+
+(defvar configuration-layer--declared-layers-usedp nil
+  "If non-nil then declared layers are considered to be used.")
+
 (defvar configuration-layer-error-count nil
   "Non nil indicates the number of errors occurred during the
 installation of initialization.")
@@ -244,6 +275,10 @@ cache folder.")
   "Initialize `package.el'."
   (setq configuration-layer--refresh-package-timeout dotspacemacs-elpa-timeout)
   (unless package--initialized
+    (setq configuration-layer-rollback-directory
+          (configuration-layer/elpa-directory configuration-layer-rollback-directory))
+    (setq package-user-dir
+          (configuration-layer/elpa-directory package-user-dir))
     (setq package-archives (configuration-layer//resolve-package-archives
                             configuration-layer--elpa-archives))
     ;; optimization, no need to activate all the packages so early
@@ -269,18 +304,21 @@ The returned list has a `package-archives' compliant format."
   (mapcar
    (lambda (x)
      (cons (car x)
-           (if (string-match-p "http" (cdr x))
+           (if (or (string-match-p "http" (cdr x))
+                   (string-prefix-p "/" (cdr x)))
                (cdr x)
-             (concat (if (and dotspacemacs-elpa-https
-                              (not spacemacs-insecure)
-                              ;; for now org ELPA repository does
-                              ;; not support HTTPS
-                              ;; TODO when org ELPA repo support
-                              ;; HTTPS remove the check
-                              ;; `(not (equal "org" (car x)))'
-                              (not (equal "org" (car x))))
-                         "https://"
-                       "http://") (cdr x)))))
+             (concat
+              (if (and dotspacemacs-elpa-https
+                       (not spacemacs-insecure)
+                       ;; for now org ELPA repository does
+                       ;; not support HTTPS
+                       ;; TODO when org ELPA repo support
+                       ;; HTTPS remove the check
+                       ;; `(not (equal "org" (car x)))'
+                       (not (equal "org" (car x))))
+                  "https://"
+                "http://")
+              (cdr x)))))
    archives))
 
 (defun configuration-layer/retrieve-package-archives (&optional quiet force)
@@ -339,11 +377,11 @@ If NO-INSTALL is non nil then install steps are skipped."
   (dotspacemacs|call-func dotspacemacs/layers "Calling dotfile layers...")
   (when (spacemacs-buffer//choose-banner)
     (spacemacs-buffer//inject-version))
-  ;; first, declare used layers then packages as soon as possible to resolve
+  ;; declare used layers then packages as soon as possible to resolve
   ;; usage and ownership
   (configuration-layer/discover-layers)
   (configuration-layer//declare-used-layers dotspacemacs-configuration-layers)
-  (configuration-layer//declare-packages configuration-layer--used-layers)
+  (configuration-layer//declare-used-packages configuration-layer--used-layers)
   ;; then load the functions and finally configure the layers
   (configuration-layer//load-layers-files configuration-layer--used-layers
                                           '("funcs.el"))
@@ -352,27 +390,44 @@ If NO-INSTALL is non nil then install steps are skipped."
   (setq configuration-layer--used-distant-packages
         (configuration-layer//get-distant-packages
          configuration-layer--used-packages t))
-  ;; install/uninstall packages
+  ;; load layers lazy settings
   (configuration-layer/load-auto-layer-file)
+  ;; install and/or uninstall packages
   (unless no-install
-    (if (eq 'all dotspacemacs-download-packages)
-        (configuration-layer//install-packages
-         (configuration-layer//get-distant-packages
-          (configuration-layer/make-all-packages 'used) nil))
-      (configuration-layer//install-packages
-       (configuration-layer/filter-objects
-        configuration-layer--used-distant-packages
-        (lambda (x)
-          (let ((pkg (configuration-layer/get-package x)))
-            (not (oref pkg :lazy-install)))))))
-    (configuration-layer//configure-packages configuration-layer--used-packages)
-    (configuration-layer//load-layers-files configuration-layer--used-layers
-                                            '("keybindings.el"))
-    (when (and (eq 'used dotspacemacs-download-packages)
-               (not configuration-layer-force-distribution)
-               (not configuration-layer-exclude-all-layers))
-      (configuration-layer/delete-orphan-packages
-       configuration-layer--used-distant-packages))))
+    (let ((packages
+           (append
+            ;; install used packages
+            (configuration-layer/filter-objects
+             configuration-layer--used-distant-packages
+             (lambda (x)
+               (let ((pkg (configuration-layer/get-package x)))
+                 (not (oref pkg :lazy-install)))))
+            ;; also install all other packages if requested
+            (when (eq 'all dotspacemacs-install-packages)
+              (let (all-other-packages)
+                (dolist (layer (configuration-layer/get-layers-list))
+                  (let ((configuration-layer--declared-layers-usedp nil)
+                        (configuration-layer--load-packages-files t))
+                    (configuration-layer/declare-layer layer)
+                    (let* ((obj (configuration-layer/get-layer layer))
+                           (pkgs (when obj (oref obj :packages))))
+                      (configuration-layer/make-packages-from-layers
+                       (list layer))
+                      (dolist (pkg pkgs)
+                        (let ((pkg-name (if (listp pkg) (car pkg) pkg)))
+                          (add-to-list 'all-other-packages pkg-name))))))
+                (configuration-layer//get-distant-packages
+                 all-other-packages nil))))))
+      (configuration-layer//install-packages packages)
+      (when (and (or (eq 'used dotspacemacs-install-packages)
+                     (eq 'used-only dotspacemacs-install-packages))
+                 (not configuration-layer-force-distribution)
+                 (not configuration-layer-exclude-all-layers))
+        (configuration-layer/delete-orphan-packages packages))))
+  ;; configure used packages
+  (configuration-layer//configure-packages configuration-layer--used-packages)
+  (configuration-layer//load-layers-files configuration-layer--used-layers
+                                          '("keybindings.el")))
 
 (defun configuration-layer/load-auto-layer-file ()
   "Load `auto-layer.el' file"
@@ -466,6 +521,10 @@ indexed layers for the path."
       (let* ((dir (file-name-as-directory dir))
              (disabled (when (listp layer-specs)
                          (spacemacs/mplist-get layer-specs :disabled-for)))
+             (enabled (if (and (listp layer-specs)
+                               (memq :enabled-for layer-specs))
+                          (spacemacs/mplist-get layer-specs :enabled-for)
+                        'unspecified))
              (variables (when (listp layer-specs)
                           (spacemacs/mplist-get layer-specs :variables)))
              (packages-file (concat dir "packages.el"))
@@ -484,51 +543,103 @@ indexed layers for the path."
         (oset obj :dir dir)
         (when usedp
           (oset obj :disabled-for disabled)
+          (oset obj :enabled-for enabled)
           (oset obj :variables variables))
         (when packages
           (oset obj :packages packages)
           (oset obj :selected-packages selected-packages))
         obj))))
 
-(defun configuration-layer/make-package (pkg &optional obj togglep layer)
+(defun configuration-layer/make-package (pkg layer-name &optional obj)
   "Return a `cfgl-package' object based on PKG.
 If OBJ is non nil then copy PKG properties into OBJ, otherwise create
 a new object.
 Properties that can be copied are `:location', `:step' and `:excluded'.
 If TOGGLEP is nil then `:toggle' parameter is ignored."
-  (let* ((name-sym (if (listp pkg) (car pkg) pkg))
-         (name-str (symbol-name name-sym))
-         (location (when (listp pkg) (plist-get (cdr pkg) :location)))
+  (let* ((pkg-name (if (listp pkg) (car pkg) pkg))
+         (pkg-name-str (symbol-name pkg-name))
+         (layer (unless (eq 'dotfile layer-name)
+                  (configuration-layer/get-layer layer-name)))
          (min-version (when (listp pkg) (plist-get (cdr pkg) :min-version)))
          (step (when (listp pkg) (plist-get (cdr pkg) :step)))
+         (toggle (when (listp pkg) (plist-get (cdr pkg) :toggle)))
          (excluded (when (listp pkg) (plist-get (cdr pkg) :excluded)))
-         (toggle (when (and togglep (listp pkg)) (plist-get (cdr pkg) :toggle)))
+         (location (when (listp pkg) (plist-get (cdr pkg) :location)))
          (protected (when (listp pkg) (plist-get (cdr pkg) :protected)))
+         (init-func (intern (format "%S/init-%S"
+                                    layer-name pkg-name)))
+         (pre-init-func (intern (format "%S/pre-init-%S"
+                                        layer-name pkg-name)))
+         (post-init-func (intern (format "%S/post-init-%S"
+                                         layer-name pkg-name)))
          (copyp (not (null obj)))
-         (obj (if obj obj (cfgl-package name-str :name name-sym))))
-    (when (and (listp location)
+         (obj (if obj obj (cfgl-package pkg-name-str :name pkg-name)))
+         (ownerp (or (and (eq 'dotfile layer-name)
+                          (null (oref obj :owners)))
+                     (fboundp init-func))))
+    (when min-version
+      (cfgl-package-set-property obj :min-version (version-to-list min-version)))
+    (when step (cfgl-package-set-property obj :step step))
+    (when toggle (cfgl-package-set-property obj :toggle toggle))
+    (cfgl-package-set-property obj :excluded (or excluded (oref obj :excluded)))
+    (when location
+      (if (and (listp location)
                (eq (car location) 'recipe)
                (eq (plist-get (cdr location) :fetcher) 'local))
-      (setq location
-            `(recipe
-              :fetcher file
-              :path ,(expand-file-name
-                      (format
-                       "%s%s/%s.el"
-                       (configuration-layer/get-layer-local-dir
-                        (oref layer :name))
-                       name-str name-str)))))
-    (when location (oset obj :location location))
-    (when min-version (oset obj :min-version (version-to-list min-version)))
-    (when step (oset obj :step step))
-    (oset obj :excluded (or excluded (oref obj :excluded)))
-    (when toggle (oset obj :toggle toggle))
+          (cond
+           (layer (let ((path (expand-file-name
+                               (format "%s%s/%s.el"
+                                       (configuration-layer/get-layer-local-dir
+                                        layer-name)
+                                       pkg-name-str pkg-name-str))))
+                    (cfgl-package-set-property
+                     obj :location `(recipe :fetcher file :path ,path))))
+           ((eq 'dotfile layer-name)
+            ;; TODO what is the local path for a packages owned by the dotfile?
+            nil))
+        (cfgl-package-set-property obj :location location)))
     ;; cannot override protected packages
     (unless copyp
       ;; a bootstrap package is protected
-      (oset obj :protected (or protected (eq 'bootstrap step)))
+      (cfgl-package-set-property
+       obj :protected (or protected (eq 'bootstrap step)))
       (when protected
-        (push name-sym configuration-layer--protected-packages)))
+        (push pkg-name configuration-layer--protected-packages)))
+    (when ownerp
+      ;; warn about mutliple owners
+      (when (and (oref obj :owners)
+                 (not (memq layer-name (oref obj :owners))))
+        (configuration-layer//warning
+         (format (concat "More than one init function found for "
+                         "package %S. Previous owner was %S, "
+                         "replacing it with layer %S.")
+                 pkg-name (car (oref obj :owners)) layer-name)))
+      ;; last owner wins over the previous one
+      (object-add-to-list obj :owners layer-name))
+    ;; check consistency betwween package and defined init functions
+    (unless (or ownerp
+                (eq 'dotfile layer-name)
+                (fboundp pre-init-func)
+                (fboundp post-init-func)
+                (oref obj :excluded))
+      (configuration-layer//warning
+       (format (concat "package %s not initialized in layer %s, "
+                       "you may consider removing this package from "
+                       "the package list or use the :toggle keyword "
+                       "instead of a `when' form.")
+               pkg-name layer-name)))
+    ;; check if toggle can be applied
+    (when (and (not ownerp)
+               (and (not (eq 'unspecified toggle))
+                    toggle))
+      (configuration-layer//warning
+       (format (concat "Ignoring :toggle for package %s because "
+                       "layer %S does not own it.")
+               pkg-name layer-name)))
+    (when (fboundp pre-init-func)
+      (object-add-to-list obj :pre-layers layer-name))
+    (when (fboundp post-init-func)
+      (object-add-to-list obj :post-layers layer-name))
     obj))
 
 (define-button-type 'help-dotfile-variable
@@ -775,10 +886,11 @@ Return nil if package object is not found."
 (defun configuration-layer/make-all-packages (&optional usedp)
   "Create objects for _all_ packages.
 USEDP if non-nil indicates that made packages are used packages."
-  (configuration-layer/make-packages (configuration-layer/get-layers-list)
-                                     usedp))
+  (configuration-layer/make-packages-from-layers
+   (configuration-layer/get-layers-list) usedp))
 
-(defun configuration-layer/make-packages (layer-names &optional usedp dotfile)
+(defun configuration-layer/make-packages-from-layers
+    (layer-names &optional usedp)
   "Read the package lists of layers with name LAYER-NAMES and create packages.
 USEDP if non-nil indicates that made packages are used packages.
 DOTFILE if non-nil will process the dotfile `dotspacemacs-additional-packages'
@@ -787,72 +899,29 @@ variable as well."
     (let ((layer (configuration-layer/get-layer layer-name)))
       (dolist (pkg (cfgl-layer-get-packages layer))
         (let* ((pkg-name (if (listp pkg) (car pkg) pkg))
-               (init-func (intern (format "%S/init-%S"
-                                          layer-name pkg-name)))
-               (pre-init-func (intern (format "%S/pre-init-%S"
-                                              layer-name pkg-name)))
-               (post-init-func (intern (format "%S/post-init-%S"
-                                               layer-name pkg-name)))
-               (ownerp (fboundp init-func))
                (obj (configuration-layer/get-package pkg-name)))
           (if obj
-              (setq obj (configuration-layer/make-package pkg obj ownerp layer))
-            (setq obj (configuration-layer/make-package pkg nil ownerp layer)))
-          (configuration-layer//add-package obj usedp)
-          (when ownerp
-            ;; last owner wins over the previous one,
-            ;; still warn about mutliple owners
-            (when (and (oref obj :owners)
-                       (not (memq layer-name (oref obj :owners))))
-              (configuration-layer//warning
-               (format (concat "More than one init function found for "
-                               "package %S. Previous owner was %S, "
-                               "replacing it with layer %S.")
-                       pkg-name (car (oref obj :owners)) layer-name)))
-            (push layer-name (oref obj :owners)))
-          ;; if no function at all is found for the package, then check
-          ;; again this layer later to resolve `package-usedp'  usage in
-          ;; `packages.el' files
-          (unless (or ownerp
-                      (fboundp pre-init-func)
-                      (fboundp post-init-func)
-                      (oref obj :excluded))
-            (unless (memq layer-name configuration-layer--delayed-layers)
-              (configuration-layer//warning
-               (format (concat "package %s not initialized in layer %s, "
-                               "you may consider removing this package from "
-                               "the package list or use the :toggle keyword "
-                               "instead of a `when' form.")
-                       pkg-name layer-name))
-              (push layer-name configuration-layer--delayed-layers)))
-          ;; check if toggle can be applied
-          (when (and (not ownerp)
-                     (listp pkg)
-                     (spacemacs/mplist-get pkg :toggle))
-            (configuration-layer//warning
-             (format (concat "Ignoring :toggle for package %s because "
-                             "layer %S does not own it.")
-                     pkg-name layer-name)))
-          (when (fboundp pre-init-func)
-            (push layer-name (oref obj :pre-layers)))
-          (when (fboundp post-init-func)
-            (push layer-name (oref obj :post-layers)))))))
-  ;; additional and excluded packages from dotfile
-  (when dotfile
-    (dolist (pkg dotspacemacs-additional-packages)
-      (let* ((pkg-name (if (listp pkg) (car pkg) pkg))
-             (obj (configuration-layer/get-package pkg-name)))
-        (if obj
-            (setq obj (configuration-layer/make-package pkg obj t))
-          (setq obj (configuration-layer/make-package pkg nil t))
-          (push 'dotfile (oref obj :owners)))
-        (configuration-layer//add-package obj usedp)))
-    (dolist (xpkg dotspacemacs-excluded-packages)
-      (let ((obj (configuration-layer/get-package xpkg)))
-        (unless obj
-          (setq obj (configuration-layer/make-package xpkg)))
-        (configuration-layer//add-package obj usedp)
-        (oset obj :excluded t)))))
+              (setq obj (configuration-layer/make-package pkg layer-name obj))
+            (setq obj (configuration-layer/make-package pkg layer-name)))
+          (configuration-layer//add-package
+           obj (and (cfgl-package-get-safe-owner obj) usedp)))))))
+
+(defun configuration-layer/make-packages-from-dotfile (&optional usedp)
+  "Read the additonal packages declared in the dotfile and create packages.
+USEDP if non-nil indicates that made packages are used packages."
+  (dolist (pkg dotspacemacs-additional-packages)
+    (let* ((pkg-name (if (listp pkg) (car pkg) pkg))
+           (obj (configuration-layer/get-package pkg-name)))
+      (if obj
+          (setq obj (configuration-layer/make-package pkg 'dotfile obj))
+        (setq obj (configuration-layer/make-package pkg 'dotfile)))
+      (configuration-layer//add-package obj usedp)))
+  (dolist (xpkg dotspacemacs-excluded-packages)
+    (let ((obj (configuration-layer/get-package xpkg)))
+      (unless obj
+        (setq obj (configuration-layer/make-package xpkg 'dotfile)))
+      (configuration-layer//add-package obj usedp)
+      (cfgl-package-set-property obj :excluded t))))
 
 (defun configuration-layer/lazy-install (layer-name &rest props)
   "Configure auto-installation of layer with name LAYER-NAME."
@@ -875,7 +944,7 @@ variable as well."
                        :initial-value t)))
             (oset layer :lazy-install lazy)
             (dolist (pkg packages)
-              (oset pkg :lazy-install lazy)))))
+              (cfgl-package-set-property pkg :lazy-install lazy)))))
       (dolist (x extensions)
         (let ((ext (car x))
               (mode (cadr x)))
@@ -1032,24 +1101,17 @@ Returns nil if the directory is not a category."
                 ;; layer not found, add it to search path
                 (setq search-paths (cons sub search-paths)))))))))))
 
-(defun configuration-layer/declare-used-layers (layers-specs)
-  "Declare used layers with LAYERS-SPECS."
-  (configuration-layer/declare-layers layers-specs 'used))
-
-(defun configuration-layer/declare-layers (layers-specs &optional usedp)
+(defun configuration-layer/declare-layers (layers-specs)
   "Declare layers with LAYERS-SPECS."
-  (mapc (lambda (x)
-          (configuration-layer/declare-layer x usedp))
-        layers-specs))
+  (mapc 'configuration-layer/declare-layer layers-specs))
 
-(defun configuration-layer/declare-used-layer (layer-specs)
-  "Declare used layer with LAYER-SPECS."
-  (configuration-layer/declare-layer layer-specs 'used))
-
-(defun configuration-layer/declare-layer (layer-specs &optional usedp)
-  "Declare a single layer with spec LAYER-SPECS."
+(defun configuration-layer/declare-layer (layer-specs)
+  "Declare a single layer with spec LAYER-SPECS.
+Set the variable `configuration-layer--declared-layers-usedp' to control
+wether the declared layer is an used one or not."
   (let* ((layer-name (if (listp layer-specs) (car layer-specs) layer-specs))
-         (layer (configuration-layer/get-layer layer-name)))
+         (layer (configuration-layer/get-layer layer-name))
+         (usedp configuration-layer--declared-layers-usedp))
     (if layer
         (let ((obj (configuration-layer/make-layer
                     layer-specs
@@ -1057,36 +1119,36 @@ Returns nil if the directory is not a category."
                     usedp)))
           (configuration-layer//add-layer obj usedp)
           (configuration-layer//set-layer-variables obj)
-          (when usedp
+          (when (or usedp configuration-layer--load-packages-files)
             (configuration-layer//load-layer-files layer-name '("layers.el"))))
       (configuration-layer//warning "Unknown layer %s declared in dotfile."
                                     layer-name))))
 
-(defun configuration-layer//declare-used-layers (&optional layers-specs)
-  "Declare used layers from LAYERS-SPECS list.
-If LAYERS-SPECS is nil then read variable `dotspacemacs-configuration-layers'."
+(defun configuration-layer//declare-used-layers (layers-specs)
+  "Declare used layers from LAYERS-SPECS list."
   (setq configuration-layer--used-layers nil)
-  (unless layers-specs
-    (setq layers-specs dotspacemacs-configuration-layers))
-  (unless configuration-layer-exclude-all-layers
-    (dolist (layer-specs layers-specs)
-      (let* ((layer-name (if (listp layer-specs) (car layer-specs) layer-specs))
-             (layer (configuration-layer/get-layer layer-name)))
-        (if layer
-            (let ((layer-path (oref layer :dir)))
-              (unless (string-match-p "+distributions" layer-path)
-                (configuration-layer/declare-used-layer layer-specs)))
-          (configuration-layer//warning "Unknown layer %s declared in dotfile."
-                                        layer-name))))
-    (setq configuration-layer--used-layers
-          (reverse configuration-layer--used-layers)))
-  ;; distribution and bootstrap layers are always first
-  (let ((distribution (if configuration-layer-force-distribution
-                          configuration-layer-force-distribution
-                        dotspacemacs-distribution)))
-    (unless (eq 'spacemacs-bootstrap distribution)
-      (configuration-layer/declare-used-layer distribution)))
-  (configuration-layer/declare-used-layer 'spacemacs-bootstrap))
+  (let ((configuration-layer--declared-layers-usedp t))
+    (unless configuration-layer-exclude-all-layers
+      (dolist (layer-specs layers-specs)
+        (let* ((layer-name (if (listp layer-specs)
+                               (car layer-specs)
+                             layer-specs))
+               (layer (configuration-layer/get-layer layer-name)))
+          (if layer
+              (let ((layer-path (oref layer :dir)))
+                (unless (string-match-p "+distributions" layer-path)
+                  (configuration-layer/declare-layer layer-specs)))
+            (configuration-layer//warning
+             "Unknown layer %s declared in dotfile." layer-name))))
+      (setq configuration-layer--used-layers
+            (reverse configuration-layer--used-layers)))
+    ;; distribution and bootstrap layers are always first
+    (let ((distribution (if configuration-layer-force-distribution
+                            configuration-layer-force-distribution
+                          dotspacemacs-distribution)))
+      (unless (eq 'spacemacs-bootstrap distribution)
+        (configuration-layer/declare-layer distribution)))
+    (configuration-layer/declare-layer 'spacemacs-bootstrap)))
 
 (defun configuration-layer//set-layers-variables (layers)
   "Set the configuration variables for the passed LAYERS."
@@ -1137,14 +1199,12 @@ If LAYERS-SPECS is nil then read variable `dotspacemacs-configuration-layers'."
     (dolist (layer-name layer-names)
       (configuration-layer//load-layer-files layer-name '("config.el")))))
 
-(defun configuration-layer//declare-packages (layers)
-  "Declare packages contained in LAYERS."
+(defun configuration-layer//declare-used-packages (layers)
+  "Declare used packages contained in LAYERS."
   (setq configuration-layer--used-packages nil)
   (let* ((warning-minimum-level :error))
-    ;; first pass
-    (configuration-layer/make-packages layers t t)
-    ;; second pass to resolve package-usedp calls
-    (configuration-layer/make-packages configuration-layer--delayed-layers t)
+    (configuration-layer/make-packages-from-layers layers t)
+    (configuration-layer/make-packages-from-dotfile t)
     (setq configuration-layer--used-packages
           (configuration-layer//sort-packages
            configuration-layer--used-packages))))
@@ -1204,10 +1264,10 @@ If LAYERS-SPECS is nil then read variable `dotspacemacs-configuration-layers'."
           (cond
            ((or (null pkg) (eq 'elpa location))
             (configuration-layer//install-from-elpa pkg-name)
-            (when pkg (oset pkg :lazy-install nil)))
+            (when pkg (cfgl-package-set-property pkg :lazy-install nil)))
            ((and (listp location) (eq 'recipe (car location)))
             (configuration-layer//install-from-recipe pkg)
-            (oset pkg :lazy-install nil))
+            (cfgl-package-set-property pkg :lazy-install nil))
            (t (configuration-layer//warning "Cannot install package %S."
                                         pkg-name)))
         ('error
@@ -1244,7 +1304,7 @@ If LAYERS-SPECS is nil then read variable `dotspacemacs-configuration-layers'."
             (delq nil (mapcar
                        (lambda (x)
                          (let ((pkg (configuration-layer/get-package x)))
-                           (oset pkg :lazy-install nil)
+                           (cfgl-package-set-property pkg :lazy-install nil)
                            pkg))
                        (oref layer :packages)))))
       (let ((last-buffer (current-buffer))
@@ -1359,18 +1419,18 @@ If LAYERS-SPECS is nil then read variable `dotspacemacs-configuration-layers'."
     (when pkg
       (let ((location (oref pkg :location)))
         (when (and (listp location) (eq 'recipe (car location)))
-          location)))))
+          (cons pkg-name (cdr location)))))))
 
 (defun configuration-layer//new-version-available-p (pkg-name)
   "Return non nil if there is a new version available for PKG-NAME."
   (let ((recipe (configuration-layer//get-package-recipe pkg-name))
         (cur-version (configuration-layer//get-package-version-string pkg-name))
+        (quelpa-upgrade-p t)
         new-version)
     (when cur-version
       (setq new-version
             (if recipe
-                (quelpa-checkout recipe (expand-file-name (symbol-name pkg-name)
-                                                          quelpa-build-dir))
+                (or (quelpa-checkout recipe (expand-file-name (symbol-name pkg-name) quelpa-build-dir)) cur-version)
               (configuration-layer//get-latest-package-version-string
                pkg-name)))
       ;; (message "%s: %s > %s ?" pkg-name cur-version new-version)
@@ -1459,49 +1519,61 @@ If LAYERS-SPECS is nil then read variable `dotspacemacs-configuration-layers'."
          (t
           (configuration-layer//configure-package pkg))))))))
 
+(defun configuration-layer//package-enabled-p (pkg layer)
+  "Returns true if PKG should be configured for LAYER.
+LAYER must not be the owner of PKG."
+  (let* ((owner (configuration-layer/get-layer (car (oref pkg :owners))))
+         (disabled (oref owner :disabled-for))
+         (enabled (oref owner :enabled-for)))
+    (if (not (eq 'unspecified enabled))
+        (memq layer enabled)
+      (not (memq layer disabled)))))
+
 (defun configuration-layer//configure-package (pkg)
   "Configure PKG object."
   (let* ((pkg-name (oref pkg :name))
-         (owner (car (oref pkg :owners)))
-         (owner-layer (configuration-layer/get-layer owner))
-         (disabled-for-layers (oref owner-layer :disabled-for)))
+         (owner (car (oref pkg :owners))))
     (spacemacs-buffer/message (format "Configuring %S..." pkg-name))
     ;; pre-init
-    (mapc (lambda (layer)
-            (if (memq layer disabled-for-layers)
-                (spacemacs-buffer/message
-                 (format "  -> ignored pre-init (%S)..." layer))
-              (spacemacs-buffer/message
-               (format "  -> pre-init (%S)..." layer))
-              (condition-case-unless-debug err
-                  (funcall (intern (format "%S/pre-init-%S" layer pkg-name)))
-                ('error
-                 (configuration-layer//increment-error-count)
-                 (spacemacs-buffer/append
-                  (format
-                   (concat "\nAn error occurred while pre-configuring %S "
-                           "in layer %S (error: %s)\n")
-                   pkg-name layer err))))))
+    (mapc
+     (lambda (layer)
+       (when (configuration-layer/layer-usedp layer)
+         (if (not (configuration-layer//package-enabled-p pkg layer))
+             (spacemacs-buffer/message
+              (format "  -> ignored pre-init (%S)..." layer))
+           (spacemacs-buffer/message
+            (format "  -> pre-init (%S)..." layer))
+           (condition-case-unless-debug err
+               (funcall (intern (format "%S/pre-init-%S" layer pkg-name)))
+             ('error
+              (configuration-layer//increment-error-count)
+              (spacemacs-buffer/append
+               (format
+                (concat "\nAn error occurred while pre-configuring %S "
+                        "in layer %S (error: %s)\n")
+                pkg-name layer err)))))))
           (oref pkg :pre-layers))
     ;; init
     (spacemacs-buffer/message (format "  -> init (%S)..." owner))
     (funcall (intern (format "%S/init-%S" owner pkg-name)))
     ;; post-init
-    (mapc (lambda (layer)
-            (if (memq layer disabled-for-layers)
-                (spacemacs-buffer/message
-                 (format "  -> ignored post-init (%S)..." layer))
-              (spacemacs-buffer/message
-               (format "  -> post-init (%S)..." layer))
-              (condition-case-unless-debug err
-                  (funcall (intern (format "%S/post-init-%S" layer pkg-name)))
-                ('error
-                 (configuration-layer//increment-error-count)
-                 (spacemacs-buffer/append
-                  (format
-                   (concat "\nAn error occurred while post-configuring %S "
-                           "in layer %S (error: %s)\n")
-                   pkg-name layer err))))))
+    (mapc
+     (lambda (layer)
+       (when (configuration-layer/layer-usedp layer)
+         (if (not (configuration-layer//package-enabled-p pkg layer))
+             (spacemacs-buffer/message
+              (format "  -> ignored post-init (%S)..." layer))
+           (spacemacs-buffer/message
+            (format "  -> post-init (%S)..." layer))
+           (condition-case-unless-debug err
+               (funcall (intern (format "%S/post-init-%S" layer pkg-name)))
+             ('error
+              (configuration-layer//increment-error-count)
+              (spacemacs-buffer/append
+               (format
+                (concat "\nAn error occurred while post-configuring %S "
+                        "in layer %S (error: %s)\n")
+                pkg-name layer err)))))))
           (oref pkg :post-layers))))
 
 (defun configuration-layer//cleanup-rollback-directory ()
@@ -1878,19 +1950,29 @@ to select one."
         (configuration-layer//insert-lazy-install-form
          layer-name (car x) (cdr x))))))
 
+(defvar configuration-layer--spacemacs-startup-time nil
+  "Spacemacs full startup duration.")
+
 (defun configuration-layer/display-summary (start-time)
   "Display a summary of loading time."
-  (let ((elapsed (float-time (time-subtract (current-time) emacs-start-time)))
-        (stats (configuration-layer/configured-packages-stats
+  (unless configuration-layer--spacemacs-startup-time
+    (setq configuration-layer--spacemacs-startup-time
+          (float-time (time-subtract (current-time) emacs-start-time))))
+  (let ((stats (configuration-layer/configured-packages-stats
                 configuration-layer--used-packages)))
+    (spacemacs-buffer/insert-page-break)
     (spacemacs-buffer/append
-     (format "\n%s packages loaded in %.3fs (e:%s r:%s l:%s b:%s)\n"
+     (format "\n%s packages loaded in %.3fs (e:%s r:%s l:%s b:%s)"
              (cadr (assq 'total stats))
-             elapsed
+             configuration-layer--spacemacs-startup-time
              (cadr (assq 'elpa stats))
              (cadr (assq 'recipe stats))
              (cadr (assq 'local stats))
-             (cadr (assq 'built-in stats))))))
+             (cadr (assq 'built-in stats))))
+    (with-current-buffer (get-buffer-create spacemacs-buffer-name)
+      (let ((buffer-read-only nil))
+	(spacemacs-buffer//center-line)
+	(insert "\n")))))
 
 (defun configuration-layer/load-or-install-protected-package
     (pkg &optional log file-to-load)

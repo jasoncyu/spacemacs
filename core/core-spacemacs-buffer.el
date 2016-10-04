@@ -8,7 +8,7 @@
 ;; This file is not part of GNU Emacs.
 ;;
 ;;; License: GPLv3
-(defconst spacemacs-buffer-version-info "0.105"
+(defconst spacemacs-buffer-version-info "0.200"
   "Current version used to display addition release information.")
 
 (defconst spacemacs-buffer-name "*spacemacs*"
@@ -17,12 +17,20 @@
 (defconst spacemacs-buffer-logo-title "[S P A C E M A C S]"
   "The title displayed beneath the logo.")
 
+(defconst spacemacs-buffer-buttons-startup-lists-offset 25
+  "Relative position in characters of the home buffer buttons and the home
+ buffer startup lists.")
+
 (defconst spacemacs-buffer--banner-length 75
   "Width of a banner.")
 
 (defconst spacemacs-buffer--cache-file
   (expand-file-name (concat spacemacs-cache-directory "spacemacs-buffer.el"))
   "Cache file for various persistent data for the spacemacs startup buffer")
+
+(defvar spacemacs-buffer-startup-lists-length 20
+  "Length used for startup lists with otherwise unspecified bounds.
+Set to nil for unbounded.")
 
 (defvar spacemacs-buffer--release-note-version nil
   "If nil the release note is displayed. If non nil it contains
@@ -38,6 +46,10 @@ version the release note it displayed")
 (defvar spacemacs-buffer--fresh-install
   (not (file-exists-p dotspacemacs-filepath))
   "Non-nil if this Emacs instance if a fresh install.")
+
+(defvar spacemacs-buffer--buttons-position nil
+  "Offset in characters between the edge of the screen and the beginning of the
+ home buffer buttons. Do not set this variable.")
 
 (defvar spacemacs-buffer-mode-map
   (let ((map (make-sparse-keymap)))
@@ -77,15 +89,15 @@ version the release note it displayed")
      (insert-file-contents file)
      (let ((banner-width 0))
        (while (not (eobp))
-	 (let ((line-length (- (line-end-position) (line-beginning-position))))
-	   (if (< banner-width line-length)
-	       (setq banner-width line-length)))
-	 (forward-line 1))
+         (let ((line-length (- (line-end-position) (line-beginning-position))))
+           (if (< banner-width line-length)
+               (setq banner-width line-length)))
+         (forward-line 1))
        (goto-char 0)
        (let ((margin (max 0 (floor (/ (- spacemacs-buffer--banner-length banner-width) 2)))))
-	 (while (not (eobp))
-	   (insert (make-string margin ?\ ))
-	   (forward-line 1))))
+         (while (not (eobp))
+           (insert (make-string margin ?\ ))
+           (forward-line 1))))
      (buffer-string))))
 
 (defun spacemacs-buffer/insert-banner-and-buttons ()
@@ -106,8 +118,6 @@ Cate special text banner can de reachable via `998', `cat' or `random*'.
           (spacemacs-buffer/insert-ascii-banner-centered banner))
         (spacemacs-buffer//inject-version))
       (spacemacs-buffer//insert-buttons)
-      (unless (bound-and-true-p spacemacs-initialized)
-        (spacemacs-buffer/insert-page-break))
       (spacemacs//redisplay))))
 
 (defun spacemacs-buffer/display-info-box ()
@@ -161,15 +171,20 @@ Cate special text banner can de reachable via `998', `cat' or `random*'.
              (spacemacs-buffer//get-banner-path 1)))
           (t (spacemacs-buffer//get-banner-path 1)))))
 
+(defvar spacemacs-buffer--random-banner nil
+  "The random banner chosen.")
+
 (defun spacemacs-buffer//choose-random-text-banner (&optional all)
   "Return the full path of a banner chosen randomly.
 
 If ALL is non-nil then truly all banners can be selected."
-  (let* ((files (directory-files spacemacs-banner-directory t ".*\.txt"))
-         (count (length files))
-         ;; -2 to remove the two last ones (easter eggs)
-         (choice (random (- count (if all 0 2)))))
-    (nth choice files)))
+  (setq spacemacs-buffer--random-banner
+        (or spacemacs-buffer--random-banner
+            (let* ((files (directory-files spacemacs-banner-directory t ".*\.txt"))
+                   (count (length files))
+                   ;; -2 to remove the two last ones (easter eggs)
+                   (choice (random (- count (if all 0 2)))))
+              (nth choice files)))))
 
 (defun spacemacs-buffer//get-banner-path (index)
   "Return the full path to banner with index INDEX."
@@ -470,8 +485,8 @@ The vertical spacing is always one line."
        "╭─"
        (if caption
            (concat caption
-                   (make-string (+ (- fill-column caption-len 1)
-                                   hpadding) ?─))
+                   (make-string (max 0 (+ (- fill-column caption-len 1)
+                                          hpadding)) ?─))
          (make-string fill-column ?─))
        (make-string hpadding ?─) "╮\n"
        ;; content
@@ -583,7 +598,12 @@ border."
                    :mouse-face 'highlight
                    :follow-link "\C-m"
                    (propertize "Update Spacemacs" 'face 'font-lock-keyword-face))
-    (spacemacs-buffer//center-line)
+    (let ((len (- (line-end-position)
+                  (line-beginning-position))))
+      (spacemacs-buffer//center-line)
+      (setq spacemacs-buffer--buttons-position (- (line-end-position)
+                                                  (line-beginning-position)
+                                                  len)))
     (insert "\n")
     (widget-create 'push-button
                    :help-echo "Update all ELPA packages to the latest versions."
@@ -770,16 +790,13 @@ list. Return entire list if `END' is omitted."
     (cl-subseq seq start (and (number-or-marker-p end)
                               (min len end)))))
 
-(defun spacemacs-buffer/insert-startupify-lists ()
-  (interactive)
-  (with-current-buffer (get-buffer spacemacs-buffer-name)
-    (let ((buffer-read-only nil)
-          (list-separator "\n\n"))
-      (goto-char (point-max))
-      (spacemacs-buffer/insert-page-break)
+(defun spacemacs-buffer//do-insert-startupify-lists ()
+   (let ((list-separator "\n\n"))
       (mapc (lambda (els)
               (let ((el (or (car-safe els) els))
-                    (list-size (cdr-safe els)))
+                    (list-size
+                     (or (cdr-safe els)
+                         spacemacs-buffer-startup-lists-length)))
                 (cond
                  ((eq el 'recents)
                   (recentf-mode)
@@ -792,14 +809,14 @@ list. Return entire list if `END' is omitted."
                   (when (spacemacs-buffer//insert-todo-list
                          "ToDo:"
                          (spacemacs//subseq (spacemacs-buffer//todo-list)
-                                     0 list-size))
+                                            0 list-size))
                     (spacemacs//insert--shortcut "d" "ToDo:")
                     (insert list-separator)))
                  ((eq el 'agenda)
                   (when (spacemacs-buffer//insert-todo-list
                          "Agenda:"
                          (spacemacs//subseq (spacemacs-buffer//agenda-list)
-                                     0 list-size))
+                                            0 list-size))
                     (spacemacs//insert--shortcut "c" "Agenda:")
                     (insert list-separator)))
                  ((eq el 'bookmarks)
@@ -809,7 +826,7 @@ list. Return entire list if `END' is omitted."
                   (when (spacemacs-buffer//insert-bookmark-list
                          "Bookmarks:"
                          (spacemacs//subseq (bookmark-all-names)
-                                     0 list-size))
+                                            0 list-size))
                     (spacemacs//insert--shortcut "b" "Bookmarks:")
                     (insert list-separator)))
                  ((and (eq el 'projects)
@@ -818,9 +835,45 @@ list. Return entire list if `END' is omitted."
                   (when (spacemacs-buffer//insert-file-list
                          "Projects:"
                          (spacemacs//subseq (projectile-relevant-known-projects)
-                                     0 list-size))
+                                            0 list-size))
                     (spacemacs//insert--shortcut "p" "Projects:")
-                    (insert list-separator)))))) dotspacemacs-startup-lists))))
+                    (insert list-separator)))))) dotspacemacs-startup-lists)))
+
+(defun spacemacs-buffer//get-buffer-width ()
+  (save-excursion
+    (goto-char 0)
+    (let ((current-max 0))
+      (while (not (eobp))
+        (let ((line-length (- (line-end-position) (line-beginning-position))))
+          (if (< current-max line-length)
+              (setq current-max line-length)))
+        (forward-line 1))
+      current-max)))
+
+(defun spacemacs-buffer//center-startupify-lists ()
+  (let* ((lists-width (spacemacs-buffer//get-buffer-width))
+         (margin (max 0 (- spacemacs-buffer--buttons-position
+                           spacemacs-buffer-buttons-startup-lists-offset)))
+         (final-padding (if (< spacemacs-buffer--banner-length (+ margin lists-width))
+                            (max 0 (floor (/ (- spacemacs-buffer--banner-length lists-width) 2)))
+                          margin)))
+    (goto-char 0)
+    (while (not (eobp))
+      (line-beginning-position)
+      (insert (make-string final-padding ?\ ))
+      (forward-line))))
+
+(defun spacemacs-buffer/insert-startupify-lists ()
+  (interactive)
+  (with-current-buffer (get-buffer spacemacs-buffer-name)
+    (let ((buffer-read-only nil))
+      (goto-char (point-max))
+      (spacemacs-buffer/insert-page-break)
+      (insert "\n")
+      (save-restriction
+        (narrow-to-region (point) (point))
+        (spacemacs-buffer//do-insert-startupify-lists)
+        (spacemacs-buffer//center-startupify-lists)))))
 
 (defun spacemacs-buffer/goto-link-line ()
   "Set point to the beginning of the link line."
@@ -851,42 +904,68 @@ list. Return entire list if `END' is omitted."
     (force-mode-line-update)
     (spacemacs-buffer/goto-link-line)))
 
-(defun spacemacs-buffer/goto-buffer ()
+(defvar spacemacs-buffer--last-width nil
+  "Previous width of spacemacs-buffer")
+
+(defun spacemacs-buffer/goto-buffer (&optional refresh)
   "Create the special buffer for `spacemacs-buffer-mode' if it doesn't
 already exist, and switch to it."
   (interactive)
-  (unless (buffer-live-p (get-buffer spacemacs-buffer-name))
-    ;; revise banner length in GUI
-    (when (display-graphic-p)
-      (setq spacemacs-buffer--banner-length
-            (- (window-total-width) 2)))
-    (with-current-buffer (get-buffer-create spacemacs-buffer-name)
-      (page-break-lines-mode)
-      (save-excursion
-        (spacemacs-buffer/set-mode-line "")
-        ;; needed in case the buffer was deleted and we are recreating it
-        (setq spacemacs-buffer--note-widgets nil)
-        (spacemacs-buffer/insert-banner-and-buttons)
-        ;; non-nil if emacs-startup-hook was run
-        (if (bound-and-true-p spacemacs-initialized)
-            (progn
-              (when dotspacemacs-startup-lists
-                (spacemacs-buffer/insert-startupify-lists))
-              (spacemacs-buffer//insert-footer)
-              (spacemacs-buffer/set-mode-line spacemacs--default-mode-line)
-              (force-mode-line-update)
-              (spacemacs-buffer-mode))
-          (add-hook 'emacs-startup-hook 'spacemacs-buffer//startup-hook t)))))
-  (spacemacs-buffer/goto-link-line)
-  (switch-to-buffer spacemacs-buffer-name)
-  (spacemacs//redisplay))
+  (let ((buffer-exists (buffer-live-p (get-buffer spacemacs-buffer-name)))
+        (save-line nil))
+    (when (or (not (eq spacemacs-buffer--last-width (window-width)))
+              (not buffer-exists)
+              refresh)
+      (setq spacemacs-buffer--banner-length (window-width)
+            spacemacs-buffer--last-width spacemacs-buffer--banner-length)
+      (with-current-buffer (get-buffer-create spacemacs-buffer-name)
+        (page-break-lines-mode)
+        (save-excursion
+          (when (> (buffer-size) 0)
+            (set 'save-line (line-number-at-pos))
+            (let ((inhibit-read-only t))
+              (erase-buffer)))
+          (spacemacs-buffer/set-mode-line "")
+          ;; needed in case the buffer was deleted and we are recreating it
+          (setq spacemacs-buffer--note-widgets nil)
+          (spacemacs-buffer/insert-banner-and-buttons)
+          ;; non-nil if emacs-startup-hook was run
+          (if (bound-and-true-p spacemacs-initialized)
+              (progn
+                (configuration-layer/display-summary emacs-start-time)
+                (when dotspacemacs-startup-lists
+                  (spacemacs-buffer/insert-startupify-lists))
+                (spacemacs-buffer//insert-footer)
+                (spacemacs-buffer/set-mode-line spacemacs--default-mode-line)
+                (force-mode-line-update)
+                (spacemacs-buffer-mode))
+            (add-hook 'emacs-startup-hook 'spacemacs-buffer//startup-hook t))))
+      (if save-line
+          (progn (goto-char (point-min))
+                 (forward-line (1- save-line))
+                 (forward-to-indentation 0))
+        (spacemacs-buffer/goto-link-line))
+      (switch-to-buffer spacemacs-buffer-name)
+      (spacemacs//redisplay))))
+
+(add-hook 'window-setup-hook
+          (lambda ()
+            (add-hook 'window-configuration-change-hook 'spacemacs-buffer//resize-on-hook)
+            (spacemacs-buffer//resize-on-hook)))
+
+(defun spacemacs-buffer//resize-on-hook ()
+  (let ((space-win (get-buffer-window spacemacs-buffer-name))
+        (frame-win (frame-selected-window)))
+    (when (and dotspacemacs-startup-buffer-responsive
+               space-win
+               (not (window-minibuffer-p frame-win)))
+      (with-selected-window space-win
+        (spacemacs-buffer/goto-buffer)))))
 
 (defun spacemacs-buffer/refresh ()
-  "Recreate the spacemacs buffer."
+  "Force recreation of the spacemacs buffer."
   (interactive)
-  (let ((inhibit-redisplay t))
-    (when (buffer-live-p (get-buffer spacemacs-buffer-name))
-      (kill-buffer spacemacs-buffer-name))
-    (spacemacs-buffer/goto-buffer)))
+  (setq spacemacs-buffer--last-width nil)
+  (spacemacs-buffer/goto-buffer t))
 
 (provide 'core-spacemacs-buffer)

@@ -50,6 +50,9 @@
 (defconst spacemacs-docs-directory
   (expand-file-name (concat spacemacs-start-directory "doc/"))
   "Spacemacs documentation directory.")
+(defconst spacemacs-news-directory
+  (expand-file-name (concat spacemacs-start-directory "news/"))
+  "Spacemacs News directory.")
 (defconst spacemacs-assets-directory
   (expand-file-name (concat spacemacs-start-directory "assets/"))
   "Spacemacs assets directory.")
@@ -68,7 +71,7 @@
 ;; load paths
 (mapc 'add-to-load-path
       `(
-        ,(concat spacemacs-start-directory "core/")
-        ,(concat spacemacs-start-directory "core/libs/")
-        ,(concat spacemacs-start-directory "core/aprilfool/")
+        ,spacemacs-core-directory
+        ,(concat spacemacs-core-directory "libs/")
+        ,(concat spacemacs-core-directory "aprilfool/")
         ))

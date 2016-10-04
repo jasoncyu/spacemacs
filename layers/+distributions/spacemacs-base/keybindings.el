@@ -116,20 +116,20 @@
   "au"  'undo-tree-visualize)
 ;; buffers --------------------------------------------------------------------
 (spacemacs/set-leader-keys
-  "TAB" 'spacemacs/alternate-buffer
-  "bd"  'spacemacs/kill-this-buffer
-  "be"  'spacemacs/safe-erase-buffer
-  "bh"  'spacemacs/home
-  "bk"  'spacemacs/kill-matching-buffers-rudely
-  "bn"  'next-buffer
-  "bm"  'spacemacs/kill-other-buffers
-  "bN"  'spacemacs/new-empty-buffer
-  "bP"  'spacemacs/copy-clipboard-to-whole-buffer
-  "bp"  'previous-buffer
-  "bR"  'spacemacs/safe-revert-buffer
-  "bs"  'spacemacs/switch-to-scratch-buffer
-  "bY"  'spacemacs/copy-whole-buffer-to-clipboard
-  "bw"  'read-only-mode)
+  "TAB"   'spacemacs/alternate-buffer
+  "bd"    'spacemacs/kill-this-buffer
+  "be"    'spacemacs/safe-erase-buffer
+  "bh"    'spacemacs/home
+  "b C-d" 'spacemacs/kill-matching-buffers-rudely
+  "bn"    'next-buffer
+  "bm"    'spacemacs/kill-other-buffers
+  "bN"    'spacemacs/new-empty-buffer
+  "bP"    'spacemacs/copy-clipboard-to-whole-buffer
+  "bp"    'previous-buffer
+  "bR"    'spacemacs/safe-revert-buffer
+  "bs"    'spacemacs/switch-to-scratch-buffer
+  "bY"    'spacemacs/copy-whole-buffer-to-clipboard
+  "bw"    'read-only-mode)
 ;; Cycling settings -----------------------------------------------------------
 (spacemacs/set-leader-keys "Tn" 'spacemacs/cycle-spacemacs-theme)
 ;; errors ---------------------------------------------------------------------
@@ -178,7 +178,7 @@
   "fg" 'rgrep
   "fl" 'find-file-literally
   "fE" 'spacemacs/sudo-edit
-  "fo" 'spacemacs/open-in-external-app
+  "fo" 'spacemacs/open-file-or-directory-in-external-app
   "fR" 'spacemacs/rename-current-buffer-file
   "fS" 'evil-write-all
   "fs" 'save-buffer
@@ -219,11 +219,8 @@
 (spacemacs/set-leader-keys
   "j0" 'spacemacs/push-mark-and-goto-beginning-of-line
   "j$" 'spacemacs/push-mark-and-goto-end-of-line
-  "jF" 'find-function-at-point
   "jf" 'find-function
-  "ji" 'spacemacs/jump-in-buffer
-  "jv" 'find-variable
-  "jV" 'find-variable-at-point)
+  "jv" 'find-variable)
 
 ;; Compilation ----------------------------------------------------------------
 (spacemacs/set-leader-keys
@@ -488,8 +485,8 @@
  ──────^^^^───────────── ────^^^^───────────── ─────^^─────────────── ──────^^──────────────────── ─────^^──────────────────────────────
  [_j_/_k_] down/up       [_J_/_K_] down/up     [_s_] vertical         [_[_] shrink horizontally    [_q_] quit
  [_h_/_l_] left/right    [_H_/_L_] left/right  [_S_] vert & follow    [_]_] enlarge horizontally   [_u_] restore prev layout
- [_0_-_9_] window N      [_r_]^^   rotate counterclockwise      [_v_] horizontal       [_{_] shrink vertically      [_U_] restore next layout
- [_w_]^^   other window  [_R_]^^ rotate clockwise                  [_V_] horiz & follow   [_}_] enlarge vertically     [_d_] close current
+ [_0_-_9_] window N      [_r_]^^   rotate fwd  [_v_] horizontal       [_{_] shrink vertically      [_U_] restore next layout
+ [_w_]^^   other window  [_R_]^^   rotate bwd  [_V_] horiz & follow   [_}_] enlarge vertically     [_d_] close current
  [_o_]^^   other frame   ^^^^                  ^^                     ^^                           [_D_] close other
  ^^^^                    ^^^^                  ^^                     ^^                           [_g_] golden-ratio %`golden-ratio-mode"
   :bindings

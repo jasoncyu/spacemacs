@@ -63,7 +63,7 @@
     (spacemacs/add-flycheck-hook mode)))
 
 (defun javascript/post-init-ggtags ()
-  (add-hook 'js2-mode-hook #'spacemacs/ggtags-mode-enable))
+  (add-hook 'js2-mode-local-vars-hook #'spacemacs/ggtags-mode-enable))
 
 (defun javascript/post-init-helm-gtags ()
   (spacemacs/helm-gtags-define-keys-for-mode 'js2-mode))
@@ -80,6 +80,7 @@
 
       (defun spacemacs/js-doc-set-key-bindings (mode)
         "Setup the key bindings for `js2-doc' for the given MODE."
+        (spacemacs/declare-prefix-for-mode mode "mrd" "documentation")
         (spacemacs/set-leader-keys-for-major-mode mode "rdb" 'js-doc-insert-file-doc)
         (spacemacs/set-leader-keys-for-major-mode mode "rdf" 'js-doc-insert-function-doc)
         (spacemacs/set-leader-keys-for-major-mode mode "rdt" 'js-doc-insert-tag)
