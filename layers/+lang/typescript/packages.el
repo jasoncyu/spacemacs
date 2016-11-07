@@ -50,26 +50,17 @@
       (spacemacs/declare-prefix-for-mode 'typescript-mode "mS" "server")
       (spacemacs/declare-prefix-for-mode 'typescript-mode "ms" "send")
 
-  :config
-  (progn
-    (spacemacs/declare-prefix-for-mode 'typescript-mode "mg" "goto")
-    (spacemacs/declare-prefix-for-mode 'typescript-mode "mh" "help")
-    (spacemacs/declare-prefix-for-mode 'typescript-mode "mn" "name")
-    (spacemacs/declare-prefix-for-mode 'typescript-mode "mr" "rename")
-    (spacemacs/declare-prefix-for-mode 'typescript-mode "mS" "server")
-    (spacemacs/declare-prefix-for-mode 'typescript-mode "ms" "send")
+      (defun typescript/jump-to-type-def()
+        (interactive)
+        (tide-jump-to-definition t))
 
-    (defun typescript/jump-to-type-def()
-      (interactive)
-      (tide-jump-to-definition t))
-
-    (spacemacs/set-leader-keys-for-major-mode 'typescript-mode
-      "gb" 'tide-jump-back
-      "gt" 'typescript/jump-to-type-def
-      "gu" 'tide-references
-      "hh" 'tide-documentation-at-point
-      "rr" 'tide-rename-symbol
-      "Sr" 'tide-restart-server)))
+      (spacemacs/set-leader-keys-for-major-mode 'typescript-mode
+        "gb" 'tide-jump-back
+        "gt" 'typescript/jump-to-type-def
+        "gu" 'tide-references
+        "hh" 'tide-documentation-at-point
+        "rr" 'tide-rename-symbol
+        "Sr" 'tide-restart-server))))
 
 (defun typescript/post-init-web-mode ()
   (add-to-list 'auto-mode-alist '("\\.tsx\\'" . web-mode))
