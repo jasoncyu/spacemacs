@@ -80,6 +80,9 @@ the final step of executing code in `emacs-startup-hook'.")
   (dotspacemacs/load-file)
   (require 'core-configuration-layer)
   (dotspacemacs|call-func dotspacemacs/init "Calling dotfile init...")
+  (when dotspacemacs-maximized-at-startup
+    (toggle-frame-maximized)
+    (add-to-list 'default-frame-alist '(fullscreen . maximized)))
   (dotspacemacs|call-func dotspacemacs/user-init "Calling dotfile user init...")
   (setq dotspacemacs-editing-style (dotspacemacs//read-editing-style-config
                                     dotspacemacs-editing-style))
@@ -133,7 +136,9 @@ the final step of executing code in `emacs-startup-hook'.")
                                       "with this build.")))
   ;; check for new version
   (if dotspacemacs-mode-line-unicode-symbols
-      (setq-default spacemacs-version-check-lighter "[⇪]")))
+      (setq-default spacemacs-version-check-lighter "[⇪]"))
+  ;; install the dotfile if required
+  (spacemacs/maybe-install-dotfile))
 
 (defun spacemacs//removes-gui-elements ()
   "Remove the menu bar, tool bar and scroll bars."
@@ -209,7 +214,9 @@ defer call using `spacemacs-post-user-config-hook'."
            "- Distribution: %s\n"
            "- Editing style: %s\n"
            "- Completion: %s\n"
-           "- Layers:\n```elisp\n%s```\n")
+           "- Layers:\n```elisp\n%s```\n"
+           (when (version<= "25.1" emacs-version)
+             "- System configuration features: %s\n"))
    system-type
    emacs-version
    spacemacs-version
@@ -223,7 +230,8 @@ defer call using `spacemacs-post-user-config-hook'."
          ((configuration-layer/layer-usedp 'ivy)
           'ivy)
          (t 'helm))
-   (pp-to-string dotspacemacs-configuration-layers)))
+   (pp-to-string dotspacemacs--configuration-layers-saved)
+   (bound-and-true-p system-configuration-features)))
 
 (defun spacemacs/describe-system-info ()
   "Gathers info about your Spacemacs setup and copies to clipboard."
