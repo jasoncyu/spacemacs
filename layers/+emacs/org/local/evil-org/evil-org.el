@@ -122,14 +122,16 @@ FUN function callback"
 
 ;; normal state shortcuts
 (evil-define-key 'normal evil-org-mode-map
+  ;; Go to current heading. Useful if the content of your headnig is super large
+  "gg" (lambda () (interactive) (org-back-to-heading))
   "gh" 'outline-up-heading
   "gp" 'outline-previous-heading
   "gj" (if (fboundp 'org-forward-same-level) ;to be backward compatible with older org version
-	   'org-forward-same-level
-	  'org-forward-heading-same-level)
+     'org-forward-same-level
+    'org-forward-heading-same-level)
   "gk" (if (fboundp 'org-backward-same-level)
-	   'org-backward-same-level
-	  'org-backward-heading-same-level)
+     'org-backward-same-level
+    'org-backward-heading-same-level)
   "gl" 'outline-next-visible-heading
   "t" 'org-todo
   "T" '(lambda () (interactive) (evil-org-eol-call (lambda() (org-insert-todo-heading nil))))
