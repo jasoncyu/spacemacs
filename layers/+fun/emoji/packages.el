@@ -11,9 +11,19 @@
 
 (setq emoji-packages
       '(
+        emojify
         emoji-cheat-sheet-plus
         (company-emoji :toggle (configuration-layer/package-usedp 'company))
         ))
+
+(defun emoji/init-emojify ()
+  (use-package emojify
+    :init
+    (progn
+      ;; Show emoji text when hovering over one
+      (spacemacs/set-leader-keys "ie" 'emojify-insert-emoji)
+      (setq emojify-show-help t)
+      (setq emojify-display-style 'image))))
 
 (defun emoji/init-emoji-cheat-sheet-plus ()
   (use-package emoji-cheat-sheet-plus
@@ -23,7 +33,7 @@
     :init
     (progn
       (spacemacs/set-leader-keys "aE" 'emoji-cheat-sheet-plus-buffer)
-      (spacemacs/set-leader-keys "ie" 'emoji-cheat-sheet-plus-insert)
+      ;; (spacemacs/set-leader-keys "ie" 'emoji-cheat-sheet-plus-insert)
       (evilified-state-evilify emoji-cheat-sheet-plus-buffer-mode
         emoji-cheat-sheet-plus-buffer-mode-map
         "<RET>" 'emoji-cheat-sheet-plus-echo-and-copy)
