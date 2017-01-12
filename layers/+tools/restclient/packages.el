@@ -1,6 +1,6 @@
 ;;; packages.el --- restclient Layer Packages File
 ;;
-;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2017 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -10,7 +10,6 @@
 ;;; License: GPLv3
 (setq restclient-packages
       '(
-        company
         (company-restclient :toggle (configuration-layer/package-usedp 'company))
         golden-ratio
         ob-http
@@ -49,18 +48,18 @@
         "p" 'restclient-jump-prev
         "s" 'restclient-http-send-current-stay-in-window
         "S" 'restclient-http-send-current
-        "r" 'restclient-http-send-current-raw-stay-in-window
+        "r" 'spacemacs/restclient-http-send-current-raw-stay-in-window
         "R" 'restclient-http-send-current-raw
         "y" 'restclient-copy-curl-command))))
-
-(defun restclient/post-init-company ()
-  (spacemacs|add-company-hook restclient-mode))
 
 (defun restclient/init-company-restclient ()
   (use-package company-restclient
     :defer t
-    :init (push 'company-restclient company-backends-restclient-mode)))
+    :init (spacemacs|add-company-backends
+            :backends company-restclient
+            :modes restclient-mode)))
 
 (defun restclient/init-restclient-helm ()
   (use-package restclient-helm
-    :init (spacemacs/set-leader-keys "ji" 'helm-restclient)))
+    :init (spacemacs/set-leader-keys-for-major-mode 'restclient-mode
+            "ji" 'helm-restclient)))

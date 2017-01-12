@@ -1,4 +1,4 @@
-;;; core-emacs-backports.el --- Spacemacs Core File
+;;; funcs.el --- Markdown Layer Functions File for Spacemacs
 ;;
 ;; Copyright (c) 2012-2017 Sylvain Benner & Contributors
 ;;
@@ -9,6 +9,6 @@
 ;;
 ;;; License: GPLv3
 
-;; nothing for now
-
-(provide 'core-emacs-backports)
+(defun spacemacs/activate-mmm-mode ()
+  ;; Enable `mmm-mode'.
+  (mmm-mode 1))

@@ -1,6 +1,6 @@
 ;;; packages.el --- Helm Layer packages File
 ;;
-;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2017 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -183,7 +183,7 @@
       (defun spacemacs/helm-file-do-ag (&optional _)
         "Wrapper to execute `helm-ag-this-file.'"
         (interactive)
-        (helm-ag-this-file))
+        (helm-do-ag-this-file))
 
       (defun spacemacs/helm-file-do-ag-region-or-symbol ()
         "Search in current file with `ag' using a default input."

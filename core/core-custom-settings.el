@@ -1,6 +1,6 @@
 ;;; core-custom-settings.el --- Spacemacs Core File
 ;;
-;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2017 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -76,7 +76,6 @@ end of the buffer.
 (defun spacemacs/write-custom-settings-to-dotfile ()
   "Write `dotspacemacs/emacs-custom-settings' function in the dotfile"
   (message "Writing Emacs custom settings to dotfile...")
-  (spacemacs//initialize-custom-file)
   (with-current-buffer (let ((find-file-visit-truename t)
                              (delay-mode-hooks t))
                          (find-file-noselect (dotspacemacs/location)))
@@ -92,6 +91,7 @@ This function is called at the very end of Spacemacs initialization.\"\n")
       (save-buffer)
       (kill-buffer (current-buffer)))))
 
+(spacemacs//initialize-custom-file)
 (advice-add 'custom-save-all :after #'spacemacs/write-custom-settings-to-dotfile)
 
 (provide 'core-custom-settings)

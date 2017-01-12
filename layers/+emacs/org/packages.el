@@ -1,6 +1,6 @@
 ;;; packages.el --- Org Layer packages File for Spacemacs
 ;;
-;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2017 Sylvain Benner & Contributors
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -24,6 +24,7 @@
     (org :location built-in)
     (org-agenda :location built-in)
     (org-expiry :location built-in)
+    (org-journal :toggle org-enable-org-journal-support)
     org-download
     ;; org-mime is installed by `org-plus-contrib'
     (org-mime :location built-in)
@@ -41,13 +42,11 @@
     persp-mode
     ))
 
-;; Disable auto-complete tospeed up org mode
-;; (defun org/post-init-company ()
-;;   (spacemacs|add-company-hook org-mode)
-;;   (push 'company-capf company-backends-org-mode))
+(defun org/post-init-company ()
+  (spacemacs|add-company-backends :backends company-capf :modes org-mode))
 
-;; (defun org/post-init-company-emoji ()
-;;   (push 'company-emoji company-backends-org-mode))
+(defun org/post-init-company-emoji ()
+  (spacemacs|add-company-backends :backends company-emoji :modes org-mode))
 
 (defun org/post-init-emoji-cheat-sheet-plus ()
   (add-hook 'org-mode-hook 'spacemacs/delay-emoji-cheat-sheet-hook))
@@ -138,9 +137,8 @@
 
       (with-eval-after-load 'org-src
         (spacemacs/set-leader-keys-for-minor-mode 'org-src-mode
-          "'" 'org-edit-src-exit
+          dotspacemacs-major-mode-leader-key 'org-edit-src-exit
           "c" 'org-edit-src-exit
-          "," 'org-edit-src-exit
           "a" 'org-edit-src-abort
           "k" 'org-edit-src-abort))
 
@@ -261,6 +259,7 @@ Will work on both org-mode and any mode that accepts plain html."
         "s" 'org-schedule
 
         ;; insertion of common elements
+        "ia" 'org-attach
         "il" 'org-insert-link
         "if" 'org-footnote-new
         "ik" 'spacemacs/insert-keybinding-org
@@ -566,3 +565,29 @@ Headline^^            Visit entry^^               Filter^^                    Da
       (if agenda-files
           (find-file (first agenda-files))
         (user-error "Error: No agenda files configured, nothing to display.")))))
+
+(defun org/init-org-journal ()
+  (use-package org-journal
+    :defer t
+    :commands (org-journal-new-entry org-journal-search-forever)
+    :init
+    (progn
+      (spacemacs/declare-prefix "aoj" "org-journal")
+      (spacemacs/set-leader-keys
+        "aojj" 'org-journal-new-entry
+        "aojs" 'org-journal-search-forever)
+
+      (spacemacs/set-leader-keys-for-major-mode 'calendar-mode
+        "r" 'org-journal-read-entry
+        "i" 'org-journal-new-date-entry
+        "n" 'org-journal-next-entry
+        "p" 'org-journal-previous-entry
+        "s" 'org-journal-search-forever
+        "w" 'org-journal-search-calendar-week
+        "m" 'org-journal-search-calendar-month
+        "y" 'org-journal-search-calendar-year)
+
+      (spacemacs/set-leader-keys-for-major-mode 'org-journal-mode
+        "j" 'org-journal-new-entry
+        "n" 'org-journal-open-next-entry
+        "p" 'org-journal-open-previous-entry))))

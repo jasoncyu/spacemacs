@@ -1,6 +1,6 @@
 ;;; packages.el --- Spacemacs Purpose Layer packages File for Spacemacs
 ;;
-;; Copyright (c) 2012-2016 Sylvain Benner & Contributors
+;; Copyright (c) 2012-2017 Sylvain Benner & Contributors
 ;;
 ;; Author: Bar Magal
 ;; URL: https://github.com/syl20bnr/spacemacs
@@ -29,6 +29,7 @@
 
 (defun spacemacs-purpose/init-helm-purpose ()
   (use-package helm-purpose
+    :defer t
     :init
     (progn
       (setq purpose-preferred-prompt 'helm)
