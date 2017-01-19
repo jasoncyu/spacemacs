@@ -20,6 +20,7 @@ for TypeScript source code formatting.
 Currently avaliable 'tide (default)
 and 'typescript-formatter .")
 
-(spacemacs|defvar-company-backends typescript-mode)
+;; Temporarily comment out, seems to cause an error
+;; (spacemacs|defvar-company-backends typescript-mode)
 
 (spacemacs|define-jump-handlers typescript-mode)
