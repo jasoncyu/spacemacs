@@ -98,6 +98,7 @@ the final step of executing code in `emacs-startup-hook'.")
   ;; effective ones.
   ;; Note: Loading custom-settings twice is not ideal since they can have side
   ;; effects! Maybe an inhibit variable in Emacs can supress these side effects?
+  (spacemacs/initialize-custom-file)
   (dotspacemacs|call-func dotspacemacs/emacs-custom-settings
                           "Calling dotfile Emacs custom settings...")
   (setq dotspacemacs-editing-style (dotspacemacs//read-editing-style-config
@@ -210,7 +211,8 @@ defer call using `spacemacs-post-user-config-hook'."
        (with-current-buffer "*scratch*"
          (funcall dotspacemacs-scratch-mode)))
      (when spacemacs--delayed-user-theme
-       (spacemacs/load-theme spacemacs--delayed-user-theme))
+       (spacemacs/load-theme spacemacs--delayed-user-theme
+                             spacemacs--fallback-theme t))
      (configuration-layer/display-summary emacs-start-time)
      (spacemacs-buffer//startup-hook)
      (spacemacs/check-for-new-version nil spacemacs-version-check-interval)

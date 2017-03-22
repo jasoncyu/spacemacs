@@ -71,7 +71,7 @@
       (spacemacs/set-leader-keys-for-major-mode mode "hf" 'helm-hoogle))))
 
 (defun haskell/post-init-flycheck ()
-  (spacemacs/add-flycheck-hook 'haskell-mode))
+  (spacemacs/enable-flycheck 'haskell-mode))
 
 (defun haskell/init-flycheck-haskell ()
   (use-package flycheck-haskell
@@ -180,11 +180,10 @@
         "b" 'haskell-debug/break-on-function
         "c" 'haskell-debug/continue
         "d" 'haskell-debug/delete
-        "n" 'haskell-debug/next
-        "N" 'haskell-debug/previous
-        "p" 'haskell-debug/previous
+        "i" 'haskell-debug/step
+        "s" 'haskell-debug/next
+        "S" 'haskell-debug/previous
         "r" 'haskell-debug/refresh
-        "s" 'haskell-debug/step
         "t" 'haskell-debug/trace)
 
       ;; configure C-c C-l so it doesn't throw any errors

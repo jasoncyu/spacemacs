@@ -51,7 +51,7 @@
 
 (defun javascript/post-init-flycheck ()
   (dolist (mode '(coffee-mode js2-mode json-mode))
-    (spacemacs/add-flycheck-hook mode)))
+    (spacemacs/enable-flycheck mode)))
 
 (defun javascript/post-init-ggtags ()
   (add-hook 'js2-mode-local-vars-hook #'spacemacs/ggtags-mode-enable))
@@ -161,10 +161,10 @@
 (defun javascript/init-tern ()
   (use-package tern
     :defer t
-    :diminish tern-mode
     :init (add-hook 'js2-mode-hook 'tern-mode)
     :config
     (progn
+      (spacemacs|hide-lighter tern-mode)
       (when javascript-disable-tern-port-files
         (add-to-list 'tern-command "--no-port-file" 'append))
       (spacemacs//set-tern-key-bindings 'js2-mode))))
@@ -186,7 +186,6 @@
 (defun javascript/init-skewer-mode ()
   (use-package skewer-mode
     :defer t
-    :diminish skewer-mode
     :init
     (progn
       (spacemacs/register-repl 'skewer-mode
@@ -195,6 +194,7 @@
       (add-hook 'js2-mode-hook 'skewer-mode))
     :config
     (progn
+      (spacemacs|hide-lighter skewer-mode)
       (spacemacs/declare-prefix-for-mode 'js2-mode "ms" "skewer")
       (spacemacs/declare-prefix-for-mode 'js2-mode "me" "eval")
       (spacemacs/set-leader-keys-for-major-mode 'js2-mode
