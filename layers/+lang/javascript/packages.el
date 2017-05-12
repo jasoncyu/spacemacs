@@ -22,11 +22,11 @@
     js2-refactor
     json-mode
     json-snatcher
-    ;; Use gtags instead of tern
-    ;; (tern :toggle (spacemacs//tern-detect))
+    (tern :toggle (spacemacs//tern-detect))
     web-beautify
     skewer-mode
     livid-mode
+    rjsx-mode
     ))
 
 (defun javascript/init-coffee-mode ()
@@ -50,7 +50,7 @@
             :modes js2-mode)))
 
 (defun javascript/post-init-flycheck ()
-  (dolist (mode '(coffee-mode js2-mode json-mode))
+  (dolist (mode '(coffee-mode js2-mode json-mode rjsx-mode))
     (spacemacs/enable-flycheck mode)))
 
 (defun javascript/post-init-ggtags ()
@@ -69,7 +69,8 @@
     :defer t
     :init
     (progn
-      (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
+      ;; Commenting out to use rjsx-mode
+      ;; (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
       ;; Required to make imenu functions work correctly
       (add-hook 'js2-mode-hook 'js2-imenu-extras-mode))
     :config
@@ -217,3 +218,8 @@
             :mode livid-mode
             :documentation "Live evaluation of JS buffer change."
             :evil-leader-for-mode (js2-mode . "sa"))))
+
+(defun javascript/init-rjsx-mode ()
+  (use-package rjsx-mode
+    :config
+    (add-to-list 'auto-mode-alist '("\\.js\\'" . rjsx-mode))))
