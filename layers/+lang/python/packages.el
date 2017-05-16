@@ -70,7 +70,8 @@
     :backends (company-files company-capf)
     :modes inferior-python-mode
     :variables
-    company-minimum-prefix-length 0
+    ;; company-minimum-prefix-length 0
+    company-minimum-prefix-length 2
     company-idle-delay 0.5)
   (when (configuration-layer/package-usedp 'pip-requirements)
     (spacemacs|add-company-backends

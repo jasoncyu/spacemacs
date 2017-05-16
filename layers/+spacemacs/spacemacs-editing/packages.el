@@ -298,6 +298,8 @@
                '(:add (spacemacs/smartparens-pair-newline-and-indent "RET")))
       (sp-pair "[" nil :post-handlers
                '(:add (spacemacs/smartparens-pair-newline-and-indent "RET")))
+      (sp-pair "(" nil :post-handlers
+               '(:add (spacemacs/smartparens-pair-newline-and-indent "RET")))
       (when dotspacemacs-smart-closing-parenthesis
         (define-key evil-insert-state-map ")"
           'spacemacs/smart-closing-parenthesis)))))

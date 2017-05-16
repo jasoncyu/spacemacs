@@ -88,6 +88,7 @@
         "Complete common prefix or cycle backward."
         (interactive)
         (company-complete-common-or-cycle -1))
+
       (spacemacs//auto-completion-set-RET-key-behavior 'company)
       (spacemacs//auto-completion-set-TAB-key-behavior 'company)
       (spacemacs//auto-completion-setup-key-sequence 'company)
