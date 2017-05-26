@@ -3,23 +3,24 @@
 [[file:img/elixir.png]] with [[file:img/alchemist.png]]
 
 * Table of Contents                                         :TOC_4_gh:noexport:
- - [[#description][Description]]
- - [[#install][Install]]
- - [[#configuration][Configuration]]
-   - [[#flycheck][Flycheck]]
-     - [[#credo][Credo]]
-     - [[#mix-compile][mix compile]]
- - [[#key-bindings][Key bindings]]
-   - [[#refcard][Refcard]]
-   - [[#help][Help]]
-   - [[#mix][Mix]]
-   - [[#project][Project]]
-   - [[#evaluation-in-place][Evaluation in place]]
-   - [[#repl-interactions][REPL interactions]]
-   - [[#tests][Tests]]
-   - [[#compile][Compile]]
-   - [[#execute][Execute]]
-   - [[#code-definition-jump][Code Definition Jump]]
+- [[#description][Description]]
+- [[#install][Install]]
+- [[#configuration][Configuration]]
+  - [[#flycheck][Flycheck]]
+    - [[#credo][Credo]]
+    - [[#dogma][Dogma]]
+    - [[#mix-compile][mix compile]]
+- [[#key-bindings][Key bindings]]
+  - [[#refcard][Refcard]]
+  - [[#help][Help]]
+  - [[#mix][Mix]]
+  - [[#project][Project]]
+  - [[#evaluation-in-place][Evaluation in place]]
+  - [[#repl-interactions][REPL interactions]]
+  - [[#tests][Tests]]
+  - [[#compile][Compile]]
+  - [[#execute][Execute]]
+  - [[#code-definition-jump][Code Definition Jump]]
 
 * Description
 This layer adds support for [[http://elixir-lang.org/][Elixir]] .
@@ -51,9 +52,14 @@ file.
 time.
 
 *** Credo
-You need to install [[https://github.com/rrrene/credo][credo]] into your project. Fort this, add ={:credo, "~> 0.5",
-only: [:dev, :test]}= to dependencies of your project (in file =mix.exs=) and
-run:
+You need to install [[https://github.com/rrrene/credo][credo]] into your project. For this, add the following snippet
+to dependencies of your project (in file =mix.exs=):
+
+#+BEGIN_SRC
+{:credo, "~> 0.5", only: [:dev, :test]}
+#+END_SRC
+
+Then run in your shell:
 
 #+BEGIN_SRC shell
 $ mix deps.get
@@ -65,6 +71,20 @@ You can tell flycheck-credo to call credo with the '--strict' argument.
 
 #+BEGIN_SRC elisp
 (setq flycheck-elixir-credo-strict t)
+#+END_SRC
+
+*** Dogma
+In order to lint your code, you also need to install [[https://github.com/lpil/dogma][dogma]] into your project.
+For this, add the following snippet to the dependencies in your =mix.exs= file:
+
+#+BEGIN_SRC
+{:dogma, "~> 0.1", only: [:dev]}
+#+END_SRC
+
+Then run in your shell:
+
+#+BEGIN_SRC shell
+$ mix deps.get
 #+END_SRC
 
 *** mix compile
@@ -101,7 +121,7 @@ Remember that you can verify the flycheck checkers status with ~SPC e v~.
 
 * Key bindings
 ** Refcard
-You find and overview of all the key-bindings on the [[file:alchemist-refcard.pdf][Alchemist-Refcard]].
+You find and overview of all the key-bindings on the [[https://github.com/tonini/alchemist.el/blob/master/doc/alchemist-refcard.pdf][Alchemist-Refcard]].
 
 ** Help
 
@@ -160,8 +180,11 @@ You find and overview of all the key-bindings on the [[file:alchemist-refcard.pd
 | ~SPC m g t~ | Open the test file for current buffer |
 | ~SPC m t a~ | Run all the tests                     |
 | ~SPC m t b~ | Run all the tests from current buffer |
+| ~SPC m t f~ | Test this file                        |
 | ~SPC m t r~ | Rerun the last test                   |
 | ~SPC m t t~ | Run test under point                  |
+| ~SPC m t n~ | Jump to next test                     |
+| ~SPC m t p~ | Jump to previous test                 |
 
 ** Compile
 

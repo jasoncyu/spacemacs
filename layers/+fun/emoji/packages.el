@@ -13,6 +13,7 @@
       '(
         emojify
         emoji-cheat-sheet-plus
+        emojify
         (company-emoji :toggle (configuration-layer/package-usedp 'company))
         ))
 
@@ -46,7 +47,20 @@
         ;; text properties are not applied correctly.
         (run-at-time 0.1 nil 'emoji-cheat-sheet-plus-display-mode)))))
 
+(defun emoji/init-emojify ()
+  (use-package emojify
+    :defer t
+    :init
+    (setq emojify-emojis-dir (concat spacemacs-cache-directory "emojify/"))))
+
 (defun emoji/init-company-emoji ()
   (use-package company-emoji
     :defer t
-    :init (setq company-emoji-insert-unicode nil)))
+    :init
+    (progn
+      (setq company-emoji-insert-unicode nil)
+      ;; For when Emacs is started in GUI mode:
+      (spacemacs//set-emoji-font nil)
+      ;; Hook for when a frame is created with emacsclient
+      (spacemacs|do-after-display-system-init
+       (spacemacs//set-emoji-font-for-current-frame)))))

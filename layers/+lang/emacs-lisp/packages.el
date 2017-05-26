@@ -58,7 +58,7 @@
     :defer t
     :init (dolist (mode '(emacs-lisp-mode lisp-interaction-mode))
             (spacemacs/declare-prefix-for-mode mode "md" "debug")
-            (spacemacs/set-leader-keys-for-major-mode 'emacs-lisp-mode
+            (spacemacs/set-leader-keys-for-major-mode mode
               "dt" 'spacemacs/elisp-toggle-debug-expr-and-eval-func))
     :config (evilified-state-evilify-map debugger-mode-map
               :mode debugger-mode)))
@@ -70,7 +70,7 @@
     (progn
       ;; key bindings
       (dolist (mode '(emacs-lisp-mode lisp-interaction-mode))
-        (spacemacs/set-leader-keys-for-major-mode 'emacs-lisp-mode
+        (spacemacs/set-leader-keys-for-major-mode mode
           "df" 'spacemacs/edebug-instrument-defun-on
           "dF" 'spacemacs/edebug-instrument-defun-off))
       ;; since we evilify `edebug-mode-map' we don't need to intercept it to
@@ -86,12 +86,14 @@
         :eval-after-load edebug
         :bindings
         "a" 'edebug-stop
+        "c" 'edebug-go-mode
         "s" 'edebug-step-mode
         "S" 'edebug-next-mode)
       (evilified-state-evilify-map edebug-eval-mode-map
         :eval-after-load edebug
         :bindings
         "a" 'edebug-stop
+        "c" 'edebug-go-mode
         "s" 'edebug-step-mode
         "S" 'edebug-next-mode)
       (advice-add 'edebug-mode :after 'spacemacs//edebug-mode))))
