@@ -24,7 +24,8 @@
     ))
 
 (defun scala/post-init-eldoc ()
-  (add-hook 'scala-mode-hook #'spacemacs//java-setup-ensime-eldoc))
+  (when scala-enable-eldoc
+    (add-hook 'scala-mode-hook #'spacemacs//java-setup-ensime-eldoc)))
 
 (defun scala/pre-init-ensime ()
   (spacemacs|use-package-add-hook ensime
@@ -54,7 +55,7 @@
 
 (defun scala/post-init-flyspell ()
   (spell-checking/add-flyspell-hook 'scala-mode)
-  (add-hook 'scala-mode-hook #'spacemacs//java-setup-ensime-spell-checking))
+  (add-hook 'scala-mode-hook #'spacemacs//java-setup-ensime-flyspell))
 
 (defun scala/init-noflet ()
   (use-package noflet))

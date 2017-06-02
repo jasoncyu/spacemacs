@@ -78,6 +78,7 @@
     professional-theme
     purple-haze-theme
     railscasts-theme
+    rebecca-theme
     reverse-theme
     seti-theme
     smyx-theme
@@ -104,6 +105,7 @@
     twilight-theme
     ujelly-theme
     underwater-theme
+    white-sand-theme
     zen-and-art-theme
     zenburn-theme
     zonokai-theme

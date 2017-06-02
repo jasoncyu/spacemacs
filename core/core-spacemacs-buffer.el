@@ -13,7 +13,7 @@
 ;;
 ;;; Code:
 
-(defconst spacemacs-buffer-version-info "0.200"
+(defconst spacemacs-buffer-version-info "0.200.9"
   "Current version used to display addition release information.")
 
 (defconst spacemacs-buffer-name "*spacemacs*"
@@ -876,7 +876,8 @@ SEQ, START and END are the same arguments as for `cl-subseq'"
 
 (defun spacemacs-buffer//do-insert-startupify-lists ()
   "Insert the startup lists in the current buffer."
-  (let ((list-separator "\n\n"))
+  (let ((list-separator "\n\n")
+        (recentf-exclude '((lambda (filename) t))))
     (mapc (lambda (els)
             (let ((el (or (car-safe els) els))
                   (list-size

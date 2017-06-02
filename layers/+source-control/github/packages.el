@@ -12,7 +12,6 @@
 (setq github-packages
       '(
         gist
-        github-browse-file
         github-clone
         github-search
         magit-gh-pulls
@@ -38,11 +37,6 @@
         "ggl" 'gist-list
         "ggr" 'gist-region
         "ggR" 'gist-region-private))))
-
-(defun github/init-github-browse-file ()
-  (use-package github-browse-file
-    :defer t
-    :init (spacemacs/set-leader-keys "gho" 'github-browse-file)))
 
 (defun github/init-github-clone ()
   (use-package github-clone
@@ -80,6 +74,8 @@
   (use-package magithub
     :defer t
     :after magit
+    :init
+    (setq magithub-dir (concat spacemacs-cache-directory "magithub/"))
     :config
     (progn
       (magithub-feature-autoinject t)

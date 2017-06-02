@@ -83,6 +83,23 @@
       (add-hook 'eshell-mode-hook 'spacemacs/disable-hl-line-mode))
     :config
     (progn
+
+      ;; Work around bug in eshell's preoutput-filter code.
+      ;; Eshell doesn't call preoutput-filter functions in the context of the eshell
+      ;; buffer. This breaks the xterm color filtering when the eshell buffer is updated
+      ;; when it's not currently focused.
+      ;; To remove if/when fixed upstream.
+      (defun eshell-output-filter@spacemacs-with-buffer (fn process string)
+        (let ((proc-buf (if process (process-buffer process)
+                          (current-buffer))))
+          (when proc-buf
+            (with-current-buffer proc-buf
+              (funcall fn process string)))))
+      (advice-add
+       #'eshell-output-filter
+       :around
+       #'eshell-output-filter@spacemacs-with-buffer)
+
       (require 'esh-opt)
 
       ;; quick commands
