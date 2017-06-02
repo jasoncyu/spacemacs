@@ -46,9 +46,14 @@ python-*-docs-html
 /recentf
 .mc-lists.el
 
+# Private symlink
+private
 # Private directory
 private/
 !private/README.md
 !private/snippets/README.md
 !private/local/README.md
 /games/
+
+# Org-mode
+org-clock-save.el
