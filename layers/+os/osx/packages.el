@@ -15,7 +15,8 @@
         helm
         launchctl
         (osx-dictionary :toggle osx-use-dictionary-app)
-        osx-trash
+        ;; trash is a lot slower than rm, especially when deleting multiple files.
+        ;; osx-trash
         pbcopy
         reveal-in-osx-finder
         term
