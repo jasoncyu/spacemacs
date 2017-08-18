@@ -14,7 +14,7 @@
         emojify
         emoji-cheat-sheet-plus
         emojify
-        (company-emoji :toggle (configuration-layer/package-usedp 'company))
+        (company-emoji :requires company)
         ))
 
 (defun emoji/init-emojify ()
