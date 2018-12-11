@@ -2,14 +2,14 @@
 
 [[file:img/tern.png]]
 
-* Table of Contents                                         :TOC_4_gh:noexport:
+* Table of Contents                     :TOC_4_gh:noexport:
 - [[#description][Description]]
   - [[#features][Features:]]
 - [[#install][Install]]
 - [[#configuration][Configuration]]
   - [[#custom-tern-command][Custom tern command]]
   - [[#re-use-the-server-across-multiple-different-editing-sessions][Re-use the server across multiple different editing sessions]]
-- [[#key-bindings][Key Bindings]]
+- [[#key-bindings][Key bindings]]
 
 * Description
 This layer adds support for [[http://ternjs.net/][tern]] stand-alone code-analysis engine for
@@ -37,7 +37,7 @@ details]]. The variable can be set by adding the =tern= layer with this
 configuration layer:
 
 #+BEGIN_SRC emacs-lisp
-(tern :variables tern-command '("node" "/path/to/tern/bin/tern"))
+  (tern :variables tern-command '("node" "/path/to/tern/bin/tern"))
 #+END_SRC
 
 Note: =tern-command= must be a list of strings.
@@ -54,9 +54,9 @@ for more details]]) set the variable =tern-disable-port-files= to nil:
   (tern :variables tern-disable-port-files nil)
 #+END_SRC
 
-* Key Bindings
+* Key bindings
 
-| Key Binding   | Description                                                                              |
+| Key binding   | Description                                                                              |
 |---------------+------------------------------------------------------------------------------------------|
 | ~SPC m C-g~   | brings you back to last place you were when you pressed M-..                             |
 | ~SPC m g g~   | jump to the definition of the thing under the cursor                                     |

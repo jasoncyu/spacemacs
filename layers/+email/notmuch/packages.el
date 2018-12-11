@@ -11,14 +11,12 @@
 
 (setq notmuch-packages
       '(
-        (counsel-notmuch :requires ivy
-                         :location (recipe :fetcher github
-                                           :repo "fuxialexander/counsel-notmuch"))
+        (counsel-notmuch :requires ivy)
         (helm-notmuch :requires helm)
         notmuch
         org
-        persp-mode)
-      )
+        persp-mode
+        ))
 
 (defun notmuch/init-counsel-notmuch ()
   (use-package counsel-notmuch

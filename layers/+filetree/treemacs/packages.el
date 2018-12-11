@@ -10,11 +10,13 @@
 ;;; License: GPLv3
 
 (defconst treemacs-packages
-  '(golden-ratio
+  '(
+    golden-ratio
     treemacs
     (treemacs-evil :toggle (memq dotspacemacs-editing-style '(vim hybrid)))
     treemacs-projectile
-    winum))
+    winum
+    ))
 
 (defun treemacs/pre-init-golden-ratio ()
   (spacemacs|use-package-add-hook golden-ratio
@@ -24,7 +26,8 @@
 
 (defun treemacs/init-treemacs ()
   (use-package treemacs
-    :commands (treemacs-select-window treemacs--window-number-ten)
+    :commands (treemacs-select-window treemacs--window-number-ten
+               treemacs-current-visibility)
     :defer t
     :init
     (progn
@@ -40,11 +43,22 @@
             treemacs-never-persist nil
             treemacs-goto-tag-strategy 'refetch-index
             treemacs-collapse-dirs treemacs-use-collapsed-directories)
+      (add-hook 'treemacs-mode-hook
+                #'spacemacs/treemacs-setup-width-lock)
       (spacemacs/set-leader-keys
-        "ft"    #'treemacs
-        "fB"    #'treemacs-bookmark
-        "fT"    #'treemacs-find-file
-        "f M-t" #'treemacs-find-tag))
+        "ft"    'treemacs
+        "fB"    'treemacs-bookmark
+        "fT"    'treemacs-find-file
+        "f M-t" 'treemacs-find-tag
+        "pt"    'spacemacs/treemacs-project-toggle)
+      (which-key-add-major-mode-key-based-replacements 'treemacs-mode
+        "c"     "treemacs-create"
+        "o"     "treemacs-visit-node"
+        "oa"    "treemacs-visit-node-ace"
+        "t"     "treemacs-toggles"
+        "y"     "treemacs-copy"
+        "C-p"   "treemacs-projects"
+        "C-p c" "treemacs-projects-collapse"))
     :config
     (progn
       (spacemacs/define-evil-state-face "treemacs" "MediumPurple1")
@@ -54,7 +68,8 @@
         (treemacs-filewatch-mode t))
       (when (memq treemacs-use-git-mode '(simple extended))
         (treemacs-git-mode treemacs-use-git-mode))
-      (add-to-list 'spacemacs-window-split-ignore-prefixes treemacs--buffer-name-prefix))))
+      (add-to-list 'spacemacs-window-split-ignore-prefixes
+                   treemacs--buffer-name-prefix))))
 
 (defun treemacs/init-treemacs-evil ()
   (use-package treemacs-evil
@@ -71,5 +86,5 @@
     :post-config
     (progn
       ;; window 0 is reserved for file trees
-      (spacemacs/set-leader-keys "0" #'treemacs-select-window)
-      (define-key winum-keymap (kbd "M-0") #'treemacs-select-window))))
+      (spacemacs/set-leader-keys "0" 'treemacs-select-window)
+      (define-key winum-keymap (kbd "M-0") 'treemacs-select-window))))

@@ -10,41 +10,41 @@
 ;;; License: GPLv3
 
 (setq python-packages
-  '(
-    company
-    counsel-gtags
-    cython-mode
-    eldoc
-    evil-matchit
-    flycheck
-    ggtags
-    helm-cscope
-    helm-gtags
-    (helm-pydoc :requires helm)
-    importmagic
-    live-py-mode
-    (nose :location local)
-    org
-    pip-requirements
-    pipenv
-    pippel
-    py-isort
-    pyenv-mode
-    (pylookup :location local)
-    pytest
-    (python :location built-in)
-    pyvenv
-    semantic
-    smartparens
-    stickyfunc-enhance
-    xcscope
-    yapfify
-    ;; packages for anaconda backend
-    anaconda-mode
-    (company-anaconda :requires company)
-    ;; packages for lsp backend
-    (lsp-python :requires lsp-mode)
-    ))
+      '(
+        company
+        counsel-gtags
+        cython-mode
+        eldoc
+        evil-matchit
+        flycheck
+        ggtags
+        helm-cscope
+        helm-gtags
+        (helm-pydoc :requires helm)
+        importmagic
+        live-py-mode
+        (nose :location local)
+        org
+        pip-requirements
+        pipenv
+        pippel
+        py-isort
+        pyenv-mode
+        (pylookup :location local)
+        pytest
+        (python :location built-in)
+        pyvenv
+        semantic
+        smartparens
+        stickyfunc-enhance
+        xcscope
+        yapfify
+        ;; packages for anaconda backend
+        anaconda-mode
+        (company-anaconda :requires company)
+        ;; packages for lsp backend
+        (lsp-python :requires lsp-mode)
+        ))
 
 (defun python/init-anaconda-mode ()
   (use-package anaconda-mode
@@ -54,7 +54,7 @@
       (spacemacs/set-leader-keys-for-major-mode 'python-mode
         "hh" 'anaconda-mode-show-doc
         "ga" 'anaconda-mode-find-assignments
-        "gb" 'anaconda-mode-go-back
+        "gb" 'xref-pop-marker-stack
         "gu" 'anaconda-mode-find-references)
       (setq anaconda-mode-installation-directory
             (concat spacemacs-cache-directory "anaconda-mode")))
@@ -333,6 +333,10 @@
         "si" 'spacemacs/python-start-or-switch-repl
         "sR" 'spacemacs/python-shell-send-region-switch
         "sr" 'python-shell-send-region)
+
+      ;; Set `python-indent-guess-indent-offset' to `nil' to prevent guessing `python-indent-offset
+      ;; (we call python-indent-guess-indent-offset manually so python-mode does not need to do it)
+      (setq-default python-indent-guess-indent-offset nil)
 
       ;; Emacs users won't need these key bindings
       ;; TODO: make these key bindings dynamic given the current style

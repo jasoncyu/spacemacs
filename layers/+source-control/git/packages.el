@@ -21,6 +21,7 @@
         git-link
         git-messenger
         git-timemachine
+        (helm-git-grep :requires helm)
         (helm-gitignore :requires helm)
         magit
         magit-gitflow
@@ -45,6 +46,13 @@
 
 (defun git/post-init-fill-column-indicator ()
   (add-hook 'git-commit-mode-hook 'fci-mode))
+
+(defun git/init-helm-git-grep ()
+  (use-package helm-git-grep
+    :defer t
+    :init (spacemacs/set-leader-keys
+            "g/" 'helm-git-grep
+            "g*" 'helm-git-grep-at-point)))
 
 (defun git/init-helm-gitignore ()
   (use-package helm-gitignore
@@ -129,6 +137,8 @@
     :defer (spacemacs/defer)
     :init
     (progn
+      (push "magit: .*" spacemacs-useless-buffers-regexp)
+      (push "magit-.*: .*"  spacemacs-useless-buffers-regexp)
       (spacemacs|require 'magit)
       (setq magit-completing-read-function
             (if (configuration-layer/layer-used-p 'ivy)
@@ -164,10 +174,10 @@
 Press [_b_] again to blame further in the history, [_q_] to go up or quit."
         :on-enter (let (golden-ratio-mode)
                     (unless (bound-and-true-p magit-blame-mode)
-                      (call-interactively 'magit-blame)))
+                      (call-interactively 'magit-blame-addition)))
         :foreign-keys run
         :bindings
-        ("b" magit-blame)
+        ("b" magit-blame-addition)
         ;; here we use the :exit keyword because we should exit the
         ;; micro-state only if the magit-blame-quit effectively disable
         ;; the magit-blame mode.
@@ -200,7 +210,8 @@ Press [_b_] again to blame further in the history, [_q_] to go up or quit."
         'spacemacs/magit-toggle-whitespace)
       ;; full screen magit-status
       (when git-magit-status-fullscreen
-        (setq magit-display-buffer-function 'magit-display-buffer-fullframe-status-v1)))))
+        (setq magit-display-buffer-function 'magit-display-buffer-fullframe-status-v1))
+      (add-to-list 'magit-log-arguments "--color"))))
 
 (defun git/init-magit-gitflow ()
   (use-package magit-gitflow
@@ -220,7 +231,9 @@ Press [_b_] again to blame further in the history, [_q_] to go up or quit."
               (spacemacs|diminish magit-svn-mode "SVN")
               (define-key magit-mode-map "~" 'magit-svn-popup))))
 
-(defun git/init-orgit ())
+(defun git/init-orgit ()
+  (use-package orgit
+    :defer t))
 
 (defun git/init-smeargle ()
   (use-package smeargle

@@ -15,7 +15,8 @@
         ess-R-data-view
         (ess-smart-equals :toggle ess-enable-smart-equals)
         golden-ratio
-        org))
+        org
+        ))
 
 (defun ess/init-ess ()
   (use-package ess-site
@@ -36,7 +37,6 @@
            ("\\.do\\'"           . STA-mode)
            ("\\.ado\\'"          . STA-mode)
            ("\\.[Ss][Aa][Ss]\\'" . SAS-mode)
-           ;; ("\\.jl\\'"           . ess-julia-mode)
            ("\\.[Ss]t\\'"        . S-transcript-mode)
            ("\\.Sout"            . S-transcript-mode)
            ("\\.[Rr]out"         . R-transcript-mode)
@@ -47,11 +47,10 @@
            ("\\.[Jj][Aa][Gg]\\'" . ess-jags-mode)
            ("\\.[Jj][Oo][Gg]\\'" . ess-jags-mode)
            ("\\.[Jj][Mm][Dd]\\'" . ess-jags-mode))
-    ;; :commands (R stata julia SAS)
-    :commands (R stata SAS)
+    :commands (R stata julia SAS ess-julia-mode)
     :init
     (progn
-      ;; (spacemacs/register-repl 'ess-site 'julia)
+      (spacemacs/register-repl 'ess-site 'julia)
       (spacemacs/register-repl 'ess-site 'R)
       (spacemacs/register-repl 'ess-site 'SAS)
       (spacemacs/register-repl 'ess-site 'stata)
@@ -70,7 +69,7 @@
                  ess-nuke-trailing-whitespace-p t
                  ess-default-style 'DEFAULT)
            (when ess-disable-underscore-assign
-             (ess-toggle-underscore nil))
+             (setq ess-smart-S-assign-key nil))
 
            (define-key ess-doc-map "h" 'ess-display-help-on-object)
            (define-key ess-doc-map "p" 'ess-R-dv-pprint)

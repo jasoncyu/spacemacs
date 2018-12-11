@@ -91,6 +91,11 @@ when this mode is enabled since the minibuffer is cleared all the time."
   (setq mode-name "Python"
         tab-width python-tab-width
         fill-column python-fill-column)
+
+  ;; since we changed the tab-width we need to manually call python-indent-guess-indent-offset here
+  (when python-spacemacs-indent-guess
+    (python-indent-guess-indent-offset))
+
   (when (version< emacs-version "24.5")
     ;; auto-indent on colon doesn't work well with if statement
     ;; should be fixed in 24.5 and above
@@ -104,6 +109,7 @@ when this mode is enabled since the minibuffer is cleared all the time."
 (defun spacemacs/python-annotate-pdb ()
   "Highlight break point lines."
   (interactive)
+  (highlight-lines-matching-regexp "breakpoint()")
   (highlight-lines-matching-regexp "import \\(pdb\\|ipdb\\|pudb\\|wdb\\)")
   (highlight-lines-matching-regexp "\\(pdb\\|ipdb\\|pudb\\|wdb\\).set_trace()")
   (highlight-lines-matching-regexp "trepan.api.debug()"))
@@ -124,6 +130,8 @@ as the pyenv version then also return nil. This works around https://github.com/
                           (< i (length pyenv-version-names)))
                 (if (string-match (elt pyenv-version-names i) (string-trim pyenv-string))
                     (setq executable (string-trim pyenv-string)))
+                (if (string-match (elt pyenv-version-names i) "system")
+                    (setq executable (string-trim (executable-find command))))
                 (setq i (1+ i))))
           executable))
     (executable-find command)))
@@ -161,6 +169,8 @@ as the pyenv version then also return nil. This works around https://github.com/
                      ((spacemacs/pyenv-executable-find "pudb") "import pudb; pudb.set_trace()")
                      ((spacemacs/pyenv-executable-find "ipdb3") "import ipdb; ipdb.set_trace()")
                      ((spacemacs/pyenv-executable-find "pudb3") "import pudb; pudb.set_trace()")
+                     ((spacemacs/pyenv-executable-find "python3.7") "breakpoint()")
+                     ((spacemacs/pyenv-executable-find "python3.8") "breakpoint()")
                      (t "import pdb; pdb.set_trace()")))
         (line (thing-at-point 'line)))
     (if (and line (string-match trace line))

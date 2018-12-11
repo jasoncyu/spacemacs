@@ -1,9 +1,19 @@
+;;; config.el --- Major modes Layer packages File for Spacemacs
+;;
+;; Copyright (c) 2012-2018 Sylvain Benner & Contributors
+;;
+;; Author: Sylvain Benner <sylvain.benner@gmail.com>
+;; URL: https://github.com/syl20bnr/spacemacs
+;;
+;; This file is not part of GNU Emacs.
+;;
+;;; License: GPLv3
+
 (setq major-modes-packages
       '(
         arduino-mode
         (ebuild-mode :location (recipe :fetcher github :repo "emacsmirror/ebuild-mode"))
         (hoon-mode :location (recipe :fetcher github :repo "urbit/hoon-mode.el"))
-        julia-mode
         kivy-mode
         (logcat :location (recipe :fetcher github :repo "dcolascione/logcat-mode"))
         matlab-mode
@@ -31,8 +41,6 @@
         "a" 'ebuild-run-echangelog))))
 
 (defun major-modes/init-hoon-mode ())
-
-(defun major-modes/init-julia-mode ())
 
 (defun major-modes/init-logcat ()
   (use-package logcat

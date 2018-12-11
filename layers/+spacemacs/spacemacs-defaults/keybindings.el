@@ -196,10 +196,12 @@
   ("n" spacemacs/next-error "next")
   ("p" spacemacs/previous-error "prev")
   ("N" spacemacs/previous-error "prev")
+  ("z" recenter-top-bottom "recenter")
   ("q" nil "quit" :exit t)
   :evil-leader "e.")
 ;; file -----------------------------------------------------------------------
 (spacemacs/set-leader-keys
+  "fA" 'spacemacs/find-file-and-replace-buffer
   "fc" 'spacemacs/copy-file
   "fD" 'spacemacs/delete-current-buffer-file
   "fei" 'spacemacs/find-user-init-file
@@ -227,6 +229,8 @@
   "fyc" 'spacemacs/copy-file-path-with-line-column
   "fyd" 'spacemacs/copy-directory-path
   "fyl" 'spacemacs/copy-file-path-with-line
+  "fyn" 'spacemacs/copy-file-name
+  "fyN" 'spacemacs/copy-file-name-base
   "fyy" 'spacemacs/copy-file-path)
 ;; frame ----------------------------------------------------------------------
 (spacemacs/set-leader-keys
@@ -464,8 +468,8 @@ respond to this toggle."
   "wl"  'evil-window-right
   "w <right>"  'evil-window-right
   "wm"  'spacemacs/toggle-maximize-buffer
-  "wc"  'spacemacs/toggle-centered-buffer-mode
-  "wC"  'spacemacs/toggle-centered-buffer-mode-frame
+  "wc"  'spacemacs/toggle-centered-buffer
+  "wC"  'spacemacs/toggle-distraction-free
   "wo"  'other-frame
   "wr"  'spacemacs/rotate-windows-forward
   "wR"  'spacemacs/rotate-windows-backward
@@ -549,11 +553,11 @@ respond to this toggle."
 
 (spacemacs|define-transient-state buffer
   :title "Buffer Selection Transient State"
-  :doc (concat "
+  :doc "
  [_C-1_.._C-9_] goto nth window            [_n_/_<right>_]^^  next buffer       [_b_]   buffer list
  [_1_.._9_]     move buffer to nth window  [_N_/_p_/_<left>_] previous buffer   [_C-d_] bury buffer
  [_M-1_.._M-9_] swap buffer w/ nth window  [_d_]^^^^          kill buffer       [_o_]   other window
- ^^^^                                      [_q_]^^^^          quit")
+ ^^^^                                      [_z_]^^^^          recenter          [_q_]   quit"
   :bindings
   ("n" next-buffer)
   ("<right>" next-buffer)
@@ -564,6 +568,7 @@ respond to this toggle."
   ("b" helm-buffers-list)
   ("d" spacemacs/kill-this-buffer)
   ("C-d" bury-buffer)
+  ("z" recenter-top-bottom)
   ("q" nil :exit t)
   ("1" move-buffer-window-no-follow-1)
   ("2" move-buffer-window-no-follow-2)

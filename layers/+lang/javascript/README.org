@@ -2,12 +2,14 @@
 
 [[file:img/javascript.png]]
 
-* Table of Contents                                         :TOC_4_gh:noexport:
+* Table of Contents                     :TOC_4_gh:noexport:
 - [[#description][Description]]
   - [[#features][Features:]]
 - [[#install][Install]]
   - [[#web-beautify][web-beautify]]
+  - [[#prettier][prettier]]
   - [[#choosing-a-backend][Choosing a backend]]
+  - [[#choosing-a-formatter][Choosing a formatter]]
 - [[#backends][Backends]]
   - [[#tern][Tern]]
   - [[#language-server-protocol][Language Server Protocol]]
@@ -15,7 +17,7 @@
   - [[#indentation][Indentation]]
   - [[#repl][REPL]]
   - [[#node-modules][Node Modules]]
-- [[#key-bindings][Key Bindings]]
+- [[#key-bindings][Key bindings]]
   - [[#js2-mode][js2-mode]]
   - [[#folding-js2-mode][Folding (js2-mode)]]
   - [[#refactoring-js2-refactor][Refactoring (js2-refactor)]]
@@ -56,11 +58,14 @@ If you install these in non-standard locations, then add the following to your =
 ** web-beautify
 See [[file:../../+tools/web-beautify/README.org][web-beautify layer]] documentation.
 
+** prettier
+See [[file:../../+tools/prettier/README.org][prettier layer]] documentation.
+
 ** Choosing a backend
 To choose a default backend set the layer variable =javascript-backend=:
 
 #+BEGIN_SRC elisp
-(javascript :variables javascript-backend 'tern)
+  (javascript :variables javascript-backend 'tern)
 #+END_SRC
 
 Backend can be chosen on a per project basis using directory local variables
@@ -68,10 +73,28 @@ Backend can be chosen on a per project basis using directory local variables
 =lsp= backend:
 
 #+BEGIN_SRC elisp
-;;; Directory Local Variables
-;;; For more information see (info "(emacs) Directory Variables")
+  ;;; Directory Local Variables
+  ;;; For more information see (info "(emacs) Directory Variables")
 
-((js2-mode (javascript-backend . lsp)))
+  ((js2-mode (javascript-backend . lsp)))
+#+END_SRC
+
+** Choosing a formatter
+To choose a formatter, set the layer variable =javascript-fmt-tool=:
+
+#+BEGIN_SRC elisp
+  (javascript :variables javascript-fmt-tool 'web-beautify)
+#+END_SRC
+
+Formatter can be chosen on a per project basis using directory local variables
+(files named =.dir-locals.el= at the root of a project), an example to use the
+=prettier= formatter:
+
+#+BEGIN_SRC elisp
+  ;;; Directory Local Variables
+  ;;; For more information see (info "(emacs) Directory Variables")
+
+  ((js2-mode (javascript-fmt-tool . prettier)))
 #+END_SRC
 
 *Note:* you can easily add a directory local variable with ~SPC f v d~.
@@ -83,9 +106,9 @@ See [[file:../../+tools/tern/README.org][tern layer]] documentation.
 ** Language Server Protocol
 You just have to install javascript and typescript language server packages:
 
-#+begin_src sh
-npm i -g typescript javascript-typescript-langserver
-#+end_src
+#+BEGIN_SRC sh
+  npm i -g typescript javascript-typescript-langserver
+#+END_SRC
 
 * Configuration
 ** Indentation
@@ -120,7 +143,7 @@ To use the available JS repl, you need a running httpd server and a page loaded
 with skewer. If a blank page serves your needs, just use the run-skewer command
 in your javascript buffer. If you want to inject it in your own page, follow
 [[https://github.com/skeeto/skewer-mode#skewering-with-cors][these instructions]] (install the Greasemonkey script and then click the triangle
-in the top-right corner - if it turns green, you're good to go).
+in the top-right corner - if it turns green, you’re good to go).
 
 ** Node Modules
 If you would like =node_modules/.bin= to be automatically added to the buffer
@@ -129,21 +152,21 @@ local =exec_path=, e.g. to support project local eslint installations, set the
 doing this [[https://stackoverflow.com/questions/9679932#comment33532258_9683472][introduces a security risk]]:
 
 #+BEGIN_SRC elisp
-(setq-default dotspacemacs-configuration-layers
-  '((javascript :variables node-add-modules-path t)))
+  (setq-default dotspacemacs-configuration-layers
+    '((javascript :variables node-add-modules-path t)))
 #+END_SRC
 
-* Key Bindings
+* Key bindings
 ** js2-mode
 
-| Key Binding | Description                          |
+| Key binding | Description                          |
 |-------------+--------------------------------------|
 | ~SPC m w~   | toggle js2-mode warnings and errors  |
 | ~%~         | jump between blockswith [[https://github.com/redguardtoo/evil-matchit][evil-matchit]] |
 
 ** Folding (js2-mode)
 
-| Key Binding | Description              |
+| Key binding | Description              |
 |-------------+--------------------------|
 | ~SPC m z c~ | hide element             |
 | ~SPC m z o~ | show element             |
@@ -155,7 +178,7 @@ doing this [[https://stackoverflow.com/questions/9679932#comment33532258_9683472
 ** Refactoring (js2-refactor)
 Bindings should match the plain emacs assignments.
 
-| Key Binding   | Description                                                                                                    |
+| Key binding   | Description                                                                                                    |
 |---------------+----------------------------------------------------------------------------------------------------------------|
 | ~SPC m k~     | deletes to the end of the line, but does not cross semantic boundaries                                         |
 | ~SPC m r 3 i~ | converts ternary operator to if-statement                                                                      |
@@ -191,7 +214,7 @@ Bindings should match the plain emacs assignments.
 *** Documentation (js-doc)
 You can check more [[https://github.com/mooz/js-doc/][here]]
 
-| Key Binding   | Description                           |
+| Key binding   | Description                           |
 |---------------+---------------------------------------|
 | ~SPC m r d b~ | insert JSDoc comment for current file |
 | ~SPC m r d f~ | insert JSDoc comment for function     |
@@ -200,12 +223,12 @@ You can check more [[https://github.com/mooz/js-doc/][here]]
 
 ** REPL (skewer-mode)
 
-| Key Binding | Description                                                      |
+| Key binding | Description                                                      |
 |-------------+------------------------------------------------------------------|
 | ~SPC m e e~ | evaluates the last expression                                    |
 | ~SPC m e E~ | evaluates and inserts the result of the last expression at point |
 
-| Key Binding | Description                                                                        |
+| Key binding | Description                                                                        |
 |-------------+------------------------------------------------------------------------------------|
 | ~SPC m s a~ | Toggle live evaluation of whole buffer in REPL on buffer changes                   |
 | ~SPC m s b~ | send current buffer contents to the skewer REPL                                    |

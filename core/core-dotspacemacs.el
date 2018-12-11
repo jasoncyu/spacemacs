@@ -178,11 +178,12 @@ with 2 themes variants, one dark and one light")
 
 (defvar dotspacemacs-mode-line-theme '(spacemacs :separator wave :separator-scale 1.5)
   "Set the theme for the Spaceline. Supported themes are `spacemacs',
-`all-the-icons', `custom', `vim-powerline' and `vanilla'. The first three
-are spaceline themes. `vanilla' is default Emacs mode-line. `custom' is a
-user defined themes, refer to the DOCUMENTATION.org for more info on how
-to create your own spaceline theme. Value can be a symbol or a list with
-additional properties like '(all-the-icons :separator-scale 1.5).")
+`all-the-icons', `custom', `doom',`vim-powerline' and `vanilla'. The first three
+are spaceline themes. `doom' is the doom-emacs mode-line. `vanilla' is default
+Emacs mode-line. `custom' is a user defined themes, refer to the
+DOCUMENTATION.org for more info on how to create your own spaceline theme. Value
+can be a symbol or a list with additional properties like '(all-the-icons
+:separator-scale 1.5).")
 
 (defvar dotspacemacs-frame-title-format "%I@%S"
   "Default format string for a frame title bar, using the
@@ -262,8 +263,9 @@ auto-save the file in-place, `cache' to auto-save the file to another
 file stored in the cache directory and `nil' to disable auto-saving.")
 
 (defvar dotspacemacs-enable-paste-transient-state nil
-  "If non-nil, the paste transient-state is enabled. While enabled, pressing
-`p' several times cycles through the elements in the `kill-ring'.")
+  "If non-nil, the paste transient-state is enabled. While enabled, after you
+paste something, pressing `C-j' and `C-k' several times cycles through the
+elements in the `kill-ring'.")
 (defvaralias
   'dotspacemacs-enable-paste-micro-state
   'dotspacemacs-enable-paste-transient-state
@@ -679,35 +681,48 @@ If ARG is non nil then Ask questions to the user before installing the dotfile."
   %n -- prints Narrow if appropriate
   %z -- prints mnemonics of buffer, terminal, and keyboard coding systems
   %Z -- like %z, but including the end-of-line format"
-  (let* ((fs (format-spec-make
-              ?a (abbreviate-file-name (or (buffer-file-name)
-                                           (buffer-name)))
-              ?t (if (fboundp 'projectile-project-name)
-                     (projectile-project-name)
-                   "-")
-              ?S system-name
-              ?I invocation-name
-              ?U (or (getenv "USER") "")
-              ?b "%b"
-              ?f "%f"
-              ?F "%F"
-              ?* "%*"
-              ?+ "%+"
-              ?s "%s"
-              ?l "%l"
-              ?c "%c"
-              ?p "%p"
-              ?P "%P"
-              ?m "%m"
-              ?n "%n"
-              ?z "%z"
-              ?Z "%Z"
-              ?\[ "%["
-              ?\] "%]"
-              ?% "%%"
-              ?- "%-"
-              )))
-    (format-spec title-format fs)))
+  (save-match-data
+    ;; save-match-data to work around Emacs bug, see
+    ;; https://github.com/syl20bnr/spacemacs/issues/9700
+    (let* ((project-name (when (string-match-p "%t" title-format)
+                           (if (boundp 'spacemacs--buffer-project-name)
+                               spacemacs--buffer-project-name
+                             (set (make-local-variable 'spacemacs--buffer-project-name)
+                                  (if (fboundp 'projectile-project-name)
+                                      (projectile-project-name)
+                                    "-")))))
+           (abbreviated-file-name (when (string-match-p "%a" title-format)
+                                    (if (boundp 'spacemacs--buffer-abbreviated-filename)
+                                        spacemacs--buffer-abbreviated-filename
+                                      (set (make-local-variable 'spacemacs--buffer-abbreviated-filename)
+                                           (abbreviate-file-name (or (buffer-file-name)
+                                                                     (buffer-name)))))))
+           (fs (format-spec-make
+                ?a abbreviated-file-name
+                ?t project-name
+                ?S system-name
+                ?I invocation-name
+                ?U (or (getenv "USER") "")
+                ?b "%b"
+                ?f "%f"
+                ?F "%F"
+                ?* "%*"
+                ?+ "%+"
+                ?s "%s"
+                ?l "%l"
+                ?c "%c"
+                ?p "%p"
+                ?P "%P"
+                ?m "%m"
+                ?n "%n"
+                ?z "%z"
+                ?Z "%Z"
+                ?\[ "%["
+                ?\] "%]"
+                ?% "%%"
+                ?- "%-"
+                )))
+      (format-spec title-format fs))))
 
 (defun dotspacemacs/safe-load ()
   "Error recovery from malformed .spacemacs.
@@ -808,6 +823,7 @@ error recovery."
       (let ((themes '(spacemacs
                       all-the-icons
                       custom
+                      doom
                       vim-powerline
                       vanilla)))
         (or (member x themes)

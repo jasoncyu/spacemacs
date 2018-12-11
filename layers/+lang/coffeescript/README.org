@@ -2,13 +2,13 @@
 
 [[file:img/coffee.png]]
 
-* Table of Contents                                         :TOC_4_gh:noexport:
+* Table of Contents                     :TOC_4_gh:noexport:
 - [[#description][Description]]
   - [[#features][Features:]]
 - [[#install][Install]]
 - [[#configuration][Configuration]]
   - [[#linting][Linting]]
-- [[#key-bindings][Key Bindings]]
+- [[#key-bindings][Key bindings]]
   - [[#repl][REPL]]
 
 * Description
@@ -31,12 +31,12 @@ this file.
 To enable linting, install [[http://www.coffeelint.org/][CoffeeLint]] with the following command:
 
 #+BEGIN_SRC sh
-npm install -g coffeelint
+  npm install -g coffeelint
 #+END_SRC
 
-* Key Bindings
+* Key bindings
 
-| Key Binding | Description            |
+| Key binding | Description            |
 |-------------+------------------------|
 | ~SPC m c c~ | Compile buffer         |
 | ~SPC m c r~ | Compile region         |
@@ -44,7 +44,7 @@ npm install -g coffeelint
 
 ** REPL
 
-| Key Binding | Description                                        |
+| Key binding | Description                                        |
 |-------------+----------------------------------------------------|
 | ~SPC m '~   | Create or go to REPL                               |
 | ~SPC m s b~ | Send buffer to REPL                                |
