@@ -21,7 +21,8 @@
         helm-cscope
         helm-gtags
         (helm-pydoc :requires helm)
-        importmagic
+        ;; importmagic spawns a python process every time I open up a python org-babel buffer,
+        ;; importmagic
         live-py-mode
         (nose :location local)
         org
